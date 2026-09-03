@@ -1,0 +1,21 @@
+# Virtual Environment
+venv/
+env/
+
+# Python Cache (File yang di-generate otomatis oleh Python)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# File konfigurasi lokal dan rahasia (seperti password atau API key)
+.env
+instance/
+
+# Database lokal SQLite (agar data testing di komputer Anda tidak terunggah)
+*.sqlite3
+*.db
+
+# Sistem Operasi
+.DS_Store
+Thumbs.db
