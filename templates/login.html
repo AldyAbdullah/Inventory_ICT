@@ -1,45 +1,163 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login - Inventaris JOB Tomori</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
     <style>
-        body { background-color: #0A2540; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .card-login { width: 100%; max-width: 400px; border: none; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .btn-primary { background-color: #004B87; border-color: #004B87; }
-        .btn-primary:hover { background-color: #0A2540; border-color: #0A2540; }
+      body {
+        background-color: #f4f6f9; /* Latar belakang abu-abu terang yang bersih */
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+      }
+      .card-login {
+        width: 100%;
+        max-width: 400px;
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        background-color: #ffffff;
+        overflow: hidden;
+        border-top: 6px solid #e31837; /* Aksen garis merah tebal di atas */
+      }
+      .login-header {
+        padding: 30px 20px 20px;
+        text-align: center;
+      }
+      .login-header img {
+        max-height: 70px;
+        margin-bottom: 15px;
+        object-fit: contain;
+      }
+      .login-header h5 {
+        color: #0a2540; /* Biru Navy gelap untuk teks */
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: 0.5px;
+      }
+      .login-header p {
+        color: #64748b;
+        margin: 5px 0 0 0;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+      .btn-korporat {
+        background-color: #e31837; /* Merah Korporat */
+        border-color: #e31837;
+        color: #ffffff;
+        font-weight: 600;
+        border-radius: 6px;
+      }
+      .btn-korporat:hover {
+        background-color: #bd1027; /* Merah gelap saat di-hover */
+        border-color: #bd1027;
+        color: #ffffff;
+      }
+      .input-group-text {
+        background-color: #ffffff;
+        color: #e31837; /* Ikon berwarna merah */
+        border-right: none;
+      }
+      .form-control {
+        border-left: none;
+      }
+      .form-control:focus {
+        border-color: #dee2e6;
+        box-shadow: none;
+        background-color: #f8fafc;
+      }
+      .form-label {
+        color: #334155;
+      }
+      /* Efek fokus pada input group */
+      .input-group:focus-within {
+        box-shadow: 0 0 0 0.25rem rgba(227, 24, 55, 0.15);
+        border-radius: 6px;
+      }
+      .input-group:focus-within .input-group-text,
+      .input-group:focus-within .form-control {
+        border-color: #e31837;
+      }
     </style>
-</head>
-<body>
-    <div class="card card-login p-4">
-        <div class="card-body">
-            <div class="text-center mb-4">
-                <i class="bi bi-box-seam-fill fs-1" style="color: #004B87;"></i>
-                <h4 class="fw-bold mt-2 text-dark">Inventaris Tomori</h4>
-                <p class="text-muted small">Silakan login untuk mengakses sistem</p>
-            </div>
-
-            {% if error %}
-            <div class="alert alert-danger py-2 small" role="alert">
-                {{ error }}
-            </div>
-            {% endif %}
-
-            <form action="{{ url_for('login') }}" method="POST">
-                <div class="mb-3">
-                    <label class="form-label fw-medium small">Username</label>
-                    <input type="text" class="form-control" name="username" required autofocus>
-                </div>
-                <div class="mb-4">
-                    <label class="form-label fw-medium small">Password</label>
-                    <input type="password" class="form-control" name="password" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-100 py-2 fw-medium">Masuk Sistem</button>
-            </form>
+  </head>
+  <body>
+    <div class="container d-flex justify-content-center">
+      <div class="card card-login">
+        <div class="login-header">
+          <!-- Logo JOB Tomori -->
+          <img
+            src="{{ url_for('static', filename='img/logo-tomori.png') }}"
+            alt="Logo JOB Tomori"
+            onerror="
+              this.outerHTML =
+                '<i class=\'bi bi-buildings-fill fs-1 d-block mb-3\' style=\'color: #E31837;\'></i>'
+            "
+          />
+          <h5>Sistem Inventaris IT</h5>
+          <p>JOB Pertamina-Medco E&P Tomori</p>
         </div>
+        <div class="card-body px-4 pb-4 pt-2">
+          {% if error %}
+          <div
+            class="alert alert-danger py-2 small d-flex align-items-center"
+            role="alert"
+          >
+            <i class="bi bi-exclamation-circle-fill me-2"></i>
+            <div>{{ error }}</div>
+          </div>
+          {% endif %}
+
+          <form action="{{ url_for('login') }}" method="POST">
+            <div class="mb-3">
+              <label class="form-label fw-medium small">Username</label>
+              <div class="input-group">
+                <span class="input-group-text"
+                  ><i class="bi bi-person-fill"></i
+                ></span>
+                <input
+                  type="text"
+                  class="form-control"
+                  name="username"
+                  required
+                  autofocus
+                  autocomplete="off"
+                  placeholder="Masukkan username"
+                />
+              </div>
+            </div>
+            <div class="mb-4">
+              <label class="form-label fw-medium small">Password</label>
+              <div class="input-group">
+                <span class="input-group-text"
+                  ><i class="bi bi-lock-fill"></i
+                ></span>
+                <input
+                  type="password"
+                  class="form-control"
+                  name="password"
+                  required
+                  placeholder="Masukkan password"
+                />
+              </div>
+            </div>
+            <button type="submit" class="btn btn-korporat w-100 py-2 mt-1">
+              Masuk Sistem
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
-</body>
+  </body>
 </html>

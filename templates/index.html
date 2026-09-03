@@ -103,7 +103,9 @@ endblock %} {% block content %}
             <th>Kategori</th>
             <th>Stok</th>
             <th>Satuan</th>
+            {% if current_user.role == 'Admin' %}
             <th class="text-end px-4">Aksi</th>
+            {% endif %}
           </tr>
         </thead>
         <tbody id="tableBody">
@@ -146,6 +148,7 @@ endblock %} {% block content %}
               {% endif %}
             </td>
             <td class="text-muted">{{ item.satuan }}</td>
+            {% if current_user.role == 'Admin' %}
             <td class="text-end px-4">
               <a
                 href="{{ url_for('edit', id=item.id) }}"
@@ -170,6 +173,7 @@ endblock %} {% block content %}
                 <i class="bi bi-arrow-left-right"></i>
               </a>
             </td>
+            {% endif %}
           </tr>
           {% else %}
           <tr>

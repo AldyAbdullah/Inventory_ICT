@@ -3,7 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-
+from functools import wraps
+from flask import abort
 
 app = Flask(__name__)
 app.secret_key = 'kunci_rahasia_inventaris_job_tomori_sangat_aman'
@@ -16,6 +17,14 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login' # Halaman tujuan jika user belum login
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if current_user.role != 'Admin':
+            abort(403) # Mengembalikan error 403 Forbidden jika bukan Admin
+        return f(*args, **kwargs)
+    return decorated_function
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -77,6 +86,7 @@ def logout():
 
 @app.route('/')
 @login_required
+@admin_required
 def index():
     # Menangkap parameter pencarian dari URL
     search_query = request.args.get('search', '')
@@ -105,6 +115,7 @@ def index():
 
 @app.route('/tambah', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def tambah():
     # Jika user menekan tombol 'Simpan' (metode POST)
     if request.method == 'POST':
@@ -136,6 +147,7 @@ def tambah():
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def edit(id):
     # Mencari data barang berdasarkan ID, jika tidak ada kembalikan error 404
     barang = BarangIT.query.get_or_404(id)
@@ -156,6 +168,7 @@ def edit(id):
 
 @app.route('/hapus/<int:id>')
 @login_required
+@admin_required
 def hapus(id):
     barang = BarangIT.query.get_or_404(id)
     db.session.delete(barang)
@@ -164,6 +177,7 @@ def hapus(id):
 
 @app.route('/transaksi/<int:id>', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def catat_transaksi(id):
     barang = BarangIT.query.get_or_404(id)
     
@@ -199,6 +213,7 @@ def catat_transaksi(id):
 
 @app.route('/riwayat')
 @login_required
+@admin_required
 def riwayat():
     # Mengambil data transaksi diurutkan dari yang terbaru
     data_riwayat = Transaksi.query.order_by(Transaksi.tanggal.desc()).all()

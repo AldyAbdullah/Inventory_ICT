@@ -223,6 +223,19 @@
               <i class="bi bi-plus-square"></i> Tambah Barang
             </a>
           </li>
+          <li class="nav-item">
+            <a
+              class="nav-link {% if request.endpoint == 'riwayat' %}active{% endif %}"
+              href="{{ url_for('riwayat') }}"
+            >
+              <i class="bi bi-clock-history"></i> Riwayat Transaksi
+            </a>
+          </li>
+          <li class="nav-item mt-5">
+            <a class="nav-link text-danger" href="{{ url_for('logout') }}">
+              <i class="bi bi-box-arrow-right"></i> Keluar Sistem
+            </a>
+          </li>
         </ul>
       </div>
     </div>
