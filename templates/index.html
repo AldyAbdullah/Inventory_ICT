@@ -2,21 +2,34 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Manajemen Inventaris</title>
+    <title>Inventaris IT - JOB Tomori</title>
 </head>
 <body>
-    <h1>Daftar Inventaris</h1>
-    <table border="1">
+    <h1>Inventaris Barang IT Habis Pakai</h1>
+    <h3>JOB Pertamina-Medco E&P Tomori</h3>
+    
+    <table border="1" cellpadding="8" cellspacing="0">
         <tr>
-            <th>ID</th>
+            <th>No</th>
+            <th>Kode Barang</th>
             <th>Nama Barang</th>
-            <th>Jumlah</th>
+            <th>Kategori</th>
+            <th>Stok</th>
+            <th>Satuan</th>
         </tr>
+        <!-- Looping data dari database -->
         {% for item in data %}
         <tr>
-            <td>{{ item.id }}</td>
+            <td>{{ loop.index }}</td>
+            <td>{{ item.kode_barang }}</td>
             <td>{{ item.nama_barang }}</td>
-            <td>{{ item.jumlah }}</td>
+            <td>{{ item.kategori }}</td>
+            <td>{{ item.stok }}</td>
+            <td>{{ item.satuan }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="6" style="text-align: center;">Belum ada data barang.</td>
         </tr>
         {% endfor %}
     </table>
