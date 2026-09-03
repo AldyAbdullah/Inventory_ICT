@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Riwayat Transaksi - Inventaris JOB Tomori{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-end mb-4">
+    <div>
+        <h3 class="mb-1 fw-bold text-dark">Riwayat Transaksi</h3>
+        <span class="text-muted">Log mutasi barang masuk dan keluar</span>
+    </div>
+</div>
+
+<div class="card border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-nowrap">
+                <thead class="table-light">
+                    <tr>
+                        <th class="px-4">Waktu (UTC)</th>
+                        <th>Kode</th>
+                        <th>Nama Barang</th>
+                        <th>Jenis</th>
+                        <th>Jumlah</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in riwayat %}
+                    <tr>
+                        <td class="px-4 text-muted">{{ log.tanggal.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ log.barang.kode_barang }}</span></td>
+                        <td class="fw-medium text-dark">{{ log.barang.nama_barang }}</td>
+                        <td>
+                            {% if log.jenis == 'Masuk' %}
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25"><i class="bi bi-arrow-down-left"></i> Masuk</span>
+                            {% else %}
+                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25"><i class="bi bi-arrow-up-right"></i> Keluar</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold">{{ log.jumlah }} {{ log.barang.satuan }}</td>
+                        <td class="text-muted">{{ log.keterangan }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">Belum ada catatan transaksi.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,37 +1,209 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Inventaris IT - JOB Tomori</title>
-</head>
-<body>
-    <h1>Inventaris Barang IT Habis Pakai</h1>
-    <h3>JOB Pertamina-Medco E&P Tomori</h3>
-    
-    <table border="1" cellpadding="8" cellspacing="0">
-        <tr>
-            <th>No</th>
-            <th>Kode Barang</th>
+{% extends 'base.html' %} {% block title %}Dashboard - Inventaris JOB Tomori{%
+endblock %} {% block content %}
+<div class="d-flex justify-content-between align-items-end mb-4">
+  <div>
+    <h3 class="mb-1 fw-bold text-dark">Ringkasan Inventaris</h3>
+    <span class="text-muted">Pantau stok barang IT habis pakai</span>
+  </div>
+</div>
+
+<!-- Statistik Card -->
+<div class="row mb-4">
+  <!-- Kartu Biru Korporat -->
+  <div class="col-md-4 mb-3 mb-md-0">
+    <div
+      class="card h-100 border-0 shadow-sm"
+      style="background-color: #004b87"
+    >
+      <div class="card-body text-white">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <p class="mb-1 opacity-75 fw-medium">Total Jenis Barang</p>
+            <h2 class="mb-0 fw-bold">{{ total_jenis }}</h2>
+          </div>
+          <i class="bi bi-boxes fs-1 opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kartu Hijau Energi Bersih -->
+  <div class="col-md-4 mb-3 mb-md-0">
+    <div
+      class="card h-100 border-0 shadow-sm"
+      style="background-color: #16a34a"
+    >
+      <div class="card-body text-white">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <p class="mb-1 opacity-75 fw-medium">Total Keseluruhan Stok</p>
+            <h2 class="mb-0 fw-bold">{{ total_stok }}</h2>
+          </div>
+          <i class="bi bi-stack fs-1 opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kartu Merah Energi -->
+  <div class="col-md-4">
+    <div
+      class="card h-100 border-0 shadow-sm"
+      style="background-color: #da291c"
+    >
+      <div class="card-body text-white">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <p class="mb-1 opacity-75 fw-medium">Stok Kritis (&le; 5)</p>
+            <h2 class="mb-0 fw-bold">{{ stok_kritis }}</h2>
+          </div>
+          <i class="bi bi-exclamation-triangle fs-1 opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabel Data -->
+<div class="card shadow-sm">
+  <div
+    class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2 py-3"
+  >
+    <h6 class="mb-0 fw-bold text-dark">Data Master Barang</h6>
+
+    <!-- Input Pencarian Real-time -->
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <!-- Tombol Ekspor Excel -->
+      <a href="{{ url_for('export_excel') }}" class="btn btn-sm btn-success">
+        <i class="bi bi-file-earmark-excel me-1"></i> Unduh Excel
+      </a>
+
+      <!-- Input Pencarian Real-time -->
+      <div class="input-group input-group-sm" style="max-width: 250px">
+        <span class="input-group-text bg-light"
+          ><i class="bi bi-search"></i
+        ></span>
+        <input
+          type="text"
+          id="searchInput"
+          class="form-control"
+          placeholder="Cari barang..."
+        />
+      </div>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 text-nowrap">
+        <thead class="table-light">
+          <tr>
+            <th class="px-4">No</th>
+            <th>Kode</th>
             <th>Nama Barang</th>
             <th>Kategori</th>
             <th>Stok</th>
             <th>Satuan</th>
-        </tr>
-        <!-- Looping data dari database -->
-        {% for item in data %}
-        <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ item.kode_barang }}</td>
-            <td>{{ item.nama_barang }}</td>
-            <td>{{ item.kategori }}</td>
-            <td>{{ item.stok }}</td>
-            <td>{{ item.satuan }}</td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="6" style="text-align: center;">Belum ada data barang.</td>
-        </tr>
-        {% endfor %}
-    </table>
-</body>
-</html>
+            <th class="text-end px-4">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          {% for item in data %}
+          <tr>
+            <td class="px-4 text-muted">{{ loop.index }}</td>
+            <td>
+              <span class="badge bg-light text-dark border"
+                >{{ item.kode_barang }}</span
+              >
+            </td>
+            <td class="fw-medium text-dark">{{ item.nama_barang }}</td>
+            <td class="text-muted">{{ item.kategori }}</td>
+            <td>
+              {% if item.stok == 0 %}
+              <span
+                class="badge border px-2 py-1"
+                style="
+                  background-color: rgba(218, 41, 28, 0.1);
+                  color: #da291c;
+                  border-color: #da291c !important;
+                "
+                >Habis</span
+              >
+              {% elif item.stok <= 5 %}
+              <span
+                class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1"
+                >{{ item.stok }}</span
+              >
+              {% else %}
+              <span
+                class="badge border px-2 py-1"
+                style="
+                  background-color: rgba(22, 163, 74, 0.1);
+                  color: #16a34a;
+                  border-color: #16a34a !important;
+                "
+                >{{ item.stok }}</span
+              >
+              {% endif %}
+            </td>
+            <td class="text-muted">{{ item.satuan }}</td>
+            <td class="text-end px-4">
+              <a
+                href="{{ url_for('edit', id=item.id) }}"
+                class="btn btn-sm btn-light text-primary border me-1"
+                title="Edit"
+              >
+                <i class="bi bi-pencil-square"></i>
+              </a>
+              <a
+                href="{{ url_for('hapus', id=item.id) }}"
+                class="btn btn-sm btn-light text-danger border"
+                title="Hapus"
+                onclick="return confirm('Hapus data {{ item.nama_barang }}?');"
+              >
+                <i class="bi bi-trash"></i>
+              </a>
+              <a
+                href="{{ url_for('catat_transaksi', id=item.id) }}"
+                class="btn btn-sm btn-light text-success border me-1"
+                title="Transaksi Baru"
+              >
+                <i class="bi bi-arrow-left-right"></i>
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="text-center py-5 text-muted">
+              <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+              Belum ada data barang.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Script Pencarian Real-time -->
+<script>
+  document.getElementById("searchInput").addEventListener("keyup", function () {
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll("#tableBody tr");
+
+    rows.forEach((row) => {
+      // Abaikan jika baris adalah pesan "Belum ada data"
+      if (row.cells.length < 2) return;
+
+      let kode = row.cells[1].textContent.toLowerCase();
+      let nama = row.cells[2].textContent.toLowerCase();
+
+      if (kode.includes(filter) || nama.includes(filter)) {
+        row.style.display = "";
+      } else {
+        row.style.display = "none";
+      }
+    });
+  });
+</script>
+{% endblock %}
