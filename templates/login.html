@@ -1,163 +1,152 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login - Inventaris JOB Tomori</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
-    />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistem Inventaris IT JOB Tomori</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
-      body {
-        background-color: #f4f6f9; /* Latar belakang abu-abu terang yang bersih */
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0;
-      }
-      .card-login {
-        width: 100%;
-        max-width: 400px;
-        border: none;
-        border-radius: 8px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        background-color: #ffffff;
-        overflow: hidden;
-        border-top: 6px solid #e31837; /* Aksen garis merah tebal di atas */
-      }
-      .login-header {
-        padding: 30px 20px 20px;
-        text-align: center;
-      }
-      .login-header img {
-        max-height: 70px;
-        margin-bottom: 15px;
-        object-fit: contain;
-      }
-      .login-header h5 {
-        color: #0a2540; /* Biru Navy gelap untuk teks */
-        font-weight: 700;
-        margin: 0;
-        letter-spacing: 0.5px;
-      }
-      .login-header p {
-        color: #64748b;
-        margin: 5px 0 0 0;
-        font-size: 0.85rem;
-        font-weight: 500;
-      }
-      .btn-korporat {
-        background-color: #e31837; /* Merah Korporat */
-        border-color: #e31837;
-        color: #ffffff;
-        font-weight: 600;
-        border-radius: 6px;
-      }
-      .btn-korporat:hover {
-        background-color: #bd1027; /* Merah gelap saat di-hover */
-        border-color: #bd1027;
-        color: #ffffff;
-      }
-      .input-group-text {
-        background-color: #ffffff;
-        color: #e31837; /* Ikon berwarna merah */
-        border-right: none;
-      }
-      .form-control {
-        border-left: none;
-      }
-      .form-control:focus {
-        border-color: #dee2e6;
-        box-shadow: none;
-        background-color: #f8fafc;
-      }
-      .form-label {
-        color: #334155;
-      }
-      /* Efek fokus pada input group */
-      .input-group:focus-within {
-        box-shadow: 0 0 0 0.25rem rgba(227, 24, 55, 0.15);
-        border-radius: 6px;
-      }
-      .input-group:focus-within .input-group-text,
-      .input-group:focus-within .form-control {
-        border-color: #e31837;
-      }
+        body {
+            background-color: #f4f6f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            overflow: hidden;
+            width: 100%;
+            max-width: 950px;
+            /* Penambahan aksen garis merah di atas */
+            border-top: 5px solid #d32f2f;
+        }
+        .form-section {
+            padding: 3.5rem;
+        }
+        .info-section {
+            background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+            color: white;
+            padding: 3.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .logo-img {
+            max-width: 140px;
+            margin-bottom: 1rem;
+        }
+        .form-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #333;
+        }
+        .form-control {
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            border: 1px solid #ced4da;
+        }
+        .form-control:focus {
+            box-shadow: none;
+            border-color: #d32f2f;
+        }
+        .btn-login {
+            background-color: #d32f2f;
+            color: white;
+            border-radius: 6px;
+            font-weight: 600;
+            padding: 0.75rem;
+        }
+        .btn-login:hover {
+            background-color: #b71c1c;
+            color: white;
+        }
+        .nav-link-custom {
+            color: #6c757d;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-decoration: none;
+            margin-right: 1.5rem;
+        }
+        .nav-link-custom.active {
+            color: #d32f2f;
+            border-bottom: 2px solid #d32f2f;
+            padding-bottom: 0.2rem;
+        }
     </style>
-  </head>
-  <body>
-    <div class="container d-flex justify-content-center">
-      <div class="card card-login">
-        <div class="login-header">
-          <!-- Logo JOB Tomori -->
-          <img
-            src="{{ url_for('static', filename='img/logo-tomori.png') }}"
-            alt="Logo JOB Tomori"
-            onerror="
-              this.outerHTML =
-                '<i class=\'bi bi-buildings-fill fs-1 d-block mb-3\' style=\'color: #E31837;\'></i>'
-            "
-          />
-          <h5>Sistem Inventaris IT</h5>
-          <p>JOB Pertamina-Medco E&P Tomori</p>
-        </div>
-        <div class="card-body px-4 pb-4 pt-2">
-          {% if error %}
-          <div
-            class="alert alert-danger py-2 small d-flex align-items-center"
-            role="alert"
-          >
-            <i class="bi bi-exclamation-circle-fill me-2"></i>
-            <div>{{ error }}</div>
-          </div>
-          {% endif %}
+</head>
+<body>
+    <div class="container p-3">
+        <div class="login-card mx-auto row g-0">
+            <!-- Sisi Kiri: Form Login -->
+            <div class="col-md-5 form-section d-flex flex-column justify-content-center">
+                <div class="text-center mb-4">
+                    <img src="{{ url_for('static', filename='img/logo-tomori.png') }}" alt="Logo JOB Tomori" class="logo-img">
+                    <h6 class="fw-bold mt-2 mb-1">Sistem Inventaris IT</h6>
+                    <p class="text-muted" style="font-size: 0.8rem;">JOB Pertamina-Medco E&P Tomori</p>
+                </div>
 
-          <form action="{{ url_for('login') }}" method="POST">
-            <div class="mb-3">
-              <label class="form-label fw-medium small">Username</label>
-              <div class="input-group">
-                <span class="input-group-text"
-                  ><i class="bi bi-person-fill"></i
-                ></span>
-                <input
-                  type="text"
-                  class="form-control"
-                  name="username"
-                  required
-                  autofocus
-                  autocomplete="off"
-                  placeholder="Masukkan username"
-                />
-              </div>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else category }} text-center small py-2">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form action="{{ url_for('login') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-control" name="username" placeholder="Masukkan Username" required autocomplete="off">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" name="password" placeholder="Masukkan Password" required>
+                    </div>
+                    
+                    <!-- Tambahan Checkbox Ingat Saya -->
+                    <div class="mb-4 form-check">
+                        <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                        <label class="form-check-label text-muted small" for="remember" style="font-weight: 500;">Ingat Saya</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-login w-100">Masuk Sistem</button>
+                </form>
             </div>
-            <div class="mb-4">
-              <label class="form-label fw-medium small">Password</label>
-              <div class="input-group">
-                <span class="input-group-text"
-                  ><i class="bi bi-lock-fill"></i
-                ></span>
-                <input
-                  type="password"
-                  class="form-control"
-                  name="password"
-                  required
-                  placeholder="Masukkan password"
-                />
-              </div>
+
+            <!-- Sisi Kanan: Banner Info -->
+            <div class="col-md-7 d-none d-md-flex flex-column bg-white p-4">
+                <!-- Navigasi Internal -->
+                <div class="d-flex justify-content-center mb-4">
+                    <a href="#" class="nav-link-custom active">Menu Utama</a>
+                    <a href="#" class="nav-link-custom">Pengumuman & Informasi</a>
+                    <a href="#" class="nav-link-custom">Kontak Bantuan</a>
+                </div>
+                
+                <!-- Area Merah -->
+                <div class="info-section flex-grow-1 rounded-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4 z-1">
+                        <span class="badge bg-white text-danger fw-bold">IT SUPPORT</span>
+                        <span class="fw-bold fs-6">JOB TOMORI</span>
+                    </div>
+                    <h2 class="fw-bold mb-3 z-1" style="line-height: 1.4;">Lebih Mudah Mengatur<br>Ketersediaan Barang<br>Dengan Sistem Terpadu</h2>
+                    <p class="opacity-75 mb-0 z-1">Departemen Information Technology<br>Senoro Field, Kabupaten Banggai</p>
+                    
+                    <!-- Ornamen Grafis -->
+                    <div class="position-absolute opacity-25" style="bottom: -30px; right: -30px; z-index: 0;">
+                        <i class="bi bi-box-seam" style="font-size: 16rem;"></i>
+                    </div>
+                </div>
             </div>
-            <button type="submit" class="btn btn-korporat w-100 py-2 mt-1">
-              Masuk Sistem
-            </button>
-          </form>
         </div>
-      </div>
     </div>
-  </body>
+</body>
 </html>

@@ -5,9 +5,15 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from flask import abort
+from flask import send_file
+from export_utils import generate_excel_report
+import pdfkit
+from flask import make_response
+from datetime import timedelta
 
 app = Flask(__name__)
 app.secret_key = 'kunci_rahasia_inventaris_job_tomori_sangat_aman'
+app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///inventaris_job_tomori.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -65,17 +71,25 @@ with app.app_context():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        
+        # Menangkap nilai checkbox (akan bernilai 'on' jika dicentang, atau None jika tidak)
+        remember = True if request.form.get('remember') else False
+
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password, password):
-            login_user(user)
-            return redirect(url_for('index'))
-        else:
-            return render_template('login.html', error="Username atau password salah!")
+            # Tambahkan parameter remember di sini
+            login_user(user, remember=remember)
             
+            next_page = request.args.get('next')
+            return redirect(next_page) if next_page else redirect(url_for('index'))
+        else:
+            flash('Username atau password salah.', 'error')
+
     return render_template('login.html')
 
 @app.route('/logout')
@@ -228,134 +242,12 @@ from openpyxl.utils import get_column_letter
 @app.route('/export/excel')
 @login_required
 def export_excel():
-    output = io.BytesIO()
+    # Ambil data dari database
+    data_barang = BarangIT.query.all()
+    data_transaksi = Transaksi.query.order_by(Transaksi.tanggal.desc()).all()
     
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        waktu_cetak = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
-        # Konfigurasi Gaya (Styling) openpyxl
-        font_title = Font(name='Segoe UI', size=14, bold=True, color='0A2540')
-        font_subtitle = Font(name='Segoe UI', size=11, bold=True, color='334155')
-        font_meta = Font(name='Segoe UI', size=9, italic=True, color='64748B')
-        
-        font_header = Font(name='Segoe UI', size=10, bold=True, color='FFFFFF')
-        fill_header = PatternFill(start_color='0A2540', end_color='0A2540', fill_type='solid')
-        
-        font_data = Font(name='Segoe UI', size=10, color='1E293B')
-        border_thin = Border(
-            left=Side(style='thin', color='CBD5E1'),
-            right=Side(style='thin', color='CBD5E1'),
-            top=Side(style='thin', color='CBD5E1'),
-            bottom=Side(style='thin', color='CBD5E1')
-        )
-        
-        align_center = Alignment(horizontal='center', vertical='center')
-        align_left = Alignment(horizontal='left', vertical='center')
-        align_right = Alignment(horizontal='right', vertical='center')
-
-        # --- SHEET 1: MASTER STOK IT ---
-        data_barang = BarangIT.query.all()
-        list_barang = []
-        for idx, item in enumerate(data_barang, start=1):
-            status_stok = 'Habis' if item.stok == 0 else ('Kritis' if item.stok <= 5 else 'Aman')
-            list_barang.append({
-                'No': idx,
-                'Kode Barang': item.kode_barang,
-                'Nama Barang': item.nama_barang,
-                'Kategori': item.kategori,
-                'Stok': item.stok,
-                'Satuan': item.satuan,
-                'Status': status_stok
-            })
-        df_barang = pd.DataFrame(list_barang)
-        df_barang.to_excel(writer, index=False, sheet_name='Master Stok IT', startrow=4)
-        
-        ws_barang = writer.sheets['Master Stok IT']
-        ws_barang['A1'] = "JOB Pertamina-Medco E&P Tomori"
-        ws_barang['A1'].font = font_title
-        ws_barang['A2'] = "Laporan Master Stok Barang IT Habis Pakai"
-        ws_barang['A2'].font = font_subtitle
-        ws_barang['A3'] = f"Tanggal Cetak: {waktu_cetak}"
-        ws_barang['A3'].font = font_meta
-
-        # Styling Header Tabel Master
-        for col in range(1, len(df_barang.columns) + 1):
-            cell = ws_barang.cell(row=5, column=col)
-            cell.font = font_header
-            cell.fill = fill_header
-            cell.alignment = align_center
-            cell.border = border_thin
-
-        # Styling Data Master
-        for row in range(6, len(df_barang) + 6):
-            for col in range(1, len(df_barang.columns) + 1):
-                cell = ws_barang.cell(row=row, column=col)
-                cell.font = font_data
-                cell.border = border_thin
-                # Perataan teks berdasarkan kolom
-                if col in [1, 2, 5, 6, 7]:  # No, Kode, Stok, Satuan, Status
-                    cell.alignment = align_center
-                else:
-                    cell.alignment = align_left
-
-        # --- SHEET 2: RIWAYAT TRANSAKSI ---
-        data_transaksi = Transaksi.query.order_by(Transaksi.tanggal.desc()).all()
-        list_transaksi = []
-        for idx, log in enumerate(data_transaksi, start=1):
-            list_transaksi.append({
-                'No': idx,
-                'Waktu (UTC)': log.tanggal.strftime('%Y-%m-%d %H:%M:%S'),
-                'Kode Barang': log.barang.kode_barang,
-                'Nama Barang': log.barang.nama_barang,
-                'Jenis': log.jenis,
-                'Jumlah': log.jumlah,
-                'Satuan': log.barang.satuan,
-                'Keterangan / Referensi': log.keterangan
-            })
-        df_transaksi = pd.DataFrame(list_transaksi)
-        df_transaksi.to_excel(writer, index=False, sheet_name='Riwayat Transaksi', startrow=4)
-        
-        ws_transaksi = writer.sheets['Riwayat Transaksi']
-        ws_transaksi['A1'] = "JOB Pertamina-Medco E&P Tomori"
-        ws_transaksi['A1'].font = font_title
-        ws_transaksi['A2'] = "Laporan Riwayat Mutasi Barang IT"
-        ws_transaksi['A2'].font = font_subtitle
-        ws_transaksi['A3'] = f"Tanggal Cetak: {waktu_cetak}"
-        ws_transaksi['A3'].font = font_meta
-
-        # Styling Header Tabel Transaksi
-        for col in range(1, len(df_transaksi.columns) + 1):
-            cell = ws_transaksi.cell(row=5, column=col)
-            cell.font = font_header
-            cell.fill = fill_header
-            cell.alignment = align_center
-            cell.border = border_thin
-
-        # Styling Data Transaksi
-        for row in range(6, len(df_transaksi) + 6):
-            for col in range(1, len(df_transaksi.columns) + 1):
-                cell = ws_transaksi.cell(row=row, column=col)
-                cell.font = font_data
-                cell.border = border_thin
-                if col in [1, 2, 3, 5, 6, 7]:
-                    cell.alignment = align_center
-                else:
-                    cell.alignment = align_left
-
-        # Auto-adjust Column Width untuk kedua Sheet
-        for ws in [ws_barang, ws_transaksi]:
-            for col in ws.columns:
-                max_len = 0
-                col_letter = get_column_letter(col[0].column)
-                for cell in col:
-                    # Hitung panjang teks hanya dari baris data ke bawah agar tidak terpengaruh judul yang panjang
-                    if cell.row >= 5 and cell.value:
-                        max_len = max(max_len, len(str(cell.value)))
-                ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
-
-    output.seek(0)
-    tanggal_hari_ini = datetime.now().strftime('%Y-%m-%d')
-    nama_file = f'Laporan_Inventaris_JOB_Tomori_{tanggal_hari_ini}.xlsx'
+    # Panggil fungsi dari file eksternal
+    output, nama_file = generate_excel_report(data_barang, data_transaksi)
     
     return send_file(
         output,
@@ -363,6 +255,50 @@ def export_excel():
         as_attachment=True,
         download_name=nama_file
     )
+
+import os # Pastikan modul ini sudah diimpor di bagian atas
+
+@app.route('/export/pdf')
+@login_required
+def export_pdf():
+    data_barang = BarangIT.query.all()
+    data_transaksi = Transaksi.query.order_by(Transaksi.tanggal.desc()).all()
+    tanggal_cetak = datetime.now().strftime('%d %B %Y %H:%M WIB')
+
+    # Mendapatkan jalur absolut gambar logo
+    logo_path = os.path.join(app.root_path, 'static', 'img', 'logo-tomori.png')
+    # Ubah backslash (\) menjadi slash (/) agar file:/// dapat membacanya di Windows
+    logo_path = logo_path.replace('\\', '/')
+
+    rendered_html = render_template(
+        'surat_laporan.html', 
+        data=data_barang,
+        riwayat=data_transaksi, 
+        tanggal_cetak=tanggal_cetak,
+        logo_path=logo_path # Kirim variabel logo_path ke template
+    )
+
+    path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
+    config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+
+    options = {
+        'page-size': 'A4',
+        'margin-top': '20mm',
+        'margin-right': '20mm',
+        'margin-bottom': '20mm',
+        'margin-left': '20mm',
+        'encoding': "UTF-8",
+        'enable-local-file-access': None # Opsi ini wajib agar wkhtmltopdf bisa membaca gambar lokal
+    }
+
+    pdf = pdfkit.from_string(rendered_html, False, configuration=config, options=options)
+
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=Laporan_Inventaris_Tomori_{datetime.now().strftime("%Y%m%d")}.pdf'
+    
+    return response
+
 @app.route('/users')
 @login_required
 @admin_required

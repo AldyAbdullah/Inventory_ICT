@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Laporan Inventaris</title>
+    <style>
+        body { font-family: "Times New Roman", Times, serif; font-size: 11pt; color: #000; line-height: 1.4; }
+        
+        /* Desain Kop Surat */
+        .kop-surat { width: 100%; border-bottom: 4px solid #000; margin-bottom: 20px; padding-bottom: 10px; }
+        .kop-surat td { vertical-align: middle; }
+        .logo-placeholder { width: 80px; height: 80px; background-color: #e2e8f0; border: 1px dashed #64748b; text-align: center; line-height: 80px; font-size: 10px; font-weight: bold; }
+        .teks-kop { text-align: center; padding: 0 20px; }
+        .teks-kop h1 { margin: 0; font-size: 16pt; color: #0A2540; font-weight: bold; text-transform: uppercase; }
+        .teks-kop h2 { margin: 2px 0; font-size: 13pt; font-weight: bold; }
+        .teks-kop p { margin: 0; font-size: 10pt; font-style: italic; }
+        
+        /* Tipografi & Tata Letak */
+        .judul-dokumen { text-align: center; font-size: 14pt; font-weight: bold; text-decoration: underline; margin-bottom: 5px; }
+        .meta-info { display: table; width: 100%; margin-bottom: 20px; font-size: 10pt; }
+        .meta-kiri { display: table-cell; text-align: left; }
+        .meta-kanan { display: table-cell; text-align: right; }
+        
+        /* Tabel Data */
+        table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 10pt; }
+        table.data-table th, table.data-table td { border: 1px solid #000; padding: 6px 8px; }
+        table.data-table th { background-color: #f8fafc; text-align: center; font-weight: bold; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        
+        /* Tanda Tangan */
+        .ttd-section { width: 100%; margin-top: 40px; page-break-inside: avoid; }
+        .ttd-box { float: right; width: 250px; text-align: center; }
+        .ttd-nama { margin-top: 80px; font-weight: bold; text-decoration: underline; }
+        
+        /* Pemisah Halaman */
+        .page-break { page-break-before: always; }
+    </style>
+</head>
+<body>
+    <!-- KOP SURAT -->
+    <!-- KOP SURAT -->
+    <table class="kop-surat">
+        <tr>
+            <!-- Pastikan ukuran logo cukup besar dan proporsional -->
+            <td width="15%" class="text-center">
+                <img src="file:///{{ logo_path }}" alt="Logo JOB Tomori" style="width: 130px; height: auto;">
+            </td>
+            <td width="85%" class="teks-kop">
+                <h1>JOB PERTAMINA-MEDCO E&P TOMORI</h1>
+                <h2>DEPARTEMEN INFORMATION TECHNOLOGY</h2>
+                <p>Senoro Field - Jl. Trans Sulawesi, Desa Paisubuloli, Kec. Batui Selatan, Kab. Banggai, Sulawesi Tengah</p>
+            </td>
+        </tr>
+    </table>
+
+    <!-- HALAMAN 1: MASTER STOK -->
+    <div class="judul-dokumen">LAPORAN MASTER STOK BARANG IT</div>
+    <div class="meta-info">
+        <div class="meta-kiri">Nomor Dok: IT-INV-{{ tanggal_cetak[0:2] }}{{ tanggal_cetak[3:5] }}{{ tanggal_cetak[6:10] }}</div>
+        <div class="meta-kanan">Waktu Cetak: {{ tanggal_cetak }}</div>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th width="5%">No</th>
+                <th width="15%">Kode Barang</th>
+                <th width="30%">Nama Barang</th>
+                <th width="20%">Kategori</th>
+                <th width="15%">Stok Tersedia</th>
+                <th width="15%">Satuan</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in data %}
+            <tr>
+                <td class="text-center">{{ loop.index }}</td>
+                <td class="text-center">{{ item.kode_barang }}</td>
+                <td>{{ item.nama_barang }}</td>
+                <td class="text-center">{{ item.kategori }}</td>
+                <td class="text-center">{{ item.stok }}</td>
+                <td class="text-center">{{ item.satuan }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center">Tidak ada data barang.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="ttd-section">
+        <div class="ttd-box">
+            <p>Mengetahui,<br>Admin IT Support</p>
+            <p class="ttd-nama">{{ current_user.username | upper }}</p>
+        </div>
+    </div>
+
+    <!-- HALAMAN 2: RIWAYAT TRANSAKSI -->
+    <div class="page-break"></div>
+    
+    <table class="kop-surat">
+        <tr>
+            <td width="15%" class="text-center">
+                <img src="file:///{{ logo_path }}" alt="Logo JOB Tomori" style="max-width: 130px; height: auto;">
+            </td>
+            <td width="85%" class="teks-kop">
+                <h1>JOB PERTAMINA-MEDCO E&P TOMORI</h1>
+                <h2>DEPARTEMEN INFORMATION TECHNOLOGY</h2>
+                <p>Gedung Perkantoran JOB Tomori, Senayan, Jakarta Selatan</p>
+            </td>
+        </tr>
+    </table>
+
+    <div class="judul-dokumen">LAMPIRAN: RIWAYAT MUTASI BARANG</div>
+    <div class="meta-info">
+        <div class="meta-kiri">Dokumen Lampiran</div>
+        <div class="meta-kanan">Waktu Cetak: {{ tanggal_cetak }}</div>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th width="5%">No</th>
+                <th width="20%">Tanggal (UTC)</th>
+                <th width="25%">Nama Barang</th>
+                <th width="15%">Jenis</th>
+                <th width="10%">Jml</th>
+                <th width="25%">Keterangan</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in riwayat %}
+            <tr>
+                <td class="text-center">{{ loop.index }}</td>
+                <td class="text-center">{{ log.tanggal.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ log.barang.nama_barang }}</td>
+                <td class="text-center">
+                    {% if log.jenis == 'Masuk' %} [+] Masuk {% else %} [-] Keluar {% endif %}
+                </td>
+                <td class="text-center">{{ log.jumlah }} {{ log.barang.satuan }}</td>
+                <td>{{ log.keterangan }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center">Belum ada riwayat transaksi.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
