@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -38,11 +38,15 @@ def load_user(user_id):
 
 # Model Tabel User
 class User(UserMixin, db.Model):
-    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    role = db.Column(db.String(20), default='Admin') # 'Admin' atau 'Viewer'
+    role = db.Column(db.String(20), nullable=False, default='Viewer')
+    
+    # Tambahan kolom profil
+    nama_lengkap = db.Column(db.String(100), nullable=True)
+    jabatan = db.Column(db.String(50), nullable=True)
+    departemen = db.Column(db.String(50), nullable=True)
 
 class BarangIT(db.Model):
     __tablename__ = 'barang_it' # Deklarasi nama tabel secara eksplisit
@@ -125,6 +129,25 @@ def index():
                            total_stok=total_stok,
                            stok_kritis=stok_kritis,
                            search_query=search_query)
+
+@app.route('/profil', methods=['GET', 'POST'])
+@login_required
+def profil():
+    if request.method == 'POST':
+        current_user.nama_lengkap = request.form.get('nama_lengkap')
+        current_user.jabatan = request.form.get('jabatan')
+        current_user.departemen = request.form.get('departemen')
+        
+        # Ubah password jika form diisi
+        password_baru = request.form.get('password_baru')
+        if password_baru:
+            current_user.password = generate_password_hash(password_baru)
+            
+        db.session.commit()
+        flash('Profil berhasil diperbarui.', 'success')
+        return redirect(url_for('profil'))
+        
+    return render_template('profil.html')
 
 @app.route('/tambah', methods=['GET', 'POST'])
 @login_required

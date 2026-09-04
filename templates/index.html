@@ -82,7 +82,7 @@
 
     <!-- Input Pencarian Real-time -->
     <div class="d-flex align-items-center gap-2 flex-wrap">
-      <!-- Tombol Ekspor Excel -->
+      <!-- Tombol Ekspor -->
       <a href="{{ url_for('export_pdf') }}" class="btn btn-sm btn-danger">
         <i class="bi bi-file-earmark-pdf me-1"></i> Unduh PDF
       </a>
@@ -90,7 +90,7 @@
         <i class="bi bi-file-earmark-excel me-1"></i> Unduh Excel
       </a>
 
-      <!-- Input Pencarian Real-time -->
+      <!-- Input Pencarian -->
       <div class="input-group input-group-sm" style="max-width: 250px">
         <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
         <input type="text" id="searchInput" class="form-control" placeholder="Cari barang..." />
@@ -102,26 +102,27 @@
       <table class="table table-hover align-middle mb-0 text-nowrap">
         <thead class="table-light">
           <tr>
-            <th class="px-4">No</th>
-            <th>Kode</th>
+            <th class="px-4 d-none d-md-table-cell">No</th>
+            <th class="d-none d-md-table-cell">Kode</th>
             <th>Nama Barang</th>
-            <th>Kategori</th>
+            <th class="d-none d-md-table-cell">Kategori</th>
             <th>Stok</th>
-            <th>Satuan</th>
+            <th class="d-none d-md-table-cell">Satuan</th>
             {% if current_user.role == 'Admin' %}
-            <th class="text-end px-4">Aksi</th>
+            <th class="text-end px-4 d-none d-md-table-cell">Aksi</th>
+            <th class="text-end px-3 d-md-none">Detail</th>
             {% endif %}
           </tr>
         </thead>
         <tbody id="tableBody">
           {% for item in data %}
           <tr>
-            <td class="px-4 text-muted">{{ loop.index }}</td>
-            <td>
+            <td class="px-4 text-muted d-none d-md-table-cell">{{ loop.index }}</td>
+            <td class="d-none d-md-table-cell">
               <span class="badge bg-light text-dark border">{{ item.kode_barang }}</span>
             </td>
             <td class="fw-medium text-dark">{{ item.nama_barang }}</td>
-            <td class="text-muted">{{ item.kategori }}</td>
+            <td class="text-muted d-none d-md-table-cell">{{ item.kategori }}</td>
             <td>
               {% if item.stok == 0 %}
               <span class="badge border px-2 py-1" style="background-color: rgba(218, 41, 28, 0.1); color: #da291c; border-color: #da291c !important;">Habis</span>
@@ -131,21 +132,94 @@
               <span class="badge border px-2 py-1" style="background-color: rgba(22, 163, 74, 0.1); color: #16a34a; border-color: #16a34a !important;">{{ item.stok }}</span>
               {% endif %}
             </td>
-            <td class="text-muted">{{ item.satuan }}</td>
+            <td class="text-muted d-none d-md-table-cell">{{ item.satuan }}</td>
+            
             {% if current_user.role == 'Admin' %}
-            <td class="text-end px-4">
-              <a href="{{ url_for('edit', id=item.id) }}" class="btn btn-sm btn-light text-primary border me-1" title="Edit">
-                <i class="bi bi-pencil-square"></i>
-              </a>
-              <a href="{{ url_for('hapus', id=item.id) }}" class="btn btn-sm btn-light text-danger border" title="Hapus" onclick="return confirm('Hapus data {{ item.nama_barang }}?');">
-                <i class="bi bi-trash"></i>
-              </a>
-              <a href="{{ url_for('catat_transaksi', id=item.id) }}" class="btn btn-sm btn-light text-success border me-1" title="Transaksi Baru">
-                <i class="bi bi-arrow-left-right"></i>
-              </a>
+            <!-- Aksi Desktop (Dropdown) -->
+            <td class="text-end px-4 d-none d-md-table-cell">
+              <div class="dropdown">
+                <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Aksi <i class="bi bi-chevron-down ms-1" style="font-size: 0.75rem;"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="font-size: 0.85rem;">
+                  <li>
+                    <a class="dropdown-item py-2" href="{{ url_for('catat_transaksi', id=item.id) }}">
+                      <i class="bi bi-arrow-left-right text-success me-2"></i> Transaksi Baru
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item py-2" href="{{ url_for('edit', id=item.id) }}">
+                      <i class="bi bi-pencil-square text-primary me-2"></i> Edit Barang
+                    </a>
+                  </li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <a class="dropdown-item py-2 text-danger" href="{{ url_for('hapus', id=item.id) }}" onclick="return confirm('Hapus data {{ item.nama_barang }}?');">
+                      <i class="bi bi-trash text-danger me-2"></i> Hapus
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </td>
+
+            <!-- Aksi Mobile (Modal Trigger) -->
+            <td class="text-end px-3 d-md-none">
+              <button class="btn btn-sm btn-light border" data-bs-toggle="modal" data-bs-target="#modalDetail{{ item.id }}">
+                <i class="bi bi-three-dots-vertical"></i>
+              </button>
             </td>
             {% endif %}
           </tr>
+
+          <!-- Modal Detail Mobile -->
+          <div class="modal fade text-start" id="modalDetail{{ item.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content border-0 shadow">
+                <div class="modal-header border-bottom-0 pb-0">
+                  <h6 class="modal-title fw-bold">Detail Barang</h6>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <div class="text-muted small">Nama Barang</div>
+                    <div class="fw-bold fs-6">{{ item.nama_barang }}</div>
+                  </div>
+                  <div class="row mb-4">
+                    <div class="col-6 mb-2">
+                      <div class="text-muted small">Kode</div>
+                      <div class="fw-medium">{{ item.kode_barang }}</div>
+                    </div>
+                    <div class="col-6 mb-2">
+                      <div class="text-muted small">Kategori</div>
+                      <div class="fw-medium">{{ item.kategori }}</div>
+                    </div>
+                    <div class="col-6">
+                      <div class="text-muted small">Stok Saat Ini</div>
+                      <div class="fw-medium">{{ item.stok }} {{ item.satuan }}</div>
+                    </div>
+                  </div>
+                  
+                  {% if current_user.role == 'Admin' %}
+                  <hr>
+                  <div class="text-muted small mb-2">Tindakan</div>
+                  <div class="d-flex flex-column gap-2">
+                    <a href="{{ url_for('catat_transaksi', id=item.id) }}" class="btn btn-success text-start">
+                      <i class="bi bi-arrow-left-right me-2"></i> Catat Transaksi
+                    </a>
+                    <a href="{{ url_for('edit', id=item.id) }}" class="btn btn-outline-primary text-start">
+                      <i class="bi bi-pencil-square me-2"></i> Edit Data
+                    </a>
+                    <a href="{{ url_for('hapus', id=item.id) }}" class="btn btn-outline-danger text-start" onclick="return confirm('Hapus data {{ item.nama_barang }}?');">
+                      <i class="bi bi-trash me-2"></i> Hapus Barang
+                    </a>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Akhir Modal -->
+
           {% else %}
           <tr>
             <td colspan="7" class="text-center py-5 text-muted">
@@ -167,9 +241,9 @@
     let rows = document.querySelectorAll("#tableBody tr");
 
     rows.forEach((row) => {
-      // Abaikan jika baris adalah pesan "Belum ada data"
       if (row.cells.length < 2) return;
-
+      
+      // Ambil teks dari kolom Kode (index 1) dan Nama Barang (index 2)
       let kode = row.cells[1].textContent.toLowerCase();
       let nama = row.cells[2].textContent.toLowerCase();
 

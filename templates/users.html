@@ -1,126 +1,118 @@
-{% extends 'base.html' %} {% block title %}Manajemen Pengguna - Inventaris JOB
-Tomori{% endblock %} {% block content %}
-<div class="d-flex justify-content-between align-items-end mb-4">
-  <div>
-    <h3 class="mb-1 fw-bold text-dark">Manajemen Pengguna</h3>
-    <span class="text-muted">Kelola hak akses Admin dan Viewer</span>
-  </div>
-  <button
-    type="button"
-    class="btn btn-primary"
-    data-bs-toggle="modal"
-    data-bs-target="#modalTambahUser"
-  >
-    <i class="bi bi-person-plus me-1"></i> Tambah Pengguna
-  </button>
+{% extends 'base.html' %} 
+{% block title %}Manajemen Pengguna - Inventaris JOB Tomori{% endblock %} 
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1 fw-bold text-dark">Manajemen Pengguna</h3>
+        <span class="text-muted">Kelola kredensial dan profil akses sistem</span>
+    </div>
+    <button type="button" class="btn btn-danger shadow-sm" data-bs-toggle="modal" data-bs-target="#modalTambahUser">
+        <i class="bi bi-person-plus me-1"></i> Tambah Pengguna
+    </button>
 </div>
 
-<div class="card shadow-sm">
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th class="px-4">No</th>
-            <th>Username</th>
-            <th>Peran (Role)</th>
-            <th class="text-end px-4">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for user in users %}
-          <tr>
-            <td class="px-4 text-muted">{{ loop.index }}</td>
-            <td class="fw-medium text-dark">{{ user.username }}</td>
-            <td>
-              {% if user.role == 'Admin' %}
-              <span class="badge bg-primary">Admin</span>
-              {% else %}
-              <span class="badge bg-secondary">Viewer</span>
-              {% endif %}
-            </td>
-            <td class="text-end px-4">
-              {% if user.id != current_user.id %}
-              <a
-                href="{{ url_for('hapus_user', id=user.id) }}"
-                class="btn btn-sm btn-light text-danger border"
-                title="Hapus"
-                onclick="return confirm('Hapus pengguna {{ user.username }}?');"
-              >
-                <i class="bi bi-trash"></i>
-              </a>
-              {% else %}
-              <span class="text-muted small fw-medium">Sedang Digunakan</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-nowrap">
+                <thead class="table-light">
+                    <tr>
+                        <th class="px-4">No</th>
+                        <th>Username</th>
+                        <th>Nama Lengkap</th>
+                        <th class="d-none d-md-table-cell">Jabatan</th>
+                        <th class="d-none d-md-table-cell">Departemen</th>
+                        <th>Role</th>
+                        <th class="text-end px-4">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td class="px-4 text-muted">{{ loop.index }}</td>
+                        <td class="fw-bold text-dark">{{ u.username }}</td>
+                        <td>{{ u.nama_lengkap or '-' }}</td>
+                        <td class="d-none d-md-table-cell text-muted">{{ u.jabatan or '-' }}</td>
+                        <td class="d-none d-md-table-cell text-muted">{{ u.departemen or '-' }}</td>
+                        <td>
+                            <span class="badge {% if u.role == 'Admin' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                {{ u.role }}
+                            </span>
+                        </td>
+                        <td class="text-end px-4">
+                            {% if u.id != current_user.id %}
+                            <a href="{{ url_for('hapus_user', id=u.id) }}" class="btn btn-sm btn-light text-danger border" onclick="return confirm('Hapus pengguna {{ u.username }}?');" title="Hapus">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                            {% else %}
+                            <span class="badge bg-light text-success border border-success"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i>Sedang Login</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-people fs-2 d-block mb-2"></i>
+                            Belum ada data pengguna.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-  </div>
 </div>
 
 <!-- Modal Tambah User -->
-<div
-  class="modal fade"
-  id="modalTambahUser"
-  tabindex="-1"
-  aria-labelledby="modalTambahUserLabel"
-  aria-hidden="true"
->
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header border-bottom-0">
-        <h6 class="modal-title fw-bold" id="modalTambahUserLabel">
-          Tambah Pengguna Baru
-        </h6>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
-      </div>
-      <form action="{{ url_for('tambah_user') }}" method="POST">
-        <div class="modal-body py-0">
-          <div class="mb-3">
-            <label class="form-label fw-medium small">Username</label>
-            <input
-              type="text"
-              class="form-control"
-              name="username"
-              required
-              autocomplete="off"
-              placeholder="Masukkan username"
-            />
-          </div>
-          <div class="mb-3">
-            <label class="form-label fw-medium small">Password</label>
-            <input
-              type="password"
-              class="form-control"
-              name="password"
-              required
-              placeholder="Masukkan password"
-            />
-          </div>
-          <div class="mb-4">
-            <label class="form-label fw-medium small">Peran Akses (Role)</label>
-            <select class="form-select" name="role" required>
-              <option value="Viewer">Viewer (Hanya Lihat Laporan)</option>
-              <option value="Admin">Admin (Akses Penuh)</option>
-            </select>
-          </div>
+<div class="modal fade" id="modalTambahUser" tabindex="-1" aria-labelledby="modalTambahUserLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom-0">
+                <h6 class="modal-title fw-bold" id="modalTambahUserLabel">Tambah Pengguna Baru</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('tambah_user') }}" method="POST">
+                <div class="modal-body py-0">
+                    <h6 class="text-muted fw-bold mb-3 border-bottom pb-2" style="font-size: 0.85rem;">Informasi Pekerjaan</h6>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium small">Nama Lengkap</label>
+                        <input type="text" class="form-control" name="nama_lengkap" placeholder="Masukkan nama lengkap" autocomplete="off">
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <label class="form-label fw-medium small">Jabatan</label>
+                            <input type="text" class="form-control" name="jabatan" placeholder="Contoh: IT Support" autocomplete="off">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-medium small">Departemen</label>
+                            <input type="text" class="form-control" name="departemen" placeholder="Contoh: IT" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <h6 class="text-muted fw-bold mb-3 border-bottom pb-2" style="font-size: 0.85rem;">Kredensial Akses</h6>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium small">Username</label>
+                        <input type="text" class="form-control" name="username" required autocomplete="off" placeholder="Masukkan username">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium small">Password</label>
+                        <input type="password" class="form-control" name="password" required placeholder="Masukkan password">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-medium small">Peran Akses (Role)</label>
+                        <select class="form-select" name="role" required>
+                            <option value="Viewer">Viewer (Hanya Lihat Laporan)</option>
+                            <option value="Admin">Admin (Akses Penuh)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger px-4">Simpan Pengguna</button>
+                </div>
+            </form>
         </div>
-        <div class="modal-footer border-top-0">
-          <button type="button" class="btn btn-light" data-bs-dismiss="modal">
-            Batal
-          </button>
-          <button type="submit" class="btn btn-primary px-4">Simpan</button>
-        </div>
-      </form>
     </div>
-  </div>
 </div>
 {% endblock %}

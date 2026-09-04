@@ -1,0 +1,59 @@
+{% extends 'base.html' %} 
+{% block title %}Profil Pengguna - Inventaris JOB Tomori{% endblock %} 
+{% block content %}
+
+<div class="row">
+    <div class="col-md-10 col-lg-8">
+        <!-- Bagian header yang sudah diperbaiki -->
+        <div class="mb-4">
+            <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                <h3 class="fw-bold text-dark mb-0">Pengaturan Profil</h3>
+                <span class="badge bg-primary">{{ current_user.role }}</span>
+            </div>
+            <span class="text-muted d-block">Kelola informasi akun dan kata sandi Anda</span>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <form action="{{ url_for('profil') }}" method="POST">
+                    <h6 class="text-muted fw-bold mb-3 border-bottom pb-2">Informasi Pekerjaan</h6>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Nama Lengkap</label>
+                        <input type="text" class="form-control" name="nama_lengkap" value="{{ current_user.nama_lengkap or '' }}" placeholder="Masukkan nama lengkap">
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label class="form-label fw-medium">Jabatan / Posisi</label>
+                            <input type="text" class="form-control" name="jabatan" value="{{ current_user.jabatan or '' }}" placeholder="Contoh: IT Support">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Departemen</label>
+                            <input type="text" class="form-control" name="departemen" value="{{ current_user.departemen or '' }}" placeholder="Contoh: Information Technology">
+                        </div>
+                    </div>
+
+                    <h6 class="text-muted fw-bold mb-3 border-bottom pb-2">Kredensial Login</h6>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Username</label>
+                        <input type="text" class="form-control bg-light" value="{{ current_user.username }}" disabled>
+                        <div class="form-text">Username tidak dapat diubah.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-medium">Password Baru (Opsional)</label>
+                        <input type="password" class="form-control" name="password_baru" placeholder="Kosongkan jika tidak ingin mengubah password">
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-danger px-4 py-2 fw-bold">Simpan Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
