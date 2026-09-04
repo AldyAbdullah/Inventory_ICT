@@ -135,6 +135,7 @@
               <i class="bi bi-grid-1x2"></i> Dashboard
             </a>
           </li>
+          {% if current_user.role == 'Admin' %}
           <li class="nav-item">
             <a
               class="nav-link {% if request.endpoint == 'tambah' %}active{% endif %}"
@@ -143,6 +144,16 @@
               <i class="bi bi-plus-square"></i> Tambah Barang
             </a>
           </li>
+          <!-- Tambahkan menu Manajemen Pengguna di bawah Tambah Barang -->
+          <li class="nav-item">
+            <a
+              class="nav-link {% if request.endpoint == 'kelola_user' %}active{% endif %}"
+              href="{{ url_for('kelola_user') }}"
+            >
+              <i class="bi bi-people"></i> Manajemen Pengguna
+            </a>
+          </li>
+          {% endif %}
           <li class="nav-item">
             <a
               class="nav-link {% if request.endpoint == 'riwayat' %}active{% endif %}"
@@ -215,6 +226,7 @@
               <i class="bi bi-grid-1x2"></i> Dashboard
             </a>
           </li>
+          {% if current_user.role == 'Admin' %}
           <li class="nav-item">
             <a
               class="nav-link {% if request.endpoint == 'tambah' %}active{% endif %}"
@@ -223,6 +235,16 @@
               <i class="bi bi-plus-square"></i> Tambah Barang
             </a>
           </li>
+          <!-- Tambahkan menu Manajemen Pengguna di bawah Tambah Barang -->
+          <li class="nav-item">
+            <a
+              class="nav-link {% if request.endpoint == 'kelola_user' %}active{% endif %}"
+              href="{{ url_for('kelola_user') }}"
+            >
+              <i class="bi bi-people"></i> Manajemen Pengguna
+            </a>
+          </li>
+          {% endif %}
           <li class="nav-item">
             <a
               class="nav-link {% if request.endpoint == 'riwayat' %}active{% endif %}"

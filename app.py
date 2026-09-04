@@ -86,7 +86,6 @@ def logout():
 
 @app.route('/')
 @login_required
-@admin_required
 def index():
     # Menangkap parameter pencarian dari URL
     search_query = request.args.get('search', '')
@@ -213,7 +212,6 @@ def catat_transaksi(id):
 
 @app.route('/riwayat')
 @login_required
-@admin_required
 def riwayat():
     # Mengambil data transaksi diurutkan dari yang terbaru
     data_riwayat = Transaksi.query.order_by(Transaksi.tanggal.desc()).all()
@@ -365,5 +363,46 @@ def export_excel():
         as_attachment=True,
         download_name=nama_file
     )
+@app.route('/users')
+@login_required
+@admin_required
+def kelola_user():
+    users = User.query.all()
+    return render_template('users.html', users=users)
+
+@app.route('/users/tambah', methods=['POST'])
+@login_required
+@admin_required
+def tambah_user():
+    username = request.form['username']
+    password = request.form['password']
+    role = request.form['role']
+
+    # Validasi jika username sudah digunakan
+    user_exists = User.query.filter_by(username=username).first()
+    if user_exists:
+        return "Error: Username sudah digunakan.", 400
+
+    hashed_password = generate_password_hash(password)
+    user_baru = User(username=username, password=hashed_password, role=role)
+    db.session.add(user_baru)
+    db.session.commit()
+    
+    return redirect(url_for('kelola_user'))
+
+@app.route('/users/hapus/<int:id>')
+@login_required
+@admin_required
+def hapus_user(id):
+    # Mencegah Admin menghapus akun yang sedang digunakannya sendiri
+    if id == current_user.id:
+        return "Error: Tidak dapat menghapus akun yang sedang digunakan.", 400
+        
+    user = User.query.get_or_404(id)
+    db.session.delete(user)
+    db.session.commit()
+    
+    return redirect(url_for('kelola_user'))
+
 if __name__ == '__main__':
     app.run(debug=True)
