@@ -13,14 +13,26 @@
                     <strong>{{ barang.kode_barang }}</strong> - {{ barang.nama_barang }} <br>
                     Stok Saat Ini: <span class="badge bg-secondary">{{ barang.stok }} {{ barang.satuan }}</span>
                 </div>
-
+<!-- Penampil Notifikasi Flask (Hanya Pesan Terbaru) -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <!-- Menggunakan [-1:] agar hanya pesan terakhir yang dirender -->
+    {% for category, message in messages[-1:] %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show mb-3" role="alert" id="autoCloseAlert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
                 <form action="{{ url_for('catat_transaksi', id=barang.id) }}" method="POST">
                     <div class="mb-3">
                         <label class="form-label fw-bold">Jenis Transaksi</label>
-                        <select class="form-select" name="jenis" required>
-                            <option value="Masuk">Barang Masuk (Restock)</option>
-                            <option value="Keluar">Barang Keluar (Distribusi)</option>
-                        </select>
+                        <select name="jenis_transaksi" class="form-select" required>
+    <option value="" disabled {% if not request.args.get('jenis') %}selected{% endif %}>Pilih Jenis Transaksi</option>
+    <option value="Masuk" {% if request.args.get('jenis') == 'masuk' %}selected{% endif %}>Barang Masuk</option>
+    <option value="Keluar" {% if request.args.get('jenis') == 'keluar' %}selected{% endif %}>Barang Keluar</option>
+</select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Jumlah ({{ barang.satuan }})</label>
@@ -28,7 +40,7 @@
                     </div>
                     <div class="mb-4">
                         <label class="form-label fw-bold">Keterangan / Referensi</label>
-                        <input type="text" class="form-control" name="keterangan" placeholder="Contoh: PO-2026-09, Diambil Divisi HR" required>
+                        <input type="text" class="form-control" name="keterangan" placeholder="Contoh: PO-2026-09, Diambil Divisi HR">
                     </div>
                     <hr>
                     <div class="d-flex gap-2">
@@ -40,4 +52,15 @@
         </div>
     </div>
 </div>
+
+<script>
+  // Menutup alert secara otomatis setelah 3.5 detik (3500 milidetik)
+  setTimeout(function() {
+    let alertElement = document.getElementById('autoCloseAlert');
+    if (alertElement) {
+      let bsAlert = new bootstrap.Alert(alertElement);
+      bsAlert.close();
+    }
+  }, 3500);
+</script>
 {% endblock %}

@@ -147,8 +147,8 @@
           <!-- Tambahkan menu Manajemen Pengguna di bawah Tambah Barang -->
           <li class="nav-item">
             <a
-              class="nav-link {% if request.endpoint == 'kelola_user' %}active{% endif %}"
-              href="{{ url_for('kelola_user') }}"
+              class="nav-link {% if request.endpoint == 'users' %}active{% endif %}"
+              href="{{ url_for('users') }}"
             >
               <i class="bi bi-people"></i> Manajemen Pengguna
             </a>
@@ -244,8 +244,8 @@
           <!-- Tambahkan menu Manajemen Pengguna di bawah Tambah Barang -->
           <li class="nav-item">
             <a
-              class="nav-link {% if request.endpoint == 'kelola_user' %}active{% endif %}"
-              href="{{ url_for('kelola_user') }}"
+              class="nav-link {% if request.endpoint == 'users' %}active{% endif %}"
+              href="{{ url_for('users') }}"
             >
               <i class="bi bi-people"></i> Manajemen Pengguna
             </a>

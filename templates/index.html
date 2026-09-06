@@ -1,50 +1,72 @@
-{% extends 'base.html' %} 
-{% block title %}Dashboard - Inventaris JOB Tomori{% endblock %} 
-{% block content %}
+{% extends 'base.html' %} {% block title %}Dashboard - Inventaris JOB Tomori{%
+endblock %} {% block content %}
 
 <style>
-    .summary-card {
-        border: none;
-        border-radius: 8px;
-    }
+  .summary-card {
+    border: none;
+    border-radius: 8px;
+  }
+  .summary-title {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 0.2rem;
+  }
+  .summary-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0;
+  }
+  .summary-icon {
+    font-size: 1.2rem;
+    opacity: 0.7;
+    margin-bottom: 0.3rem;
+  }
+
+  @media (min-width: 768px) {
     .summary-title {
-        font-size: 0.65rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        margin-bottom: 0.2rem;
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
     }
     .summary-value {
-        font-size: 1.25rem;
-        font-weight: 700;
-        margin-bottom: 0;
+      font-size: 2rem;
     }
     .summary-icon {
-        font-size: 1.2rem;
-        opacity: 0.7;
-        margin-bottom: 0.3rem;
+      font-size: 2rem;
+      position: absolute;
+      right: 1rem;
+      top: 1rem;
     }
-    
-    @media (min-width: 768px) {
-        .summary-title { font-size: 0.9rem; margin-bottom: 0.5rem; }
-        .summary-value { font-size: 2rem; }
-        .summary-icon { font-size: 2rem; position: absolute; right: 1rem; top: 1rem; }
-        .summary-body { text-align: left !important; align-items: flex-start !important; padding: 1.5rem !important; }
+    .summary-body {
+      text-align: left !important;
+      align-items: flex-start !important;
+      padding: 1.5rem !important;
     }
+  }
 </style>
 
-<div class="d-flex justify-content-between align-items-end mb-4">
-  <div>
-    <h3 class="mb-1 fw-bold text-dark">Ringkasan Inventaris</h3>
-    <span class="text-muted">Pantau stok barang IT habis pakai</span>
-  </div>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+  <div class="d-flex gap-2">
+  <button class="btn btn-success shadow-sm px-3 py-2 fw-medium" onclick="setJenisScan('masuk')" data-bs-toggle="modal" data-bs-target="#modalScanTransaksi">
+    <i class="bi bi-box-arrow-in-down me-2"></i>Scan Masuk
+  </button>
+  <button class="btn btn-danger shadow-sm px-3 py-2 fw-medium" onclick="setJenisScan('keluar')" data-bs-toggle="modal" data-bs-target="#modalScanTransaksi">
+    <i class="bi bi-box-arrow-up me-2"></i>Scan Keluar
+  </button>
+</div>
 </div>
 
 <!-- Statistik Card -->
 <div class="row g-2 mb-4">
   <!-- Kartu Biru Korporat -->
   <div class="col-4 col-md-4">
-    <div class="card summary-card" style="background-color: #004b87; color: white; height: 100%;">
-      <div class="card-body summary-body p-2 d-flex flex-column align-items-center justify-content-center text-center position-relative">
+    <div
+      class="card summary-card"
+      style="background-color: #004b87; color: white; height: 100%"
+    >
+      <div
+        class="card-body summary-body p-2 d-flex flex-column align-items-center justify-content-center text-center position-relative"
+      >
         <i class="bi bi-boxes summary-icon"></i>
         <div class="summary-title">Jenis Barang</div>
         <div class="summary-value">{{ total_jenis }}</div>
@@ -53,20 +75,31 @@
   </div>
 
   <!-- Kartu Hijau Energi Bersih -->
+  <!-- Kartu Hijau Energi Bersih -->
   <div class="col-4 col-md-4">
-    <div class="card summary-card" style="background-color: #16a34a; color: white; height: 100%;">
-      <div class="card-body summary-body p-2 d-flex flex-column align-items-center justify-content-center text-center position-relative">
+    <div
+      class="card summary-card"
+      style="background-color: #16a34a; color: white; height: 100%"
+    >
+      <div
+        class="card-body summary-body p-2 d-flex flex-column align-items-center justify-content-center text-center position-relative"
+      >
         <i class="bi bi-stack summary-icon"></i>
         <div class="summary-title">Total Stok</div>
         <div class="summary-value">{{ total_stok }}</div>
       </div>
     </div>
-  </div>
+  </div>  
 
   <!-- Kartu Merah Energi -->
   <div class="col-4 col-md-4">
-    <div class="card summary-card" style="background-color: #da291c; color: white; height: 100%;">
-      <div class="card-body summary-body p-2 d-flex flex-column align-items-center justify-content-center text-center position-relative">
+    <div
+      class="card summary-card"
+      style="background-color: #da291c; color: white; height: 100%"
+    >
+      <div
+        class="card-body summary-body p-2 d-flex flex-column align-items-center justify-content-center text-center position-relative"
+      >
         <i class="bi bi-exclamation-triangle summary-icon"></i>
         <div class="summary-title">Stok Kritis</div>
         <div class="summary-value">{{ stok_kritis }}</div>
@@ -77,7 +110,9 @@
 
 <!-- Tabel Data -->
 <div class="card shadow-sm">
-  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2 py-3">
+  <div
+    class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2 py-3"
+  >
     <h6 class="mb-0 fw-bold text-dark">Data Master Barang</h6>
 
     <!-- Input Pencarian Real-time -->
@@ -91,9 +126,26 @@
       </a>
 
       <!-- Input Pencarian -->
-      <div class="input-group input-group-sm" style="max-width: 250px">
-        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-        <input type="text" id="searchInput" class="form-control" placeholder="Cari barang..." />
+      <!-- Input Pencarian Real-time dengan Tombol Scan -->
+      <div class="input-group input-group-sm" style="max-width: 280px">
+        <span class="input-group-text bg-light"
+          ><i class="bi bi-search"></i
+        ></span>
+        <input
+          type="text"
+          id="searchInput"
+          class="form-control"
+          placeholder="Cari barang..."
+        />
+        <button
+          class="btn btn-outline-secondary bg-light text-dark border-start-0"
+          type="button"
+          data-bs-toggle="modal"
+          data-bs-target="#scannerModal"
+          title="Scan Barcode"
+        >
+          <i class="bi bi-qr-code-scan"></i>
+        </button>
       </div>
     </div>
   </div>
@@ -117,44 +169,103 @@
         <tbody id="tableBody">
           {% for item in data %}
           <tr>
-            <td class="px-4 text-muted d-none d-md-table-cell">{{ loop.index }}</td>
+            <td class="px-4 text-muted d-none d-md-table-cell">
+              {{ loop.index }}
+            </td>
             <td class="d-none d-md-table-cell">
-              <span class="badge bg-light text-dark border">{{ item.kode_barang }}</span>
+              <span class="badge bg-light text-dark border"
+                >{{ item.kode_barang }}</span
+              >
             </td>
             <td class="fw-medium text-dark">{{ item.nama_barang }}</td>
-            <td class="text-muted d-none d-md-table-cell">{{ item.kategori }}</td>
+            <td class="text-muted d-none d-md-table-cell">
+              {{ item.kategori }}
+            </td>
             <td>
               {% if item.stok == 0 %}
-              <span class="badge border px-2 py-1" style="background-color: rgba(218, 41, 28, 0.1); color: #da291c; border-color: #da291c !important;">Habis</span>
+              <span
+                class="badge border px-2 py-1"
+                style="
+                  background-color: rgba(218, 41, 28, 0.1);
+                  color: #da291c;
+                  border-color: #da291c !important;
+                "
+                >Habis</span
+              >
               {% elif item.stok <= 5 %}
-              <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1">{{ item.stok }}</span>
+              <span
+                class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1"
+                >{{ item.stok }}</span
+              >
               {% else %}
-              <span class="badge border px-2 py-1" style="background-color: rgba(22, 163, 74, 0.1); color: #16a34a; border-color: #16a34a !important;">{{ item.stok }}</span>
+              <span
+                class="badge border px-2 py-1"
+                style="
+                  background-color: rgba(22, 163, 74, 0.1);
+                  color: #16a34a;
+                  border-color: #16a34a !important;
+                "
+                >{{ item.stok }}</span
+              >
               {% endif %}
             </td>
             <td class="text-muted d-none d-md-table-cell">{{ item.satuan }}</td>
-            
+
             {% if current_user.role == 'Admin' %}
             <!-- Aksi Desktop (Dropdown) -->
             <td class="text-end px-4 d-none d-md-table-cell">
               <div class="dropdown">
-                <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  Aksi <i class="bi bi-chevron-down ms-1" style="font-size: 0.75rem;"></i>
+                <button
+                  class="btn btn-sm btn-light border"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  Aksi
+                  <i
+                    class="bi bi-chevron-down ms-1"
+                    style="font-size: 0.75rem"
+                  ></i>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="font-size: 0.85rem;">
+
+                <ul
+                  class="dropdown-menu dropdown-menu-end shadow-sm border-0"
+                  style="font-size: 0.85rem"
+                >
                   <li>
-                    <a class="dropdown-item py-2" href="{{ url_for('catat_transaksi', id=item.id) }}">
-                      <i class="bi bi-arrow-left-right text-success me-2"></i> Transaksi Baru
+                    <a
+                      class="dropdown-item py-2"
+                      href="{{ url_for('catat_transaksi', id=item.id) }}"
+                    >
+                      <i class="bi bi-arrow-left-right text-success me-2"></i>
+                      Transaksi Baru
                     </a>
                   </li>
                   <li>
-                    <a class="dropdown-item py-2" href="{{ url_for('edit', id=item.id) }}">
-                      <i class="bi bi-pencil-square text-primary me-2"></i> Edit Barang
+                    <a
+                      class="dropdown-item py-2"
+                      href="{{ url_for('edit', id=item.id) }}"
+                    >
+                      <i class="bi bi-pencil-square text-primary me-2"></i> Edit
+                      Barang
                     </a>
                   </li>
-                  <li><hr class="dropdown-divider"></li>
                   <li>
-                    <a class="dropdown-item py-2 text-danger" href="{{ url_for('hapus', id=item.id) }}" onclick="return confirm('Hapus data {{ item.nama_barang }}?');">
+                    <a
+                      class="dropdown-item py-2"
+                      href="{{ url_for('cetak_qr', kode=item.kode_barang) }}"
+                      target="_blank"
+                    >
+                      <i class="bi bi-printer text-dark me-2"></i> Cetak QR
+                    </a>
+                  </li>
+                  <li><hr class="dropdown-divider" /></li>
+                  <li>
+                    <a
+                      class="dropdown-item py-2 text-danger"
+                      href="{{ url_for('hapus', id=item.id) }}"
+                      onclick="return confirm('Hapus data {{ item.nama_barang }}?');"
+                    >
                       <i class="bi bi-trash text-danger me-2"></i> Hapus
                     </a>
                   </li>
@@ -164,7 +275,11 @@
 
             <!-- Aksi Mobile (Modal Trigger) -->
             <td class="text-end px-3 d-md-none">
-              <button class="btn btn-sm btn-light border" data-bs-toggle="modal" data-bs-target="#modalDetail{{ item.id }}">
+              <button
+                class="btn btn-sm btn-light border"
+                data-bs-toggle="modal"
+                data-bs-target="#modalDetail{{ item.id }}"
+              >
                 <i class="bi bi-three-dots-vertical"></i>
               </button>
             </td>
@@ -172,12 +287,22 @@
           </tr>
 
           <!-- Modal Detail Mobile -->
-          <div class="modal fade text-start" id="modalDetail{{ item.id }}" tabindex="-1" aria-hidden="true">
+          <div
+            class="modal fade text-start"
+            id="modalDetail{{ item.id }}"
+            tabindex="-1"
+            aria-hidden="true"
+          >
             <div class="modal-dialog modal-dialog-centered">
               <div class="modal-content border-0 shadow">
                 <div class="modal-header border-bottom-0 pb-0">
                   <h6 class="modal-title fw-bold">Detail Barang</h6>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                  ></button>
                 </div>
                 <div class="modal-body">
                   <div class="mb-3">
@@ -195,21 +320,41 @@
                     </div>
                     <div class="col-6">
                       <div class="text-muted small">Stok Saat Ini</div>
-                      <div class="fw-medium">{{ item.stok }} {{ item.satuan }}</div>
+                      <div class="fw-medium">
+                        {{ item.stok }} {{ item.satuan }}
+                      </div>
                     </div>
                   </div>
-                  
+
                   {% if current_user.role == 'Admin' %}
-                  <hr>
+                  <hr />
                   <div class="text-muted small mb-2">Tindakan</div>
                   <div class="d-flex flex-column gap-2">
-                    <a href="{{ url_for('catat_transaksi', id=item.id) }}" class="btn btn-success text-start">
-                      <i class="bi bi-arrow-left-right me-2"></i> Catat Transaksi
+                    <a
+                      href="{{ url_for('catat_transaksi', id=item.id) }}"
+                      class="btn btn-success text-start"
+                    >
+                      <i class="bi bi-arrow-left-right me-2"></i> Catat
+                      Transaksi
                     </a>
-                    <a href="{{ url_for('edit', id=item.id) }}" class="btn btn-outline-primary text-start">
+                    <a
+                      href="{{ url_for('edit', id=item.id) }}"
+                      class="btn btn-outline-primary text-start"
+                    >
                       <i class="bi bi-pencil-square me-2"></i> Edit Data
                     </a>
-                    <a href="{{ url_for('hapus', id=item.id) }}" class="btn btn-outline-danger text-start" onclick="return confirm('Hapus data {{ item.nama_barang }}?');">
+                    <a
+                      href="{{ url_for('cetak_qr', kode=item.kode_barang) }}"
+                      target="_blank"
+                      class="btn btn-outline-dark text-start"
+                    >
+                      <i class="bi bi-printer me-2"></i> Cetak Label QR
+                    </a>
+                    <a
+                      href="{{ url_for('hapus', id=item.id) }}"
+                      class="btn btn-outline-danger text-start"
+                      onclick="return confirm('Hapus data {{ item.nama_barang }}?');"
+                    >
                       <i class="bi bi-trash me-2"></i> Hapus Barang
                     </a>
                   </div>
@@ -234,25 +379,59 @@
   </div>
 </div>
 
-<!-- Script Pencarian Real-time -->
-<script>
-  document.getElementById("searchInput").addEventListener("keyup", function () {
-    let filter = this.value.toLowerCase();
-    let rows = document.querySelectorAll("#tableBody tr");
+<!-- Modal Scanner Barcode -->
+<div class="modal fade" id="scannerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-bottom-0">
+        <h6 class="modal-title fw-bold">Scan Barcode / QR Code</h6>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+          id="closeScanner"
+        ></button>
+      </div>
+      <div class="modal-body p-0">
+        <!-- Area Kamera -->
+        <div id="reader" width="100%"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
-    rows.forEach((row) => {
-      if (row.cells.length < 2) return;
-      
-      // Ambil teks dari kolom Kode (index 1) dan Nama Barang (index 2)
-      let kode = row.cells[1].textContent.toLowerCase();
-      let nama = row.cells[2].textContent.toLowerCase();
+<!-- Modal Scan Transaksi (Otomatis) -->
+<div
+  class="modal fade"
+  id="modalScanTransaksi"
+  tabindex="-1"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-bottom-0">
+        <h6 class="modal-title fw-bold">
+          Scan Barang (Transaksi Masuk/Keluar)
+        </h6>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+          id="closeScanTransaksi"
+        ></button>
+      </div>
+      <div class="modal-body p-0">
+        <div id="readerTransaksi" width="100%"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
-      if (kode.includes(filter) || nama.includes(filter)) {
-        row.style.display = "";
-      } else {
-        row.style.display = "none";
-      }
-    });
-  });
-</script>
+<!-- Import Library Scanner -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<!-- Import File JavaScript Custom -->
+<script src="{{ url_for('static', filename='js/scanner.js') }}"></script>
 {% endblock %}
