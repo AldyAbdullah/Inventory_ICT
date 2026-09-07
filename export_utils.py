@@ -1,6 +1,6 @@
 import pandas as pd
 import io
-from datetime import datetime
+from datetime import datetime, timedelta
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -9,7 +9,7 @@ def generate_excel_report(data_barang, data_transaksi):
     output = io.BytesIO()
     
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        waktu_cetak = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        waktu_cetak = (datetime.utcnow() + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M:%S WITA')
         
         # Konfigurasi Gaya (Styling)
         font_title = Font(name='Segoe UI', size=14, bold=True, color='0A2540')
@@ -123,7 +123,7 @@ def generate_excel_report(data_barang, data_transaksi):
                 ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
 
     output.seek(0)
-    tanggal_hari_ini = datetime.now().strftime('%Y-%m-%d')
+    tanggal_hari_ini = (datetime.utcnow() + timedelta(hours=8)).strftime('%Y-%m-%d')
     nama_file = f'Laporan_Inventaris_JOB_Tomori_{tanggal_hari_ini}.xlsx'
     
     return output, nama_file

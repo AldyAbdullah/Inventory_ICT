@@ -1,23 +1,36 @@
-// 1. Script Pencarian Real-time di Tabel
+// 1. Script Pencarian Real-time (AJAX + Debounce)
 const searchInput = document.getElementById("searchInput");
-if (searchInput) {
-    searchInput.addEventListener("keyup", function () {
-        let filter = this.value.toLowerCase();
-        let rows = document.querySelectorAll("#tableBody tr");
+const tableContainer = document.getElementById("tabelBarangContainer");
+let debounceTimer;
 
-        rows.forEach((row) => {
-            if (row.cells.length < 2) return;
+if (searchInput && tableContainer) {
+    searchInput.addEventListener("input", function () {
+        clearTimeout(debounceTimer);
+        let query = this.value;
 
-            // Ambil teks dari kolom Kode (index 1) dan Nama Barang (index 2)
-            let kode = row.cells[1].textContent.toLowerCase();
-            let nama = row.cells[2].textContent.toLowerCase();
+        // Debounce: Tunggu pengguna selesai mengetik selama 300ms sebelum request ke server
+        debounceTimer = setTimeout(() => {
+            tableContainer.style.opacity = "0.5"; // Efek visual memuat data
 
-            if (kode.includes(filter) || nama.includes(filter)) {
-                row.style.display = "";
-            } else {
-                row.style.display = "none";
-            }
-        });
+            // Melakukan request ke server tanpa me-refresh halaman
+            fetch(`/master_barang?search=${encodeURIComponent(query)}`)
+                .then(response => response.text())
+                .then(html => {
+                    let parser = new DOMParser();
+                    let doc = parser.parseFromString(html, "text/html");
+                    let newContainer = doc.getElementById("tabelBarangContainer");
+
+                    if (newContainer) {
+                        // Mengganti isi tabel lama dengan hasil pencarian baru dari server
+                        tableContainer.innerHTML = newContainer.innerHTML;
+                    }
+                    tableContainer.style.opacity = "1"; // Mengembalikan efek visual
+                })
+                .catch(error => {
+                    console.error("Gagal memuat data:", error);
+                    tableContainer.style.opacity = "1";
+                });
+        }, 300);
     });
 }
 
@@ -49,7 +62,8 @@ function onScanSuccess(decodedText, decodedResult) {
 
     if (searchInput) {
         searchInput.value = decodedText;
-        searchInput.dispatchEvent(new Event("keyup"));
+        // Memicu event 'input' secara terprogram agar pencarian AJAX otomatis berjalan
+        searchInput.dispatchEvent(new Event("input"));
     }
 }
 
@@ -62,7 +76,7 @@ let scannerTransaksi;
 const modalScanTransaksi = document.getElementById("modalScanTransaksi");
 let jenisScanAktif = '';
 
-// Fungsi yang dipanggil oleh tombol di HTML (contoh: onclick="setJenisScan('masuk')")
+// Fungsi yang dipanggil oleh tombol di HTML
 function setJenisScan(jenis) {
     jenisScanAktif = jenis;
 }

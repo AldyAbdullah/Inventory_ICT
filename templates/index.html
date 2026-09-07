@@ -1,426 +1,161 @@
-{% extends 'base.html' %} {% block title %}Dashboard - Inventaris JOB Tomori{%
-endblock %} {% block content %}
+{% extends 'base.html' %} 
+{% block title %}Dashboard - Inventaris JOB Tomori{% endblock %} 
+{% block content %}
 
 <style>
-  .summary-card {
-    border: none;
-    border-radius: 8px;
+  .summary-card { 
+    border: none; 
+    border-radius: 12px; 
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
   }
-  .summary-title {
-    font-size: 0.65rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    margin-bottom: 0.2rem;
+  .summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
   }
-  .summary-value {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin-bottom: 0;
+  .summary-title { 
+    font-size: 0.95rem; 
+    font-weight: 500; 
+    opacity: 0.9; 
+    letter-spacing: 0.5px;
   }
-  .summary-icon {
-    font-size: 1.2rem;
-    opacity: 0.7;
-    margin-bottom: 0.3rem;
+  .summary-value { 
+    font-size: 2.5rem; 
+    font-weight: 700; 
+    margin-top: 5px; 
+    margin-bottom: 15px; 
   }
+  /* Ikon dibuat menjadi efek watermark di latar belakang */
+  .summary-icon { 
+    font-size: 5rem; 
+    opacity: 0.15; 
+    position: absolute; 
+    right: -10px; 
+    bottom: -15px; 
+    transform: rotate(-10deg);
+    z-index: 0;
+  }
+  .summary-footer {
+    font-size: 0.8rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-top: 0.75rem;
+    margin-top: auto;
+    opacity: 0.85;
+  }
+  /* Memastikan teks tetap berada di atas ikon watermark */
+  .z-1 { z-index: 1; }
 
-  @media (min-width: 768px) {
-    .summary-title {
-      font-size: 0.9rem;
+  /* Penyesuaian khusus layar HP (Mobile) */
+  @media (max-width: 767px) {
+    .summary-card { 
+      padding: 0.75rem !important; 
+    }
+    .summary-title { 
+      font-size: 0.55rem; 
+      line-height: 1.2;
+      text-align: center;
       margin-bottom: 0.5rem;
     }
-    .summary-value {
-      font-size: 2rem;
+    .summary-value { 
+      font-size: 1.2rem; 
+      margin-bottom: 0;
+      text-align: center;
     }
-    .summary-icon {
-      font-size: 2rem;
-      position: absolute;
-      right: 1rem;
-      top: 1rem;
+    .summary-icon { 
+      font-size: 2.5rem; 
+      right: -5px; 
+      bottom: -5px; 
     }
-    .summary-body {
-      text-align: left !important;
-      align-items: flex-start !important;
-      padding: 1.5rem !important;
+    .summary-footer { 
+      display: none !important; /* Sembunyikan footer di HP agar ruang cukup */
+    }
+    .z-1 {
+      align-items: center; /* Pusatkan konten teks di HP */
     }
   }
 </style>
 
+<!-- Header Halaman -->
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+  <div>
+    <h4 class="fw-bold text-dark mb-1">Dashboard Inventaris</h4>
+    <p class="text-muted small mb-0">Ringkasan stok dan tren transaksi barang IT.</p>
+  </div>
   <div class="d-flex gap-2">
-  <button class="btn btn-success shadow-sm px-3 py-2 fw-medium" onclick="setJenisScan('masuk')" data-bs-toggle="modal" data-bs-target="#modalScanTransaksi">
-    <i class="bi bi-box-arrow-in-down me-2"></i>Scan Masuk
-  </button>
-  <button class="btn btn-danger shadow-sm px-3 py-2 fw-medium" onclick="setJenisScan('keluar')" data-bs-toggle="modal" data-bs-target="#modalScanTransaksi">
-    <i class="bi bi-box-arrow-up me-2"></i>Scan Keluar
-  </button>
-</div>
+    <button class="btn btn-sm btn-success shadow-sm px-3 fw-medium" onclick="setJenisScan('masuk')" data-bs-toggle="modal" data-bs-target="#modalScanTransaksi">
+      <i class="bi bi-box-arrow-in-down me-1"></i> Scan Masuk
+    </button>
+    <button class="btn btn-sm btn-danger shadow-sm px-3 fw-medium" onclick="setJenisScan('keluar')" data-bs-toggle="modal" data-bs-target="#modalScanTransaksi">
+      <i class="bi bi-box-arrow-up me-1"></i> Scan Keluar
+    </button>
+  </div>
 </div>
 
 <!-- Statistik Card -->
 <div class="row g-2 mb-4">
-  <!-- Kartu Biru Korporat -->
-  <div class="col-4 col-md-4">
-    <div
-      class="card summary-card"
-      style="background-color: #004b87; color: white; height: 100%"
-    >
-      <div
-        class="card-body summary-body p-2 d-flex flex-column align-items-center justify-content-center text-center position-relative"
-      >
-        <i class="bi bi-boxes summary-icon"></i>
-        <div class="summary-title">Jenis Barang</div>
+  <!-- Kartu Biru -->
+  <div class="col-4">
+    <div class="card summary-card text-white h-100 p-4" style="background: linear-gradient(135deg, #004b87 0%, #002d52 100%);">
+      <i class="bi bi-boxes summary-icon"></i>
+      <div class="position-relative z-1 d-flex flex-column h-100">
+        <div class="summary-title">JENIS BARANG</div>
         <div class="summary-value">{{ total_jenis }}</div>
+        <div class="summary-footer">
+          <i class="bi bi-check-circle me-1"></i> Data master terkini
+        </div>
       </div>
     </div>
   </div>
-
-  <!-- Kartu Hijau Energi Bersih -->
-  <!-- Kartu Hijau Energi Bersih -->
-  <div class="col-4 col-md-4">
-    <div
-      class="card summary-card"
-      style="background-color: #16a34a; color: white; height: 100%"
-    >
-      <div
-        class="card-body summary-body p-2 d-flex flex-column align-items-center justify-content-center text-center position-relative"
-      >
-        <i class="bi bi-stack summary-icon"></i>
-        <div class="summary-title">Total Stok</div>
+  
+  <!-- Kartu Hijau -->
+  <div class="col-4">
+    <div class="card summary-card text-white h-100 p-4" style="background: linear-gradient(135deg, #16a34a 0%, #0d682f 100%);">
+      <i class="bi bi-stack summary-icon"></i>
+      <div class="position-relative z-1 d-flex flex-column h-100">
+        <div class="summary-title">TOTAL STOK</div>
         <div class="summary-value">{{ total_stok }}</div>
+        <div class="summary-footer">
+          <i class="bi bi-arrow-repeat me-1"></i> Akumulasi unit
+        </div>
       </div>
     </div>
-  </div>  
-
-  <!-- Kartu Merah Energi -->
-  <div class="col-4 col-md-4">
-    <div
-      class="card summary-card"
-      style="background-color: #da291c; color: white; height: 100%"
-    >
-      <div
-        class="card-body summary-body p-2 d-flex flex-column align-items-center justify-content-center text-center position-relative"
-      >
-        <i class="bi bi-exclamation-triangle summary-icon"></i>
-        <div class="summary-title">Stok Kritis</div>
+  </div>
+  
+  <!-- Kartu Merah -->
+  <div class="col-4">
+    <div class="card summary-card text-white h-100 p-4" style="background: linear-gradient(135deg, #da291c 0%, #9b1c13 100%);">
+      <i class="bi bi-exclamation-triangle summary-icon"></i>
+      <div class="position-relative z-1 d-flex flex-column h-100">
+        <div class="summary-title">STOK KRITIS</div>
         <div class="summary-value">{{ stok_kritis }}</div>
+        <div class="summary-footer">
+          <i class="bi bi-info-circle me-1"></i> Butuh pengadaan
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Tabel Data -->
-<div class="card shadow-sm">
-  <div
-    class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2 py-3"
-  >
-    <h6 class="mb-0 fw-bold text-dark">Data Master Barang</h6>
-
-    <!-- Input Pencarian Real-time -->
-    <div class="d-flex align-items-center gap-2 flex-wrap">
-      <!-- Tombol Ekspor -->
-      <a href="{{ url_for('export_pdf') }}" class="btn btn-sm btn-danger">
-        <i class="bi bi-file-earmark-pdf me-1"></i> Unduh PDF
-      </a>
-      <a href="{{ url_for('export_excel') }}" class="btn btn-sm btn-success">
-        <i class="bi bi-file-earmark-excel me-1"></i> Unduh Excel
-      </a>
-
-      <!-- Input Pencarian -->
-      <!-- Input Pencarian Real-time dengan Tombol Scan -->
-      <div class="input-group input-group-sm" style="max-width: 280px">
-        <span class="input-group-text bg-light"
-          ><i class="bi bi-search"></i
-        ></span>
-        <input
-          type="text"
-          id="searchInput"
-          class="form-control"
-          placeholder="Cari barang..."
-        />
-        <button
-          class="btn btn-outline-secondary bg-light text-dark border-start-0"
-          type="button"
-          data-bs-toggle="modal"
-          data-bs-target="#scannerModal"
-          title="Scan Barcode"
-        >
-          <i class="bi bi-qr-code-scan"></i>
-        </button>
-      </div>
-    </div>
+<!-- Area Grafik Transaksi -->
+<div class="card shadow-sm border mb-4">
+  <div class="card-header bg-white py-3 border-bottom">
+    <h6 class="mb-0 fw-bold text-dark">Tren Transaksi (6 Bulan Terakhir)</h6>
   </div>
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0 text-nowrap">
-        <thead class="table-light">
-          <tr>
-            <th class="px-4 d-none d-md-table-cell">No</th>
-            <th class="d-none d-md-table-cell">Kode</th>
-            <th>Nama Barang</th>
-            <th class="d-none d-md-table-cell">Kategori</th>
-            <th>Stok</th>
-            <th class="d-none d-md-table-cell">Satuan</th>
-            {% if current_user.role == 'Admin' %}
-            <th class="text-end px-4 d-none d-md-table-cell">Aksi</th>
-            <th class="text-end px-3 d-md-none">Detail</th>
-            {% endif %}
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-          {% for item in data %}
-          <tr>
-            <td class="px-4 text-muted d-none d-md-table-cell">
-              {{ loop.index }}
-            </td>
-            <td class="d-none d-md-table-cell">
-              <span class="badge bg-light text-dark border"
-                >{{ item.kode_barang }}</span
-              >
-            </td>
-            <td class="fw-medium text-dark">{{ item.nama_barang }}</td>
-            <td class="text-muted d-none d-md-table-cell">
-              {{ item.kategori }}
-            </td>
-            <td>
-              {% if item.stok == 0 %}
-              <span
-                class="badge border px-2 py-1"
-                style="
-                  background-color: rgba(218, 41, 28, 0.1);
-                  color: #da291c;
-                  border-color: #da291c !important;
-                "
-                >Habis</span
-              >
-              {% elif item.stok <= 5 %}
-              <span
-                class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1"
-                >{{ item.stok }}</span
-              >
-              {% else %}
-              <span
-                class="badge border px-2 py-1"
-                style="
-                  background-color: rgba(22, 163, 74, 0.1);
-                  color: #16a34a;
-                  border-color: #16a34a !important;
-                "
-                >{{ item.stok }}</span
-              >
-              {% endif %}
-            </td>
-            <td class="text-muted d-none d-md-table-cell">{{ item.satuan }}</td>
-
-            {% if current_user.role == 'Admin' %}
-            <!-- Aksi Desktop (Dropdown) -->
-            <td class="text-end px-4 d-none d-md-table-cell">
-              <div class="dropdown">
-                <button
-                  class="btn btn-sm btn-light border"
-                  type="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  Aksi
-                  <i
-                    class="bi bi-chevron-down ms-1"
-                    style="font-size: 0.75rem"
-                  ></i>
-                </button>
-
-                <ul
-                  class="dropdown-menu dropdown-menu-end shadow-sm border-0"
-                  style="font-size: 0.85rem"
-                >
-                  <li>
-                    <a
-                      class="dropdown-item py-2"
-                      href="{{ url_for('catat_transaksi', id=item.id) }}"
-                    >
-                      <i class="bi bi-arrow-left-right text-success me-2"></i>
-                      Transaksi Baru
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      class="dropdown-item py-2"
-                      href="{{ url_for('edit', id=item.id) }}"
-                    >
-                      <i class="bi bi-pencil-square text-primary me-2"></i> Edit
-                      Barang
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      class="dropdown-item py-2"
-                      href="{{ url_for('cetak_qr', kode=item.kode_barang) }}"
-                      target="_blank"
-                    >
-                      <i class="bi bi-printer text-dark me-2"></i> Cetak QR
-                    </a>
-                  </li>
-                  <li><hr class="dropdown-divider" /></li>
-                  <li>
-                    <a
-                      class="dropdown-item py-2 text-danger"
-                      href="{{ url_for('hapus', id=item.id) }}"
-                      onclick="return confirm('Hapus data {{ item.nama_barang }}?');"
-                    >
-                      <i class="bi bi-trash text-danger me-2"></i> Hapus
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </td>
-
-            <!-- Aksi Mobile (Modal Trigger) -->
-            <td class="text-end px-3 d-md-none">
-              <button
-                class="btn btn-sm btn-light border"
-                data-bs-toggle="modal"
-                data-bs-target="#modalDetail{{ item.id }}"
-              >
-                <i class="bi bi-three-dots-vertical"></i>
-              </button>
-            </td>
-            {% endif %}
-          </tr>
-
-          <!-- Modal Detail Mobile -->
-          <div
-            class="modal fade text-start"
-            id="modalDetail{{ item.id }}"
-            tabindex="-1"
-            aria-hidden="true"
-          >
-            <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content border-0 shadow">
-                <div class="modal-header border-bottom-0 pb-0">
-                  <h6 class="modal-title fw-bold">Detail Barang</h6>
-                  <button
-                    type="button"
-                    class="btn-close"
-                    data-bs-dismiss="modal"
-                    aria-label="Close"
-                  ></button>
-                </div>
-                <div class="modal-body">
-                  <div class="mb-3">
-                    <div class="text-muted small">Nama Barang</div>
-                    <div class="fw-bold fs-6">{{ item.nama_barang }}</div>
-                  </div>
-                  <div class="row mb-4">
-                    <div class="col-6 mb-2">
-                      <div class="text-muted small">Kode</div>
-                      <div class="fw-medium">{{ item.kode_barang }}</div>
-                    </div>
-                    <div class="col-6 mb-2">
-                      <div class="text-muted small">Kategori</div>
-                      <div class="fw-medium">{{ item.kategori }}</div>
-                    </div>
-                    <div class="col-6">
-                      <div class="text-muted small">Stok Saat Ini</div>
-                      <div class="fw-medium">
-                        {{ item.stok }} {{ item.satuan }}
-                      </div>
-                    </div>
-                  </div>
-
-                  {% if current_user.role == 'Admin' %}
-                  <hr />
-                  <div class="text-muted small mb-2">Tindakan</div>
-                  <div class="d-flex flex-column gap-2">
-                    <a
-                      href="{{ url_for('catat_transaksi', id=item.id) }}"
-                      class="btn btn-success text-start"
-                    >
-                      <i class="bi bi-arrow-left-right me-2"></i> Catat
-                      Transaksi
-                    </a>
-                    <a
-                      href="{{ url_for('edit', id=item.id) }}"
-                      class="btn btn-outline-primary text-start"
-                    >
-                      <i class="bi bi-pencil-square me-2"></i> Edit Data
-                    </a>
-                    <a
-                      href="{{ url_for('cetak_qr', kode=item.kode_barang) }}"
-                      target="_blank"
-                      class="btn btn-outline-dark text-start"
-                    >
-                      <i class="bi bi-printer me-2"></i> Cetak Label QR
-                    </a>
-                    <a
-                      href="{{ url_for('hapus', id=item.id) }}"
-                      class="btn btn-outline-danger text-start"
-                      onclick="return confirm('Hapus data {{ item.nama_barang }}?');"
-                    >
-                      <i class="bi bi-trash me-2"></i> Hapus Barang
-                    </a>
-                  </div>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- Akhir Modal -->
-
-          {% else %}
-          <tr>
-            <td colspan="7" class="text-center py-5 text-muted">
-              <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-              Belum ada data barang.
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  <div class="card-body">
+    <!-- Kontainer Chart.js (Wajib untuk responsivitas mobile) -->
+    <div style="position: relative; height: 300px; width: 100%;">
+      <canvas id="transaksiChart"></canvas>
     </div>
   </div>
 </div>
 
-<!-- Modal Scanner Barcode -->
-<div class="modal fade" id="scannerModal" tabindex="-1" aria-hidden="true">
+<!-- Modal Scan Transaksi -->
+<div class="modal fade" id="modalScanTransaksi" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow">
       <div class="modal-header border-bottom-0">
-        <h6 class="modal-title fw-bold">Scan Barcode / QR Code</h6>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-          id="closeScanner"
-        ></button>
-      </div>
-      <div class="modal-body p-0">
-        <!-- Area Kamera -->
-        <div id="reader" width="100%"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Scan Transaksi (Otomatis) -->
-<div
-  class="modal fade"
-  id="modalScanTransaksi"
-  tabindex="-1"
-  aria-hidden="true"
->
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header border-bottom-0">
-        <h6 class="modal-title fw-bold">
-          Scan Barang (Transaksi Masuk/Keluar)
-        </h6>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-          id="closeScanTransaksi"
-        ></button>
+        <h6 class="modal-title fw-bold">Scan Barang (Transaksi Masuk/Keluar)</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="closeScanTransaksi"></button>
       </div>
       <div class="modal-body p-0">
         <div id="readerTransaksi" width="100%"></div>
@@ -429,9 +164,51 @@ endblock %} {% block content %}
   </div>
 </div>
 
-<!-- Import Library Scanner -->
+<!-- Import Library Scanner & Chart.js -->
 <script src="https://unpkg.com/html5-qrcode"></script>
-
-<!-- Import File JavaScript Custom -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='js/scanner.js') }}"></script>
+
+<!-- Inisialisasi Grafik Chart.js -->
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const ctx = document.getElementById('transaksiChart').getContext('2d');
+    
+    // Menerima data dari Flask (app.py)
+    const labels = {{ labels | tojson }};
+    const dataMasuk = {{ data_masuk | tojson }};
+    const dataKeluar = {{ data_keluar | tojson }};
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Barang Masuk',
+            data: dataMasuk,
+            backgroundColor: 'rgba(22, 163, 74, 0.8)', // Hijau
+            borderRadius: 4
+          },
+          {
+            label: 'Barang Keluar',
+            data: dataKeluar,
+            backgroundColor: 'rgba(218, 41, 28, 0.8)', // Merah
+            borderRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0 } }
+        },
+        plugins: {
+          legend: { position: 'top' }
+        }
+      }
+    });
+  });
+</script>
 {% endblock %}
