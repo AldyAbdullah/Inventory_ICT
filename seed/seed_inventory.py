@@ -1,3 +1,9 @@
+import sys
+import os
+import random
+
+# Mengarahkan Python untuk membaca modul di folder utama (satu tingkat di atas folder seed)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from main import app
 from models import db, Inventory, Transaksi, Lokasi
 import random
