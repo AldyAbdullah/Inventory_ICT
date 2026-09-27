@@ -105,8 +105,8 @@
                 <form action="{{ url_for('login') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="mb-3">
-                        <label class="form-label">Username</label>
-                        <input type="text" class="form-control" name="username" placeholder="Masukkan Username" required autocomplete="off">
+                        <label class="form-label">No. Payroll</label>
+                        <input type="text" class="form-control" name="payroll" placeholder="Masukkan No. Payroll Anda" required autocomplete="off">
                     </div>
                     <div class="mb-4">
                         <label class="form-label">Password</label>

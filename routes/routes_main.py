@@ -20,11 +20,13 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     if request.method == 'POST':
-        user = User.query.filter_by(username=request.form['username']).first()
+        # Mengubah query pencarian menggunakan payroll
+        user = User.query.filter_by(payroll=request.form['payroll']).first()
         if user and check_password_hash(user.password, request.form['password']):
             login_user(user, remember=bool(request.form.get('remember')))
             return redirect(request.args.get('next') or url_for('index'))
-        flash('Username atau password salah.', 'error')
+        # Flash message disesuaikan bahasanya
+        flash('No. Payroll atau password salah.', 'error')
     return render_template('auth/login.html')
 
 @app.route('/logout')
