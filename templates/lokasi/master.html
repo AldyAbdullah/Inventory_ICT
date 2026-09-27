@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Master Lokasi - Inventaris Tomori{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1" style="color: #0a2540;">Master Area & Lokasi</h4>
+        <p class="text-muted mb-0">Kelola Main Location dan Sub Location penempatan aset.</p>
+    </div>
+    <a href="{{ url_for('tambah_lokasi') }}" class="btn btn-primary shadow-sm">
+        <i class="bi bi-plus-lg me-1"></i> Tambah Lokasi
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" width="10%">No</th>
+                        <th width="35%">Main Location (Area Utama)</th>
+                        <th width="35%">Sub Location (Titik Spesifik)</th>
+                        <th class="text-center pe-4" width="20%">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in data %}
+                    <tr>
+                        <td class="ps-4">{{ loop.index }}</td>
+                        <td class="fw-semibold text-primary">
+                            <i class="bi bi-building me-2"></i>{{ item.main_lokasi }}
+                        </td>
+                        <td>
+                            <i class="bi bi-geo-alt me-2 text-muted"></i>{{ item.nama_lokasi }}
+                        </td>
+                        <td class="text-center pe-4">
+                            <a href="{{ url_for('hapus_lokasi', id=item.id) }}" class="btn btn-sm btn-outline-danger border-0" onclick="return confirm('Hapus lokasi ini? Pastikan tidak ada aset di lokasi ini.');">
+                                <i class="bi bi-trash"></i> Hapus
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">Belum ada data lokasi.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

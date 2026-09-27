@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+{% block title %}Master Consumable - Inventaris Tomori{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1" style="color: #0a2540;">Master Data Consumable</h4>
+        <p class="text-muted mb-0">Kelola barang habis pakai, stok, dan riwayat mutasinya.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('export_consumable', search=search_query, kategori=filter_kategori, tipe=filter_tipe, lokasi=filter_lokasi) }}" class="btn btn-success shadow-sm">
+            <i class="bi bi-file-earmark-excel me-1"></i> Export Data
+        </a>
+        <a href="{{ url_for('tambah_consumable') }}" class="btn btn-primary shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i> Tambah Barang Baru
+        </a>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h6 class="m-0 fw-bold text-primary">Daftar Consumable Aktif</h6>
+        
+        <form method="GET" action="{{ url_for('master_consumable') }}" class="d-flex" style="min-width: 400px;">
+            <div class="input-group input-group-sm">
+                <input type="text" name="search" class="form-control bg-light border-0" placeholder="Cari barang atau kode..." value="{{ search_query }}">
+                <button class="btn btn-primary border-0" type="submit"><i class="bi bi-search"></i></button>
+                
+                <button class="btn btn-outline-secondary border-0 dropdown-toggle" type="button" id="dropdownFilter" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                    <i class="bi bi-funnel me-1"></i> Filter
+                </button>
+                
+                <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0" aria-labelledby="dropdownFilter" style="width: 320px;">
+                    <h6 class="dropdown-header px-0 text-dark fw-bold mb-2">Filter Data Consumable</h6>
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold mb-1">Kategori</label>
+                        <select name="kategori" class="form-select form-select-sm">
+                            <option value="">Semua Kategori</option>
+                            {% for kat in kategori_list %}
+                            <option value="{{ kat }}" {% if filter_kategori == kat %}selected{% endif %}>{{ kat }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold mb-1">Tipe Unit</label>
+                        <select name="tipe" class="form-select form-select-sm">
+                            <option value="">Semua Tipe</option>
+                            {% for tipe in tipe_list %}
+                            <option value="{{ tipe }}" {% if filter_tipe == tipe %}selected{% endif %}>{{ tipe }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold mb-1">Lokasi</label>
+                        <select name="lokasi" class="form-select form-select-sm">
+                            <option value="">Semua Lokasi</option>
+                            {% for lok in lokasi_list %}
+                            <option value="{{ lok.id }}" {% if filter_lokasi|string == lok.id|string %}selected{% endif %}>{{ lok.main_lokasi }} - {{ lok.nama_lokasi }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <a href="{{ url_for('master_consumable') }}" class="btn btn-sm btn-light border">Reset</a>
+                        <button type="submit" class="btn btn-sm btn-primary px-3">Terapkan</button>
+                    </div>
+                </div>
+
+                {% if search_query or filter_kategori or filter_tipe or filter_lokasi %}
+                    <a href="{{ url_for('master_consumable') }}" class="btn btn-danger border-0 text-white" title="Hapus Filter"><i class="bi bi-x-lg"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- FORM UNTUK BULK ACTION -->
+    <form id="bulkForm" method="POST" action="">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+        <div class="card-body p-0">
+            <div class="table-responsive table-scrollable pb-0" style="min-height: 280px;">
+                <table class="table table-hover table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4" width="5%">No</th>
+                            <th width="15%">Kode Barang</th>
+                            <th width="20%">Nama Barang</th>
+                            <th width="15%">Kategori & Tipe</th>
+                            <th width="15%">Lokasi Gudang</th>
+                            <th width="12%">Sisa Stok</th>
+                            <th class="text-center pe-4" width="18%">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in data.items %}
+                        <tr class="selectable-row" onclick="toggleRow(this, event)">
+                            <td class="ps-4">
+                                <input type="checkbox" name="item_ids" value="{{ item.id }}" class="d-none item-checkbox">
+                                {{ (data.page - 1) * data.per_page + loop.index }}
+                            </td>
+                            <td><span class="badge bg-light text-dark border"><i class="bi bi-upc-scan me-1"></i>{{ item.kode_barang }}</span></td>
+                            <td class="fw-semibold" style="color: #0a2540;">{{ item.nama_barang }}</td>
+                            <td>
+                                <div style="font-size: 0.9rem;">{{ item.kategori or '-' }}</div>
+                                <small class="text-muted">{{ item.unit_type or '-' }}</small>
+                            </td>
+                            <td>
+                                {% if item.lokasi %}
+                                    <div style="font-size: 0.9rem;">{{ item.lokasi.main_lokasi }}</div>
+                                    <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{ item.lokasi.nama_lokasi }}</small>
+                                {% else %}
+                                    <span class="text-muted" style="font-size: 0.9rem;">Belum Dialokasikan</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if item.stok <= 5 %}bg-danger{% else %}bg-success{% endif %}">
+                                    {{ item.stok }} {{ item.satuan }}
+                                </span>
+                            </td>
+                            <td class="text-center pe-4">
+                                <div class="dropdown">
+                                    <button class="btn btn-light btn-sm dropdown-toggle border" type="button" data-bs-toggle="dropdown">Pilih Aksi</button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                        {% if current_user.role == 'Admin' %}
+                                        
+                                        <!-- BAGIAN INI YANG DIPERBAIKI -->
+                                        <li><a class="dropdown-item" href="{{ url_for('catat_transaksi_cns', id=item.id) }}"><i class="bi bi-box-seam me-2 text-info"></i>Ambil / Tambah Stok</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('edit_consumable', id=item.id) }}"><i class="bi bi-pencil-square me-2 text-warning"></i>Edit Data</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger" href="{{ url_for('hapus_consumable', id=item.id) }}" onclick="return confirm('Hapus barang ini?');"><i class="bi bi-trash me-2"></i>Hapus Data</a></li>
+                                        
+                                        {% else %}
+                                        <li><span class="dropdown-item text-muted">Akses Terbatas</span></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                {% if search_query or filter_kategori or filter_tipe or filter_lokasi %}
+                                Tidak ada data Consumable yang sesuai kriteria filter/pencarian Anda.
+                                {% else %}
+                                Belum ada data barang habis pakai.
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Toolbar Aksi Massal (Kiri Bawah) -->
+            {% if current_user.role == 'Admin' %}
+            <div id="bulkActionBar" class="justify-content-between align-items-center px-4">
+                <div class="d-flex align-items-center gap-2">
+                    <input class="form-check-input border-secondary m-0" type="checkbox" id="selectAllBottom" style="width: 1.1em; height: 1.1em;">
+                    <label class="small fw-semibold text-muted mb-0" for="selectAllBottom" style="cursor:pointer; user-select: none;">
+                        Pilih Semua (<span id="selectedCount" class="text-primary">0</span> baris)
+                    </label>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#modalMutasiMassal" title="Mutasi Lokasi Terpilih" style="width: 34px; height: 34px;">
+                        <i class="bi bi-arrow-left-right"></i>
+                    </button>
+                    <button type="button" class="btn btn-danger rounded-circle shadow-sm d-flex align-items-center justify-content-center" onclick="submitBulkDelete()" title="Hapus Terpilih" style="width: 34px; height: 34px;">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Modal Mutasi Massal -->
+        <div class="modal fade" id="modalMutasiMassal" tabindex="-1" aria-labelledby="modalMutasiLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title fw-bold" id="modalMutasiLabel">Mutasi Massal Consumable</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-start">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Pilih Lokasi Tujuan Baru</label>
+                            <select class="form-select" name="lokasi_id_bulk" required>
+                                <option value="">-- Pilih Lokasi --</option>
+                                {% for lokasi in lokasi_list %}
+                                <option value="{{ lokasi.id }}">{{ lokasi.main_lokasi }} - {{ lokasi.nama_lokasi }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Keterangan Mutasi</label>
+                            <input type="text" class="form-control" name="keterangan_bulk" placeholder="Contoh: Pemindahan masal ke gudang baru">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-primary" onclick="submitBulkMutasi()">Simpan Mutasi</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    
+    <div class="card-footer bg-white py-3">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                {% if data.has_prev %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('master_consumable', page=data.prev_num, search=search_query, kategori=filter_kategori, tipe=filter_tipe, lokasi=filter_lokasi) }}">Sebelumnya</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ data.page }}</span></li>
+                {% if data.has_next %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('master_consumable', page=data.next_num, search=search_query, kategori=filter_kategori, tipe=filter_tipe, lokasi=filter_lokasi) }}">Selanjutnya</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<script>
+    function toggleRow(row, event) {
+        if (event.target.closest('button') || event.target.closest('a') || event.target.closest('.dropdown-menu')) {
+            return;
+        }
+
+        const checkbox = row.querySelector('.item-checkbox');
+        checkbox.checked = !checkbox.checked;
+        
+        if (checkbox.checked) {
+            row.classList.add('selected');
+        } else {
+            row.classList.remove('selected');
+        }
+        updateBulkBar();
+    }
+
+    function updateBulkBar() {
+        const checkedCount = document.querySelectorAll('.item-checkbox:checked').length;
+        const totalCount = document.querySelectorAll('.item-checkbox').length;
+        const bulkBar = document.getElementById('bulkActionBar');
+        const selectAllCheckbox = document.getElementById('selectAllBottom');
+        
+        document.getElementById('selectedCount').innerText = checkedCount;
+        
+        if (checkedCount > 0) {
+            bulkBar.classList.add('active');
+            selectAllCheckbox.checked = (checkedCount === totalCount && totalCount > 0);
+        } else {
+            bulkBar.classList.remove('active');
+            selectAllCheckbox.checked = false;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAllBtn = document.getElementById('selectAllBottom');
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('change', function() {
+                const isChecked = this.checked;
+                document.querySelectorAll('.selectable-row').forEach(row => {
+                    const cb = row.querySelector('.item-checkbox');
+                    cb.checked = isChecked;
+                    if (isChecked) {
+                        row.classList.add('selected');
+                    } else {
+                        row.classList.remove('selected');
+                    }
+                });
+                updateBulkBar();
+            });
+        }
+    });
+
+    function submitBulkDelete() {
+        if(confirm('Yakin ingin menghapus semua barang yang dipilih secara permanen?')) {
+            const form = document.getElementById('bulkForm');
+            form.action = "{{ url_for('hapus_consumable_bulk') }}";
+            form.submit();
+        }
+    }
+
+    function submitBulkMutasi() {
+        const lokasi = document.querySelector('select[name="lokasi_id_bulk"]').value;
+        if(!lokasi) {
+            alert("Harap pilih lokasi tujuan terlebih dahulu.");
+            return;
+        }
+        const form = document.getElementById('bulkForm');
+        form.action = "{{ url_for('mutasi_consumable_bulk') }}";
+        form.submit();
+    }
+</script>
+{% endblock %}

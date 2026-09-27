@@ -1,10 +1,9 @@
 {% extends 'base.html' %} 
-{% block title %}Profil Pengguna - Inventaris JOB Tomori{% endblock %} 
+{% block title %}Profil Pengguna - Inventaris Tomori{% endblock %} 
 {% block content %}
 
 <div class="row">
     <div class="col-md-10 col-lg-8">
-        <!-- Bagian header yang sudah diperbaiki -->
         <div class="mb-4">
             <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
                 <h3 class="fw-bold text-dark mb-0">Pengaturan Profil</h3>
@@ -16,11 +15,22 @@
         <div class="card shadow-sm border-0">
             <div class="card-body p-4">
                 <form action="{{ url_for('profil') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
                     <h6 class="text-muted fw-bold mb-3 border-bottom pb-2">Informasi Pekerjaan</h6>
                     
-                    <div class="mb-3">
-                        <label class="form-label fw-medium">Nama Lengkap</label>
-                        <input type="text" class="form-control" name="nama_lengkap" value="{{ current_user.nama_lengkap or '' }}" placeholder="Masukkan nama lengkap">
+                    <!-- Logika Jinja untuk memisahkan nama_lengkap menjadi depan dan belakang saat halaman dimuat -->
+                    {% set nama_parts = current_user.nama_lengkap.split(' ', 1) if current_user.nama_lengkap else ['', ''] %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label class="form-label fw-medium">Nama Depan</label>
+                            <input type="text" class="form-control" name="nama_depan" value="{{ nama_parts[0] }}" placeholder="Masukkan nama depan" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Nama Belakang</label>
+                            <input type="text" class="form-control" name="nama_belakang" value="{{ nama_parts[1] if nama_parts|length > 1 else '' }}" placeholder="Masukkan nama belakang (opsional)">
+                        </div>
                     </div>
                     
                     <div class="row mb-4">
@@ -48,7 +58,7 @@
                     </div>
 
                     <div class="d-flex justify-content-end">
-                        <button type="submit" class="btn btn-danger px-4 py-2 fw-bold">Simpan Perubahan</button>
+                        <button type="submit" class="btn btn-primary px-4 py-2 fw-bold">Simpan Perubahan</button>
                     </div>
                 </form>
             </div>

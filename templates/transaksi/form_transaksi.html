@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title %}Catat Transaksi - Inventaris Tomori{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0" style="color: #0a2540;">
+        {% if tipe == 'inventory' %}
+            Mutasi Aset Inventory
+        {% else %}
+            Transaksi Barang Habis Pakai
+        {% endif %}
+    </h4>
+    <a href="{% if tipe == 'inventory' %}{{ url_for('master_inventory') }}{% else %}{{ url_for('master_consumable') }}{% endif %}" class="btn btn-outline-secondary shadow-sm">
+        <i class="bi bi-arrow-left me-1"></i> Kembali
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        <!-- Panel Detail Barang -->
+        <div class="mb-4 p-3 bg-light rounded border-start border-4 border-primary">
+            <h5 class="fw-bold text-primary mb-1">{{ barang.nama_barang }}</h5>
+            <p class="mb-0 text-muted" style="font-size: 0.95rem;">
+                Kode: <strong>{{ barang.kode_barang }}</strong> |
+                {% if tipe == 'inventory' %}
+                    SN: <strong>{{ barang.serial_number }}</strong> | 
+                    Lokasi Saat Ini: <strong>{{ barang.lokasi.nama_lokasi if barang.lokasi else 'Belum Dialokasikan' }}</strong>
+                {% else %}
+                    Sisa Stok Saat Ini: <strong>{{ barang.stok }} {{ barang.satuan }}</strong>
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Form Transaksi Dinamis -->
+        <form action="{% if tipe == 'inventory' %}{{ url_for('catat_transaksi_inv', id=barang.id) }}{% else %}{{ url_for('catat_transaksi_cns', id=barang.id) }}{% endif %}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+           {% if tipe == 'inventory' %}
+            <!-- Input Khusus Mutasi Inventory -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Pindah ke Lokasi Baru</label>
+                    <select name="lokasi_id" class="form-select" required>
+                        <option value="">-- Pilih Lokasi Tujuan --</option>
+                        {% for lokasi in lokasi_list %}
+                        <option value="{{ lokasi.id }}" {% if barang.lokasi_id == lokasi.id %}disabled{% endif %}>
+                            {{ lokasi.main_lokasi }} - {{ lokasi.nama_lokasi }}
+                            {% if barang.lokasi_id == lokasi.id %}(Lokasi Saat Ini){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Update Status / Kondisi Aset</label>
+                    <input type="text" name="status_aset" class="form-control" value="{{ barang.notes or '' }}" placeholder="Contoh: Baik, Rusak, Junk...">
+                </div>
+            </div>
+            {% else %}
+            <!-- Input Khusus Masuk/Keluar Consumable -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Jenis Transaksi</label>
+                    <select name="jenis_transaksi" class="form-select" required>
+                        <option value="">-- Pilih Jenis --</option>
+                        <option value="Masuk">Masuk (Tambah Stok)</option>
+                        <option value="Keluar">Keluar (Gunakan Stok)</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Jumlah ({{ barang.satuan }})</label>
+                    <input type="number" name="jumlah" class="form-control" min="1" required placeholder="Masukkan kuantitas">
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Keterangan / Alasan (Opsional)</label>
+                <input type="text" name="keterangan" class="form-control" placeholder="Contoh: Dipinjam ke Divisi HR, Stok rusak, dll...">
+            </div>
+            
+            <hr class="my-4">
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-save me-1"></i> Simpan Transaksi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

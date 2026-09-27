@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Edit Consumable - Inventaris Tomori{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0" style="color: #0a2540;">Edit Data Consumable</h4>
+    <a href="{{ url_for('master_consumable') }}" class="btn btn-outline-secondary shadow-sm">
+        <i class="bi bi-arrow-left me-1"></i> Kembali
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('edit_consumable', id=barang.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Kode Barang</label>
+                    <input type="text" name="kode_barang" class="form-control bg-light" required value="{{ barang.kode_barang }}" readonly>
+                    <small class="text-muted">Kode barang tidak dapat diubah.</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Nama Barang</label>
+                    <input type="text" name="nama_barang" class="form-control" required value="{{ barang.nama_barang }}">
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Kategori</label>
+                    <input type="text" name="kategori" class="form-control" required value="{{ barang.kategori }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Tipe Unit / Merek</label>
+                    <input type="text" name="unit_type" class="form-control" value="{{ barang.unit_type }}">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Koreksi Stok</label>
+                    <input type="number" name="stok" class="form-control" min="0" required value="{{ barang.stok }}">
+                    <small class="text-muted">Ubah hanya untuk koreksi data.</small>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Satuan</label>
+                    <input type="text" name="satuan" class="form-control" required value="{{ barang.satuan }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Lokasi Gudang</label>
+                    <select name="lokasi_id" class="form-select">
+                        <option value="">-- Pilih Lokasi --</option>
+                        {% for lokasi in lokasi_list %}
+                        <option value="{{ lokasi.id }}" {% if barang.lokasi_id == lokasi.id %}selected{% endif %}>
+                            {{ lokasi.main_lokasi }} - {{ lokasi.nama_lokasi }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Catatan Tambahan</label>
+                    <textarea name="notes" class="form-control" rows="3">{{ barang.notes }}</textarea>
+                </div>
+            </div>
+
+            <hr class="my-4">
+            <div class="d-flex justify-content-end gap-2">
+                <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-1"></i> Perbarui Data</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

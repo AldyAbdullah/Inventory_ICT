@@ -1,5 +1,5 @@
 {% extends 'base.html' %} 
-{% block title %}Dashboard - Inventaris JOB Tomori{% endblock %} 
+{% block title %}Dashboard - Inventaris Tomori{% endblock %} 
 {% block content %}
 
 <style>
@@ -25,7 +25,6 @@
     margin-top: 5px; 
     margin-bottom: 15px; 
   }
-  /* Ikon dibuat menjadi efek watermark di latar belakang */
   .summary-icon { 
     font-size: 5rem; 
     opacity: 0.15; 
@@ -42,14 +41,10 @@
     margin-top: auto;
     opacity: 0.85;
   }
-  /* Memastikan teks tetap berada di atas ikon watermark */
   .z-1 { z-index: 1; }
 
-  /* Penyesuaian khusus layar HP (Mobile) */
   @media (max-width: 767px) {
-    .summary-card { 
-      padding: 0.75rem !important; 
-    }
+    .summary-card { padding: 0.75rem !important; }
     .summary-title { 
       font-size: 0.55rem; 
       line-height: 1.2;
@@ -61,75 +56,59 @@
       margin-bottom: 0;
       text-align: center;
     }
-    .summary-icon { 
-      font-size: 2.5rem; 
-      right: -5px; 
-      bottom: -5px; 
-    }
-    .summary-footer { 
-      display: none !important; /* Sembunyikan footer di HP agar ruang cukup */
-    }
-    .z-1 {
-      align-items: center; /* Pusatkan konten teks di HP */
-    }
+    .summary-icon { font-size: 2.5rem; right: -5px; bottom: -5px; }
+    .summary-footer { display: none !important; }
+    .z-1 { align-items: center; }
   }
 </style>
 
 <!-- Header Halaman -->
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
   <div>
-    <h4 class="fw-bold text-dark mb-1">Dashboard Inventaris</h4>
-    <p class="text-muted small mb-0">Ringkasan stok dan tren transaksi barang IT.</p>
-  </div>
-  <div class="d-flex gap-2">
-    <button class="btn btn-sm btn-success shadow-sm px-3 fw-medium" onclick="setJenisScan('masuk')" data-bs-toggle="modal" data-bs-target="#modalScanTransaksi">
-      <i class="bi bi-box-arrow-in-down me-1"></i> Scan Masuk
-    </button>
-    <button class="btn btn-sm btn-danger shadow-sm px-3 fw-medium" onclick="setJenisScan('keluar')" data-bs-toggle="modal" data-bs-target="#modalScanTransaksi">
-      <i class="bi bi-box-arrow-up me-1"></i> Scan Keluar
-    </button>
+    <h4 class="fw-bold text-dark mb-1">Dashboard Sistem IT</h4>
+    <p class="text-muted small mb-0">Ringkasan aset perangkat keras dan barang habis pakai.</p>
   </div>
 </div>
 
 <!-- Statistik Card -->
 <div class="row g-2 mb-4">
-  <!-- Kartu Biru -->
+  <!-- Kartu Biru: Total Inventory -->
   <div class="col-4">
     <div class="card summary-card text-white h-100 p-4" style="background: linear-gradient(135deg, #004b87 0%, #002d52 100%);">
-      <i class="bi bi-boxes summary-icon"></i>
+      <i class="bi bi-pc-display summary-icon"></i>
       <div class="position-relative z-1 d-flex flex-column h-100">
-        <div class="summary-title">JENIS BARANG</div>
-        <div class="summary-value">{{ total_jenis }}</div>
+        <div class="summary-title">TOTAL INVENTORY</div>
+        <div class="summary-value">{{ total_inventory | default(0) }}</div>
         <div class="summary-footer">
-          <i class="bi bi-check-circle me-1"></i> Data master terkini
+          <i class="bi bi-info-circle me-1"></i> Total unit perangkat ber-SN
         </div>
       </div>
     </div>
   </div>
   
-  <!-- Kartu Hijau -->
+  <!-- Kartu Hijau: Total Consumable -->
   <div class="col-4">
     <div class="card summary-card text-white h-100 p-4" style="background: linear-gradient(135deg, #16a34a 0%, #0d682f 100%);">
-      <i class="bi bi-stack summary-icon"></i>
+      <i class="bi bi-box-seam summary-icon"></i>
       <div class="position-relative z-1 d-flex flex-column h-100">
-        <div class="summary-title">TOTAL STOK</div>
-        <div class="summary-value">{{ total_stok }}</div>
+        <div class="summary-title">TOTAL CONSUMABLE</div>
+        <div class="summary-value">{{ total_consumable | default(0) }}</div>
         <div class="summary-footer">
-          <i class="bi bi-arrow-repeat me-1"></i> Akumulasi unit
+          <i class="bi bi-check2-circle me-1"></i> Jenis barang habis pakai
         </div>
       </div>
     </div>
   </div>
   
-  <!-- Kartu Merah -->
+  <!-- Kartu Merah: Stok Kritis Consumable -->
   <div class="col-4">
     <div class="card summary-card text-white h-100 p-4" style="background: linear-gradient(135deg, #da291c 0%, #9b1c13 100%);">
       <i class="bi bi-exclamation-triangle summary-icon"></i>
       <div class="position-relative z-1 d-flex flex-column h-100">
-        <div class="summary-title">STOK KRITIS</div>
-        <div class="summary-value">{{ stok_kritis }}</div>
+        <div class="summary-title">STOK KRITIS CONSUMABLE</div>
+        <div class="summary-value">{{ stok_kritis | default(0) }}</div>
         <div class="summary-footer">
-          <i class="bi bi-info-circle me-1"></i> Butuh pengadaan
+          <i class="bi bi-exclamation-circle me-1"></i> Membutuhkan pengadaan
         </div>
       </div>
     </div>
@@ -138,62 +117,62 @@
 
 <!-- Area Grafik Transaksi -->
 <div class="card shadow-sm border mb-4">
-  <div class="card-header bg-white py-3 border-bottom">
+  <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
     <h6 class="mb-0 fw-bold text-dark">Tren Transaksi (6 Bulan Terakhir)</h6>
+    
+    <!-- Pilihan Filter Grafik -->
+    <div class="btn-group btn-group-sm" role="group">
+      <input type="radio" class="btn-check" name="chartToggle" id="btnInv" autocomplete="off" checked onchange="updateChart('inventory')">
+      <label class="btn btn-outline-primary" for="btnInv">Inventory</label>
+
+      <input type="radio" class="btn-check" name="chartToggle" id="btnCons" autocomplete="off" onchange="updateChart('consumable')">
+      <label class="btn btn-outline-primary" for="btnCons">Consumable</label>
+    </div>
   </div>
   <div class="card-body">
-    <!-- Kontainer Chart.js (Wajib untuk responsivitas mobile) -->
     <div style="position: relative; height: 300px; width: 100%;">
       <canvas id="transaksiChart"></canvas>
     </div>
   </div>
 </div>
 
-<!-- Modal Scan Transaksi -->
-<div class="modal fade" id="modalScanTransaksi" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header border-bottom-0">
-        <h6 class="modal-title fw-bold">Scan Barang (Transaksi Masuk/Keluar)</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="closeScanTransaksi"></button>
-      </div>
-      <div class="modal-body p-0">
-        <div id="readerTransaksi" width="100%"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Import Library Scanner & Chart.js -->
-<script src="https://unpkg.com/html5-qrcode"></script>
+<!-- Import Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{{ url_for('static', filename='js/scanner.js') }}"></script>
 
-<!-- Inisialisasi Grafik Chart.js -->
 <script>
+  // Variabel Data dari Backend
+  const chartLabels = {{ labels | default('[]') | tojson }};
+  const chartData = {
+    inventory: {
+      masuk: {{ inv_masuk | default('[]') | tojson }},
+      keluar: {{ inv_keluar | default('[]') | tojson }}
+    },
+    consumable: {
+      masuk: {{ cons_masuk | default('[]') | tojson }},
+      keluar: {{ cons_keluar | default('[]') | tojson }}
+    }
+  };
+
+  let transaksiChart;
+
   document.addEventListener("DOMContentLoaded", function() {
     const ctx = document.getElementById('transaksiChart').getContext('2d');
     
-    // Menerima data dari Flask (app.py)
-    const labels = {{ labels | tojson }};
-    const dataMasuk = {{ data_masuk | tojson }};
-    const dataKeluar = {{ data_keluar | tojson }};
-
-    new Chart(ctx, {
+    transaksiChart = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: labels,
+        labels: chartLabels,
         datasets: [
           {
             label: 'Barang Masuk',
-            data: dataMasuk,
-            backgroundColor: 'rgba(22, 163, 74, 0.8)', // Hijau
+            data: chartData.inventory.masuk,
+            backgroundColor: 'rgba(22, 163, 74, 0.8)',
             borderRadius: 4
           },
           {
-            label: 'Barang Keluar',
-            data: dataKeluar,
-            backgroundColor: 'rgba(218, 41, 28, 0.8)', // Merah
+            label: 'Barang Keluar / Mutasi',
+            data: chartData.inventory.keluar,
+            backgroundColor: 'rgba(218, 41, 28, 0.8)',
             borderRadius: 4
           }
         ]
@@ -210,5 +189,14 @@
       }
     });
   });
+
+  // Fungsi untuk mengganti data grafik
+  function updateChart(tipe) {
+    if(transaksiChart) {
+      transaksiChart.data.datasets[0].data = chartData[tipe].masuk;
+      transaksiChart.data.datasets[1].data = chartData[tipe].keluar;
+      transaksiChart.update();
+    }
+  }
 </script>
 {% endblock %}

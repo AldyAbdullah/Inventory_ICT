@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Tambah Inventory - Inventaris Tomori{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1" style="color: #0a2540;">Tambah Data Inventory</h4>
+        <p class="text-muted mb-0">Registrasi perangkat IT ber-SN baru ke dalam sistem.</p>
+    </div>
+    <div>
+        <a href="{{ url_for('master_inventory') }}" class="btn btn-outline-secondary shadow-sm">
+            <i class="bi bi-arrow-left me-1"></i> Kembali
+        </a>
+    </div>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-circle-fill me-2"></i>{{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 fw-bold text-primary"><i class="bi bi-file-earmark-plus me-2"></i>Form Registrasi Inventory</h6>
+            </div>
+            <div class="card-body p-4">
+                <form action="{{ url_for('tambah_inventory') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="kode_barang" class="form-label fw-semibold">Kode Aset <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="kode_barang" name="kode_barang" required placeholder="Contoh: INV-001">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="serial_number" class="form-label fw-semibold">Serial Number (SN) <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control font-monospace" id="serial_number" name="serial_number" required placeholder="Scan atau ketik SN">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="nama_barang" class="form-label fw-semibold">Nama Perangkat <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="nama_barang" name="nama_barang" required placeholder="Contoh: Access Point Cisco Meraki">
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="kategori" class="form-label fw-semibold">Kategori Barang</label>
+                            <input type="text" class="form-control" id="kategori" name="kategori" placeholder="Contoh: Perangkat Jaringan, PC/Laptop">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="unit_type" class="form-label fw-semibold">Tipe Unit / Model</label>
+                            <input type="text" class="form-control" id="unit_type" name="unit_type" placeholder="Contoh: MR46, T14 Gen 2">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="lokasi_id" class="form-label fw-semibold">Lokasi Alokasi Saat Ini</label>
+                        <select class="form-select" id="lokasi_id" name="lokasi_id">
+                            <option value="" selected>-- Belum Dialokasikan --</option>
+                            {% for lokasi in lokasi_list %}
+                            <option value="{{ lokasi.id }}">{{ lokasi.main_lokasi }} - {{ lokasi.nama_lokasi }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="notes" class="form-label fw-semibold">Catatan / Kondisi</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Contoh: Kondisi baru, garansi 1 tahun..."></textarea>
+                    </div>
+
+                    <hr class="text-muted">
+                    
+                    <div class="d-flex justify-content-end mt-4">
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                            <i class="bi bi-save me-1"></i> Simpan Data
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 bg-light">
+            <div class="card-body">
+                <h6 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle me-2"></i>Panduan Pengisian</h6>
+                <ul class="text-muted small ps-3 mb-0" style="line-height: 1.8;">
+                    <li><strong>Kode Aset:</strong> Harus unik dan tidak boleh sama dengan barang lain.</li>
+                    <li><strong>Serial Number:</strong> Wajib diisi. Gunakan *barcode scanner* jika tersedia.</li>
+                    <li><strong>Kategori & Tipe Unit:</strong> Kategori bersifat umum (cth: Printer), Tipe Unit bersifat spesifik (cth: L3110). Keduanya opsional.</li>
+                    <li><strong>Lokasi:</strong> Default "Belum Dialokasikan". Pilih dari daftar jika barang langsung ditempatkan di lapangan.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

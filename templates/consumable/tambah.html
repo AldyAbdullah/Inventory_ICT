@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Tambah Consumable - Inventaris Tomori{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0" style="color: #0a2540;">Tambah Barang Consumable</h4>
+    <a href="{{ url_for('master_consumable') }}" class="btn btn-outline-secondary shadow-sm">
+        <i class="bi bi-arrow-left me-1"></i> Kembali
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('tambah_consumable') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Kode Barang</label>
+                    <input type="text" name="kode_barang" class="form-control" required placeholder="Contoh: CNS-001">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Nama Barang</label>
+                    <input type="text" name="nama_barang" class="form-control" required placeholder="Contoh: Kertas HVS A4 80gr">
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Kategori</label>
+                    <input type="text" name="kategori" class="form-control" required placeholder="Contoh: ATK, Tinta, Kabel">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Tipe Unit / Merek</label>
+                    <input type="text" name="unit_type" class="form-control" placeholder="Contoh: PaperOne, Epson">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Stok Awal</label>
+                    <input type="number" name="stok" class="form-control" min="0" required value="0">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Satuan</label>
+                    <input type="text" name="satuan" class="form-control" required placeholder="Contoh: Rim, Pcs, Box">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Lokasi Gudang</label>
+                    <select name="lokasi_id" class="form-select">
+                        <option value="">-- Pilih Lokasi --</option>
+                        {% for lokasi in lokasi_list %}
+                        <option value="{{ lokasi.id }}">{{ lokasi.main_lokasi }} - {{ lokasi.nama_lokasi }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Catatan Tambahan</label>
+                    <textarea name="notes" class="form-control" rows="3" placeholder="Opsional"></textarea>
+                </div>
+            </div>
+
+            <hr class="my-4">
+            <div class="d-flex justify-content-end gap-2">
+                <button type="reset" class="btn btn-light border">Reset Form</button>
+                <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-1"></i> Simpan Data</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
