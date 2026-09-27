@@ -7,13 +7,13 @@ db = SQLAlchemy()
 def waktu_lokal():
     return datetime.utcnow() + timedelta(hours=8)
 
-class User(db.Model, UserMixin):
+class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
+    payroll = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(20), nullable=False)
     nama_lengkap = db.Column(db.String(100))
-    transaksi = db.relationship('Transaksi', backref='user', lazy=True)
+    jabatan = db.Column(db.String(100))
+    role = db.Column(db.String(20), default='Viewer')
 
 class Lokasi(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -33,8 +33,9 @@ class Inventory(db.Model):
     lokasi_id = db.Column(db.Integer, db.ForeignKey('lokasi.id'))
     notes = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=waktu_lokal) # Diseragamkan
-    transaksi = db.relationship('Transaksi', backref='inventory_item', lazy=True)
+    created_at = db.Column(db.DateTime, default=waktu_lokal)
+    
+    # (Relasi ganda ke tabel Transaksi telah dihapus dari sini agar rapi)
 
 class Consumable(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -47,12 +48,13 @@ class Consumable(db.Model):
     satuan = db.Column(db.String(20))
     notes = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=waktu_lokal) # Diseragamkan
-    transaksi = db.relationship('Transaksi', backref='consumable_item', lazy=True)
+    created_at = db.Column(db.DateTime, default=waktu_lokal)
+    
+    # (Relasi ganda ke tabel Transaksi telah dihapus dari sini agar rapi)
 
 class Transaksi(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    tanggal = db.Column(db.DateTime, default=waktu_lokal) # Sudah seragam
+    tanggal = db.Column(db.DateTime, default=waktu_lokal)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.id'), nullable=True)
     consumable_id = db.Column(db.Integer, db.ForeignKey('consumable.id'), nullable=True)
@@ -60,5 +62,7 @@ class Transaksi(db.Model):
     jumlah = db.Column(db.Integer, nullable=False, default=1)
     keterangan = db.Column(db.String(200))
     
-    inventory = db.relationship('Inventory', backref='transaksi_terkait', lazy=True)
-    consumable = db.relationship('Consumable', backref='transaksi_terkait', lazy=True)
+    # INI ADALAH RELASI YANG BENAR (Semua dikumpulkan di sini):
+    user = db.relationship('User', backref='transaksi', lazy=True)
+    inventory = db.relationship('Inventory', backref='transaksi_item', lazy=True)
+    consumable = db.relationship('Consumable', backref='transaksi_item', lazy=True)

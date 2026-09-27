@@ -1,6 +1,5 @@
 import sys
 import os
-import random
 
 # Mengarahkan Python untuk membaca modul di folder utama (satu tingkat di atas folder seed)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -18,19 +17,20 @@ def reset_database():
 
         print("Membuat akun Admin default...")
         admin_user = User(
-            username='admin',
+            payroll='admin123',
             password=generate_password_hash('admin123'),
             role='Admin',
-            nama_lengkap='Administrator Sistem'
+            nama_lengkap='Administrator Sistem',
+            jabatan='IT Support'
         )
         db.session.add(admin_user)
         db.session.commit()
         
         print("-" * 30)
         print("Database berhasil direset!")
-        print("Gunakan akun berikut untuk login:")
-        print("Username : admin")
-        print("Password : admin123")
+        print("Gunakan kredensial berikut untuk login:")
+        print("No. Payroll : admin123")
+        print("Password    : admin123")
         print("-" * 30)
 
 if __name__ == '__main__':

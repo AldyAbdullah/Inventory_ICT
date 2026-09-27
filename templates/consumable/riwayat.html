@@ -1,119 +1,217 @@
-{% extends 'base.html' %}
-{% block title %}Riwayat Consumable - Inventaris Tomori{% endblock %}
-
-{% block content %}
+{% extends 'base.html' %} {% block title %}Riwayat Consumable - Inventaris
+Tomori{% endblock %} {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="fw-bold mb-1" style="color: #0a2540;">Riwayat Stok Consumable</h4>
-        <p class="text-muted mb-0">Pantau aktivitas barang masuk, barang keluar, dan mutasi.</p>
-    </div>
-    <div>
-        <a href="{{ url_for('export_riwayat_consumable', search=request.args.get('search', ''), start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="btn btn-success shadow-sm">
-            <i class="bi bi-file-earmark-excel me-1"></i> Export Data
-        </a>
-    </div>
+  <div>
+    <h4 class="fw-bold mb-1" style="color: #0a2540">Riwayat Stok Consumable</h4>
+    <p class="text-muted mb-0">
+      Pantau aktivitas barang masuk, barang keluar, dan mutasi.
+    </p>
+  </div>
+  <div>
+    <a
+      href="{{ url_for('export_riwayat_consumable', search=request.args.get('search', ''), start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}"
+      class="btn btn-success shadow-sm"
+    >
+      <i class="bi bi-file-earmark-excel me-1"></i> Export Data
+    </a>
+  </div>
 </div>
 
 <div class="card shadow-sm border-0">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <h6 class="m-0 fw-bold text-primary">Log Transaksi</h6>
-        
-        <form method="GET" action="{{ url_for('riwayat_consumable') }}" class="d-flex" style="min-width: 350px;">
-            <div class="input-group input-group-sm">
-                <input type="text" name="search" class="form-control bg-light border-0" placeholder="Cari barang, kode, atau keterangan..." value="{{ request.args.get('search', '') }}">
-                <button class="btn btn-primary border-0" type="submit"><i class="bi bi-search"></i></button>
-                
-                <button class="btn btn-outline-secondary border-0 dropdown-toggle" type="button" id="dropdownFilterRiwayatCns" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                    <i class="bi bi-funnel me-1"></i> Filter
-                </button>
-                
-                <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0" aria-labelledby="dropdownFilterRiwayatCns" style="width: 300px;">
-                    <h6 class="dropdown-header px-0 text-dark fw-bold mb-2">Filter Rentang Waktu</h6>
-                    <div class="mb-2">
-                        <label class="form-label small fw-semibold mb-1">Dari Tanggal</label>
-                        <input type="date" name="start_date" class="form-control form-control-sm" value="{{ request.args.get('start_date', '') }}">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold mb-1">Sampai Tanggal</label>
-                        <input type="date" name="end_date" class="form-control form-control-sm" value="{{ request.args.get('end_date', '') }}">
-                    </div>
-                    <div class="d-flex justify-content-end gap-2 mt-3">
-                        <a href="{{ url_for('riwayat_consumable') }}" class="btn btn-sm btn-light border">Reset</a>
-                        <button type="submit" class="btn btn-sm btn-primary px-3">Terapkan</button>
-                    </div>
-                </div>
+  <div
+    class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2"
+  >
+    <h6 class="m-0 fw-bold text-primary">Log Transaksi</h6>
 
-                {% if request.args.get('search') or request.args.get('start_date') or request.args.get('end_date') %}
-                    <a href="{{ url_for('riwayat_consumable') }}" class="btn btn-danger border-0 text-white" title="Hapus Filter"><i class="bi bi-x-lg"></i></a>
-                {% endif %}
-            </div>
-        </form>
-    </div>
+    <form
+      method="GET"
+      action="{{ url_for('riwayat_consumable') }}"
+      class="d-flex"
+      style="min-width: 350px"
+    >
+      <div class="input-group input-group-sm">
+        <input
+          type="text"
+          name="search"
+          class="form-control bg-light border-0"
+          placeholder="Cari barang, kode, atau keterangan..."
+          value="{{ request.args.get('search', '') }}"
+        />
+        <button class="btn btn-primary border-0" type="submit">
+          <i class="bi bi-search"></i>
+        </button>
 
-    <div class="card-body p-0">
-        <!-- Pengaturan Scroll Tabel -->
-        <div class="table-responsive" style="max-height: 65vh; overflow-y: auto;">
-            <table class="table table-hover align-middle mb-0">
-                <!-- Sticky Top agar header tidak ikut ter-scroll -->
-                <thead class="table-light sticky-top" style="z-index: 1;">
-                    <tr>
-                        <th class="ps-4" width="12%">Waktu</th>
-                        <th width="15%">Kode Barang</th>
-                        <th width="23%">Nama Barang</th>
-                        <th width="10%">Jenis</th>
-                        <th width="10%">Jumlah</th>
-                        <th width="20%">Keterangan</th>
-                        <th class="pe-4" width="10%">PIC</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in data.items %}
-                    <tr>
-                        <td class="ps-4">
-                            <div class="fw-medium text-dark">{{ item.tanggal.strftime('%d %b %Y') if item.tanggal else '-' }}</div>
-                            <small class="text-muted">{{ item.tanggal.strftime('%H:%M') if item.tanggal else '-' }}</small>
-                        </td>
-                        <td>
-                            <div class="font-monospace small bg-light border px-2 py-1 rounded d-inline-block">{{ item.consumable.kode_barang if item.consumable else '-' }}</div>
-                        </td>
-                        <td class="fw-semibold" style="color: #0a2540;">
-                            {{ item.consumable.nama_barang if item.consumable else 'Barang Dihapus' }}
-                        </td>
-                        <td>
-                            <span class="badge {% if item.jenis == 'Masuk' %}bg-success{% else %}bg-danger{% endif %}">
-                                <i class="bi {% if item.jenis == 'Masuk' %}bi-box-arrow-in-down{% else %}bi-box-arrow-up{% endif %} me-1"></i>
-                                {{ item.jenis }}
-                            </span>
-                        </td>
-                        <td class="fw-bold">{{ item.jumlah }} <small class="text-muted fw-normal">{{ item.consumable.satuan if item.consumable else '' }}</small></td>
-                        <td><small class="text-muted">{{ item.keterangan or '-' }}</small></td>
-                        <td class="pe-4"><small>{{ item.user.username if item.user else 'Sistem' }}</small></td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">
-                            <i class="bi bi-clock-history fs-1 d-block mb-3"></i>
-                            Tidak ada riwayat transaksi yang ditemukan.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <button
+          class="btn btn-outline-secondary border-0 dropdown-toggle"
+          type="button"
+          id="dropdownFilterRiwayatCns"
+          data-bs-toggle="dropdown"
+          data-bs-auto-close="outside"
+          aria-expanded="false"
+        >
+          <i class="bi bi-funnel me-1"></i> Filter
+        </button>
+
+        <div
+          class="dropdown-menu dropdown-menu-end p-3 shadow border-0"
+          aria-labelledby="dropdownFilterRiwayatCns"
+          style="width: 300px"
+        >
+          <h6 class="dropdown-header px-0 text-dark fw-bold mb-2">
+            Filter Rentang Waktu
+          </h6>
+          <div class="mb-2">
+            <label class="form-label small fw-semibold mb-1"
+              >Dari Tanggal</label
+            >
+            <input
+              type="date"
+              name="start_date"
+              class="form-control form-control-sm"
+              value="{{ request.args.get('start_date', '') }}"
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold mb-1"
+              >Sampai Tanggal</label
+            >
+            <input
+              type="date"
+              name="end_date"
+              class="form-control form-control-sm"
+              value="{{ request.args.get('end_date', '') }}"
+            />
+          </div>
+          <div class="d-flex justify-content-end gap-2 mt-3">
+            <a
+              href="{{ url_for('riwayat_consumable') }}"
+              class="btn btn-sm btn-light border"
+              >Reset</a
+            >
+            <button type="submit" class="btn btn-sm btn-primary px-3">
+              Terapkan
+            </button>
+          </div>
         </div>
+
+        {% if request.args.get('search') or request.args.get('start_date') or
+        request.args.get('end_date') %}
+        <a
+          href="{{ url_for('riwayat_consumable') }}"
+          class="btn btn-danger border-0 text-white"
+          title="Hapus Filter"
+          ><i class="bi bi-x-lg"></i
+        ></a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <div class="card-body p-0">
+    <!-- Pengaturan Scroll Tabel -->
+    <div class="table-responsive" style="max-height: 65vh; overflow-y: auto">
+      <table class="table table-hover align-middle mb-0">
+        <!-- Sticky Top agar header tidak ikut ter-scroll -->
+        <thead class="table-light sticky-top" style="z-index: 1">
+          <tr>
+            <th class="ps-4" width="12%">Waktu</th>
+            <th width="15%">Kode Barang</th>
+            <th width="23%">Nama Barang</th>
+            <th width="10%">Jenis</th>
+            <th width="10%">Jumlah</th>
+            <th width="20%">Keterangan</th>
+            <th class="pe-4" width="10%">PIC</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in data.items %}
+          <tr>
+            <td class="ps-4">
+              <div class="fw-medium text-dark">
+                {{ item.tanggal.strftime('%d %b %Y') if item.tanggal else '-' }}
+              </div>
+              <small class="text-muted"
+                >{{ item.tanggal.strftime('%H:%M') if item.tanggal else '-'
+                }}</small
+              >
+            </td>
+            <td>
+              <div
+                class="font-monospace small bg-light border px-2 py-1 rounded d-inline-block"
+              >
+                {{ item.consumable.kode_barang if item.consumable else '-' }}
+              </div>
+            </td>
+            <td class="fw-semibold" style="color: #0a2540">
+              {{ item.consumable.nama_barang if item.consumable else 'Barang
+              Dihapus' }}
+            </td>
+            <td>
+              <span
+                class="badge {% if item.jenis == 'Masuk' %}bg-success{% else %}bg-danger{% endif %}"
+              >
+                <i
+                  class="bi {% if item.jenis == 'Masuk' %}bi-box-arrow-in-down{% else %}bi-box-arrow-up{% endif %} me-1"
+                ></i>
+                {{ item.jenis }}
+              </span>
+            </td>
+            <td class="fw-bold">
+              {{ item.jumlah }}
+              <small class="text-muted fw-normal"
+                >{{ item.consumable.satuan if item.consumable else '' }}</small
+              >
+            </td>
+            <td>
+              <small class="text-muted">{{ item.keterangan or '-' }}</small>
+            </td>
+            <td class="pe-4">
+              <small>
+                {% if item.user %} {{ item.user.nama_lengkap.split(' ')[0] if
+                item.user.nama_lengkap else item.user.payroll }} {% else %}
+                Sistem {% endif %}
+              </small>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="text-center py-5 text-muted">
+              <i class="bi bi-clock-history fs-1 d-block mb-3"></i>
+              Tidak ada riwayat transaksi yang ditemukan.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-    
-    <div class="card-footer bg-white py-3 border-top-0">
-        <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center mb-0">
-                {% if data.has_prev %}
-                <li class="page-item"><a class="page-link" href="{{ url_for('riwayat_consumable', page=data.prev_num, search=request.args.get('search'), start_date=request.args.get('start_date'), end_date=request.args.get('end_date')) }}">Sebelumnya</a></li>
-                {% endif %}
-                <li class="page-item active"><span class="page-link">{{ data.page }}</span></li>
-                {% if data.has_next %}
-                <li class="page-item"><a class="page-link" href="{{ url_for('riwayat_consumable', page=data.next_num, search=request.args.get('search'), start_date=request.args.get('start_date'), end_date=request.args.get('end_date')) }}">Selanjutnya</a></li>
-                {% endif %}
-            </ul>
-        </nav>
-    </div>
+  </div>
+
+  <div class="card-footer bg-white py-3 border-top-0">
+    <nav aria-label="Page navigation">
+      <ul class="pagination justify-content-center mb-0">
+        {% if data.has_prev %}
+        <li class="page-item">
+          <a
+            class="page-link"
+            href="{{ url_for('riwayat_consumable', page=data.prev_num, search=request.args.get('search'), start_date=request.args.get('start_date'), end_date=request.args.get('end_date')) }}"
+            >Sebelumnya</a
+          >
+        </li>
+        {% endif %}
+        <li class="page-item active">
+          <span class="page-link">{{ data.page }}</span>
+        </li>
+        {% if data.has_next %}
+        <li class="page-item">
+          <a
+            class="page-link"
+            href="{{ url_for('riwayat_consumable', page=data.next_num, search=request.args.get('search'), start_date=request.args.get('start_date'), end_date=request.args.get('end_date')) }}"
+            >Selanjutnya</a
+          >
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
 </div>
-{% endblock %}  
+{% endblock %}

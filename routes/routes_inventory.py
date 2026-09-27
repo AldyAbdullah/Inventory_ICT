@@ -292,7 +292,6 @@ def export_riwayat_inventory():
     for idx, item in enumerate(data_riwayat, 1):
         waktu = item.tanggal.strftime('%Y-%m-%d %H:%M:%S') if item.tanggal else "-"
         
-        # Ekstraksi data inventory yang diperbarui
         if item.inventory:
             kode_aset = item.inventory.kode_barang
             serial_number = item.inventory.serial_number
@@ -301,12 +300,18 @@ def export_riwayat_inventory():
             tipe_unit = item.inventory.unit_type or '-'
         else:
             kode_aset = serial_number = nama_aset = kategori = tipe_unit = "-"
+            
+        # Logika memanggil nama depan atau payroll pengguna
+        if item.user:
+            pic_name = item.user.nama_lengkap.split(' ')[0] if item.user.nama_lengkap else item.user.payroll
+        else:
+            pic_name = 'Sistem'
         
         ws.append([
             idx, waktu, kode_aset, serial_number, nama_aset, kategori, tipe_unit, 
-            item.jenis, item.keterangan or '-', item.user.username if item.user else 'Sistem'
+            item.jenis, item.keterangan or '-', pic_name
         ])
-
+        
     for col in ws.columns:
         max_length = 0
         column_letter = col[0].column_letter

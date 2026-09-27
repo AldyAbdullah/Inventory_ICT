@@ -19,10 +19,9 @@
                     
                     <h6 class="text-muted fw-bold mb-3 border-bottom pb-2">Informasi Pekerjaan</h6>
                     
-                    <!-- Logika Jinja untuk memisahkan nama_lengkap menjadi depan dan belakang saat halaman dimuat -->
                     {% set nama_parts = current_user.nama_lengkap.split(' ', 1) if current_user.nama_lengkap else ['', ''] %}
                     
-                    <div class="row mb-4">
+                    <div class="row mb-3">
                         <div class="col-md-6 mb-3 mb-md-0">
                             <label class="form-label fw-medium">Nama Depan</label>
                             <input type="text" class="form-control" name="nama_depan" value="{{ nama_parts[0] }}" placeholder="Masukkan nama depan" required>
@@ -33,23 +32,17 @@
                         </div>
                     </div>
                     
-                    <div class="row mb-4">
-                        <div class="col-md-6 mb-3 mb-md-0">
-                            <label class="form-label fw-medium">Jabatan / Posisi</label>
-                            <input type="text" class="form-control" name="jabatan" value="{{ current_user.jabatan or '' }}" placeholder="Contoh: IT Support">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-medium">Departemen</label>
-                            <input type="text" class="form-control" name="departemen" value="{{ current_user.departemen or '' }}" placeholder="Contoh: Information Technology">
-                        </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-medium">Jabatan / Posisi</label>
+                        <input type="text" class="form-control" name="jabatan" value="{{ current_user.jabatan or '' }}" placeholder="Contoh: IT Support">
                     </div>
 
                     <h6 class="text-muted fw-bold mb-3 border-bottom pb-2">Kredensial Login</h6>
                     
                     <div class="mb-3">
-                        <label class="form-label fw-medium">Username</label>
-                        <input type="text" class="form-control bg-light" value="{{ current_user.username }}" disabled>
-                        <div class="form-text">Username tidak dapat diubah.</div>
+                        <label class="form-label fw-medium">No. Payroll</label>
+                        <input type="text" class="form-control bg-light font-monospace" value="{{ current_user.payroll }}" disabled>
+                        <div class="form-text">Nomor Payroll tidak dapat diubah secara mandiri.</div>
                     </div>
 
                     <div class="mb-4">
@@ -65,5 +58,4 @@
         </div>
     </div>
 </div>
-
 {% endblock %}

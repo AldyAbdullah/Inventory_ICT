@@ -86,7 +86,15 @@
                             </span>
                         </td>
                         <td><small class="text-muted">{{ item.keterangan or '-' }}</small></td>
-                        <td class="pe-4"><small>{{ item.user.username if item.user else 'Sistem' }}</small></td>
+                        <td class="pe-4">
+    <small>
+    {% if item.user %}
+        {{ item.user.nama_lengkap.split(' ')[0] if item.user.nama_lengkap else item.user.payroll }}
+    {% else %}
+        Sistem
+    {% endif %}
+    </small>
+</td>
                     </tr>
                     {% else %}
                     <tr>

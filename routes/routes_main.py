@@ -37,23 +37,18 @@ def logout():
 @login_required
 def profil():
     if request.method == 'POST':
-        # Tangkap data dari form
         nama_depan = request.form.get('nama_depan', '').strip()
         nama_belakang = request.form.get('nama_belakang', '').strip()
         jabatan = request.form.get('jabatan', '').strip()
-        departemen = request.form.get('departemen', '').strip()
         password_baru = request.form.get('password_baru')
 
-        # Gabungkan nama depan dan belakang
         if nama_belakang:
             nama_lengkap = f"{nama_depan} {nama_belakang}"
         else:
             nama_lengkap = nama_depan
 
-        # Simpan ke pangkalan data
         current_user.nama_lengkap = nama_lengkap
         current_user.jabatan = jabatan
-        current_user.departemen = departemen
         
         if password_baru:
             from werkzeug.security import generate_password_hash
@@ -75,20 +70,44 @@ def users():
 @login_required
 @admin_required
 def tambah_user():
-    if User.query.filter_by(username=request.form['username']).first():
-        flash('Username sudah digunakan.', 'error')
+    payroll = request.form.get('payroll')
+    nama_lengkap = request.form.get('nama_lengkap')
+    jabatan = request.form.get('jabatan')
+    password = request.form.get('password')
+    role = request.form.get('role')
+
+    if User.query.filter_by(payroll=payroll).first():
+        flash('Nomor Payroll sudah terdaftar!', 'danger')
         return redirect(url_for('users'))
-    user_baru = User(
-        username=request.form['username'], 
-        password=generate_password_hash(request.form['password']), 
-        role=request.form['role'], 
-        nama_lengkap=request.form.get('nama_lengkap'), 
-        jabatan=request.form.get('jabatan'), 
-        departemen=request.form.get('departemen')
+
+    from werkzeug.security import generate_password_hash
+    hashed_pw = generate_password_hash(password)
+    
+    new_user = User(
+        payroll=payroll, nama_lengkap=nama_lengkap, 
+        jabatan=jabatan, password=hashed_pw, role=role
     )
-    db.session.add(user_baru)
+    db.session.add(new_user)
     db.session.commit()
     flash('Pengguna berhasil ditambahkan.', 'success')
+    return redirect(url_for('users'))
+
+@app.route('/edit_user/<int:id>', methods=['POST'])
+@login_required
+@admin_required
+def edit_user(id):
+    user = User.query.get_or_404(id)
+    user.nama_lengkap = request.form.get('nama_lengkap')
+    user.jabatan = request.form.get('jabatan')
+    user.role = request.form.get('role')
+    
+    password_baru = request.form.get('password')
+    if password_baru:
+        from werkzeug.security import generate_password_hash
+        user.password = generate_password_hash(password_baru)
+        
+    db.session.commit()
+    flash('Data pengguna berhasil diperbarui.', 'success')
     return redirect(url_for('users'))
 
 @app.route('/users/hapus/<int:id>')
