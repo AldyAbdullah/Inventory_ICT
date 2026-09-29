@@ -46,9 +46,9 @@ def reset_and_seed():
 
         print("6. Mengisi tabel Data Karyawan (PIC)...")
         karyawan_data = [
-            Karyawan(payroll="TM-001", nama="Budi Santoso", jabatan="Field Engineer", divisi="Operations", status="Aktif"),
-            Karyawan(payroll="TM-002", nama="Citra Kirana", jabatan="HR Specialist", divisi="Human Resources", status="Aktif"),
-            Karyawan(payroll="TM-003", nama="Andi Pratama", jabatan="IT Support", divisi="ICT", status="Aktif"),
+            Karyawan(payroll="TM-001", nama="Budi Santoso", status="Aktif"),
+            Karyawan(payroll="TM-002", nama="Citra Kirana", status="Aktif"),
+            Karyawan(payroll="TM-003", nama="Andi Pratama", status="Aktif"),
         ]
         db.session.add_all(karyawan_data)
         
