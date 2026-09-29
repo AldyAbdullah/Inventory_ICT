@@ -10,22 +10,51 @@
     <style>
       body { background-color: #f8fafc; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
       .wrapper { display: flex; width: 100%; min-height: 100vh; }
-      .sidebar { min-width: 260px; max-width: 260px; background-color: #0a2540; color: #fff; transition: all 0.3s ease; }
-      .sidebar .brand { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.5px; padding: 20px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
-      .sidebar .nav-link { color: #cbd5e1; padding: 12px 24px; border-radius: 0; display: flex; align-items: center; gap: 12px; font-weight: 500; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; text-decoration: none;}
-      .sidebar .nav-link:hover { color: #fff; background-color: rgba(255, 255, 255, 0.05); padding-left: 28px; }
+      
+      .sidebar { 
+          min-width: 260px; 
+          max-width: 260px; 
+          background-color: #0a2540; 
+          background-image: 
+              linear-gradient(to bottom, #0a2540 0%, #0a2540 calc(100% - 200px), rgba(10, 37, 64, 0.6) 100%), 
+              url("{{ url_for('static', filename='img/senoro-toili-e1780540858491.jpeg') }}");
+          background-position: center top, bottom center;
+          background-size: 100% 100%, 100% auto;
+          background-repeat: no-repeat;
+          color: #fff; 
+          transition: all 0.3s ease; 
+          position: sticky;
+          top: 0;
+          height: 100vh;
+          overflow-y: auto; 
+      }
+
+      .sidebar::-webkit-scrollbar { width: 5px; }
+      .sidebar::-webkit-scrollbar-track { background: transparent; }
+      .sidebar::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+      .sidebar::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.4); }
+      
+      .sidebar .brand { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.5px; padding: 15px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); position: relative; z-index: 2; }
+      .sidebar .nav-link { color: #cbd5e1; padding: 10px 20px; border-radius: 0; display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 0.9rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; z-index: 2; overflow: hidden; text-decoration: none;}
+      .sidebar .nav-link:hover { color: #fff; background-color: rgba(255, 255, 255, 0.05); padding-left: 24px; }
       .sidebar .nav-link.active { color: #fff; background-color: rgba(255, 255, 255, 0.08); border-right: 4px solid #da291c; font-weight: 600; }
       .sidebar .nav-link.active i { color: #da291c; text-shadow: 0 0 10px rgba(218, 41, 28, 0.5); }
-      .sidebar .nav-link i { font-size: 1.2rem; transition: color 0.3s ease; }
+      .sidebar .nav-link i { font-size: 1.1rem; transition: color 0.3s ease; }
       
-      .sidebar .accordion-button { background-color: transparent; color: #cbd5e1; box-shadow: none; padding: 12px 24px; font-weight: 500; border: none; border-radius: 0; transition: all 0.3s ease; }
+      .sidebar .accordion-button { background-color: transparent; color: #cbd5e1; box-shadow: none; padding: 10px 20px; font-weight: 500; font-size: 0.9rem; border: none; border-radius: 0; transition: all 0.3s ease; position: relative; z-index: 2;}
       .sidebar .accordion-button:not(.collapsed) { background-color: rgba(255, 255, 255, 0.05); color: #fff; }
-      .sidebar .accordion-button::after { filter: invert(1) grayscale(100%) brightness(200%); }
-      .sidebar .accordion-body { padding: 0; background-color: rgba(0, 0, 0, 0.2); }
-      .sidebar .accordion-body .nav-link { padding: 10px 24px 10px 48px; font-size: 0.95rem; }
-      .sidebar .accordion-body .nav-link:hover { padding-left: 52px; }
+      .sidebar .accordion-button::after { filter: invert(1) grayscale(100%) brightness(200%); transform: scale(0.8); }
+      .sidebar .accordion-body { padding: 0; background-color: rgba(0, 0, 0, 0.2); position: relative; z-index: 2;}
+      .sidebar .accordion-body .nav-link { padding: 8px 20px 8px 44px; font-size: 0.85rem; }
+      .sidebar .accordion-body .nav-link:hover { padding-left: 48px; }
 
-      .main-content { width: 100%; overflow: hidden; display: flex; flex-direction: column; }
+      .main-content { 
+          width: 100%; 
+          overflow-y: auto; /* Memastikan main content bisa di-scroll */
+          height: 100vh;    /* Membatasi tinggi agar scroll bar muncul di area ini */
+          display: flex; 
+          flex-direction: column; 
+      }
       .content-wrapper { padding: 30px; flex-grow: 1; }
       .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); margin-bottom: 24px; background-color: #ffffff; }
       .card-header { background-color: #ffffff; border-bottom: 1px solid #edf2f7; padding: 16px 20px; border-radius: 12px 12px 0 0 !important; }
@@ -47,8 +76,14 @@
       .selectable-row:hover > td { background-color: #f1f5f9; }
       .selectable-row.selected:hover > td { background-color: #bae6fd !important; }
 
-      #bulkActionBar { background-color: #ffffff; border-top: 1px solid #edf2f7; padding: 10px 0; display: none; }
-      #bulkActionBar.active { display: flex !important; }
+      .dropdown-menu { animation: fadeIn 0.2s ease-in-out; }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+      
+      /* Tambahan untuk Custom Scrollbar pada Main Content */
+      .main-content::-webkit-scrollbar { width: 8px; }
+      .main-content::-webkit-scrollbar-track { background: #f1f5f9; }
+      .main-content::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+      .main-content::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
     </style>
   </head>
   <body>
@@ -61,14 +96,12 @@
         </div>
 
         <div class="accordion accordion-flush mt-3" id="sidebarAccordion">
-          <!-- 1. Dashboard -->
           <div class="nav-item">
             <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
               <i class="bi bi-grid-1x2"></i> Dashboard
             </a>
           </div>
 
-          <!-- 2. Data Master Barang (Dropdown) -->
           <div class="accordion-item" style="background: transparent; border: none">
             <h2 class="accordion-header" id="headingMaster">
               <button class="accordion-button {% if not (request.endpoint and 'riwayat' not in request.endpoint and ('inventory' in request.endpoint or 'consumable' in request.endpoint)) %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMaster" aria-expanded="{% if request.endpoint and 'riwayat' not in request.endpoint and ('inventory' in request.endpoint or 'consumable' in request.endpoint) %}true{% else %}false{% endif %}">
@@ -95,7 +128,6 @@
             </div>
           </div>
 
-          <!-- 3. Riwayat Transaksi (Dropdown) -->
           <div class="accordion-item" style="background: transparent; border: none">
             <h2 class="accordion-header" id="headingRiwayat">
               <button class="accordion-button {% if not (request.endpoint and 'riwayat' in request.endpoint) %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRiwayat" aria-expanded="{% if request.endpoint and 'riwayat' in request.endpoint %}true{% else %}false{% endif %}">
@@ -121,22 +153,19 @@
           </div>
 
           {% if current_user.role == 'Admin' %}
-          <!-- 4. Penataan Aset (Area & Lokasi dipindah ke sini) -->
           <div class="nav-item mt-3">
-            <small class="text-uppercase fw-bold text-secondary ms-4 mb-2 d-block" style="font-size: 0.7rem; letter-spacing: 1px;">Pengaturan Sistem</small>
+            <small class="text-uppercase fw-bold text-secondary ms-3 mb-2 d-block" style="font-size: 0.65rem; letter-spacing: 1px;">Pengaturan Sistem</small>
             <a class="nav-link {% if request.endpoint == 'master_lokasi' %}active{% endif %}" href="{{ url_for('master_lokasi') }}">
               <i class="bi bi-geo-alt"></i> Area & Lokasi
             </a>
           </div>
           
-          <!-- 5. Data Karyawan (Menu Baru) -->
           <div class="nav-item">
             <a class="nav-link {% if request.endpoint == 'master_karyawan' %}active{% endif %}" href="{{ url_for('master_karyawan') }}">
               <i class="bi bi-person-vcard"></i> Data Karyawan
             </a>
           </div>
 
-          <!-- 6. Manajemen Pengguna -->
           <div class="nav-item">
             <a class="nav-link {% if request.endpoint == 'users' %}active{% endif %}" href="{{ url_for('users') }}">
               <i class="bi bi-people"></i> Manajemen Pengguna
@@ -144,15 +173,12 @@
           </div>
           {% endif %}
 
-          <!-- 7. Profil Saya -->
           <div class="nav-item mt-3">
-            <small class="text-uppercase fw-bold text-secondary ms-4 mb-2 d-block" style="font-size: 0.7rem; letter-spacing: 1px;">Akun Anda</small>
+            <small class="text-uppercase fw-bold text-secondary ms-3 mb-2 d-block" style="font-size: 0.65rem; letter-spacing: 1px;">Akun Anda</small>
             <a class="nav-link {% if request.endpoint == 'profil' %}active{% endif %}" href="{{ url_for('profil') }}">
               <i class="bi bi-person-circle"></i> Profil Saya
             </a>
           </div>
-
-          <!-- 8. Keluar Sistem -->
           <div class="nav-item">
             <a class="nav-link text-danger" href="{{ url_for('logout') }}">
               <i class="bi bi-box-arrow-right"></i> Keluar Sistem
@@ -163,15 +189,53 @@
 
       <!-- Main Content Area -->
       <div class="main-content">
-        <!-- Topbar (Mobile Only) -->
-        <div class="d-lg-none bg-white p-3 d-flex justify-content-between align-items-center shadow-sm">
-          <h5 class="m-0 fw-bold" style="color: #0a2540">
-            <i class="bi bi-box-seam-fill me-2" style="color: #004b87"></i>
-            Tomori
-          </h5>
-          <button class="btn btn-light border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
-            <i class="bi bi-list fs-4"></i>
-          </button>
+        
+        <!-- Topbar Navbar Universal (Diperbarui) -->
+        <div class="bg-white py-1 px-3 d-flex justify-content-between align-items-center shadow-sm position-sticky top-0" style="z-index: 1020; min-height: 50px;">
+          <div class="d-flex align-items-center d-lg-none">
+            <button class="btn btn-sm btn-light border-0 py-1 px-2 me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
+              <i class="bi bi-list fs-5"></i>
+            </button>
+            <h6 class="m-0 fw-bold" style="color: #0a2540; font-size: 0.95rem;">
+              <i class="bi bi-box-seam-fill me-2" style="color: #004b87"></i> Tomori
+            </h6>
+          </div>
+          
+          <div class="d-none d-lg-block"></div>
+
+          <div class="dropdown ms-auto">
+            <a href="#" class="d-flex align-items-center text-decoration-none text-dark py-1 px-2 rounded hover-bg-light" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false" style="transition: background 0.2s;">
+              <div class="d-flex flex-column justify-content-center text-end me-2 d-none d-sm-block">
+                <span class="fw-bold" style="font-size: 0.85rem; color: #0a2540;">
+                  Hi, {% if current_user.is_authenticated %}{{ current_user.nama_lengkap or current_user.payroll }}{% else %}Guest{% endif %}
+                </span>
+              </div>
+              <!-- Ukuran ikon profil diperkecil (width/height 32px) -->
+              <div class="bg-primary bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm border border-2 border-white" style="width: 32px; height: 32px;">
+                <i class="bi bi-person-fill fs-6"></i>
+              </div>
+            </a>
+            
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-1" aria-labelledby="userMenu" style="min-width: 200px;">
+              <li class="px-3 py-2 d-sm-none">
+                <span class="d-block fw-bold" style="font-size: 0.9rem;">
+                  Hi, {% if current_user.is_authenticated %}{{ current_user.nama_lengkap or current_user.payroll }}{% else %}Guest{% endif %}
+                </span>
+                <hr class="dropdown-divider mt-2">
+              </li>
+              <li>
+                <a class="dropdown-item d-flex align-items-center py-2" href="{{ url_for('profil') }}" style="font-size: 0.9rem;">
+                  <i class="bi bi-person-circle me-3 text-primary fs-5"></i> Profil Saya
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <a class="dropdown-item d-flex align-items-center py-2 text-danger fw-medium" href="{{ url_for('logout') }}" style="font-size: 0.9rem;">
+                  <i class="bi bi-box-arrow-right me-3 fs-5"></i> Keluar Sistem
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
 
         <!-- Page Content -->
@@ -180,25 +244,24 @@
     </div>
 
     <!-- Offcanvas Sidebar (Mobile) -->
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" style="width: 260px; background-color: #0a2540">
-      <div class="offcanvas-header border-bottom" style="border-color: rgba(255, 255, 255, 0.1) !important">
-        <h5 class="offcanvas-title text-white fw-bold">
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" style="width: 260px; background-color: #0a2540; background-image: linear-gradient(to bottom, #0a2540 0%, #0a2540 calc(100% - 200px), rgba(10, 37, 64, 0.6) 100%), url('{{ url_for('static', filename='img/senoro-toili-e1780540858491.jpeg') }}'); background-position: center top, bottom center; background-size: 100% 100%, 100% auto; background-repeat: no-repeat;">
+      <div class="offcanvas-header border-bottom py-3" style="border-color: rgba(255, 255, 255, 0.1) !important">
+        <h6 class="offcanvas-title text-white fw-bold m-0">
           <i class="bi bi-box-seam-fill me-2" style="color: #60a5fa"></i> Tomori
-        </h5>
+        </h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
       </div>
       <div class="offcanvas-body p-0">
-        <div class="accordion accordion-flush mt-3" id="mobileSidebarAccordion">
-          
+        <div class="accordion accordion-flush mt-2" id="mobileSidebarAccordion">
           <div class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'index' %}bg-secondary bg-opacity-25{% endif %} text-light px-4 py-3" style="text-decoration: none" href="{{ url_for('index') }}">
+            <a class="nav-link {% if request.endpoint == 'index' %}bg-secondary bg-opacity-25{% endif %} text-light px-4 py-2" style="text-decoration: none; font-size: 0.9rem;" href="{{ url_for('index') }}">
               <i class="bi bi-grid-1x2 me-2"></i> Dashboard
             </a>
           </div>
 
           <div class="accordion-item" style="background: transparent; border: none">
             <h2 class="accordion-header" id="headingMasterMobile">
-              <button class="accordion-button {% if not (request.endpoint and 'riwayat' not in request.endpoint and ('inventory' in request.endpoint or 'consumable' in request.endpoint)) %}collapsed{% endif %} px-4" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMasterMobile" style="background: transparent; color: #cbd5e1; box-shadow: none;" aria-expanded="{% if request.endpoint and 'riwayat' not in request.endpoint and ('inventory' in request.endpoint or 'consumable' in request.endpoint) %}true{% else %}false{% endif %}">
+              <button class="accordion-button {% if not (request.endpoint and 'riwayat' not in request.endpoint and ('inventory' in request.endpoint or 'consumable' in request.endpoint)) %}collapsed{% endif %} px-4 py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMasterMobile" style="background: transparent; color: #cbd5e1; box-shadow: none; font-size: 0.9rem;" aria-expanded="{% if request.endpoint and 'riwayat' not in request.endpoint and ('inventory' in request.endpoint or 'consumable' in request.endpoint) %}true{% else %}false{% endif %}">
                 <i class="bi bi-hdd-network me-2"></i> Data Master
               </button>
             </h2>
@@ -206,11 +269,11 @@
               <div class="accordion-body p-0" style="background-color: rgba(0, 0, 0, 0.2)">
                 <ul class="nav flex-column">
                   <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint and 'inventory' in request.endpoint and 'riwayat' not in request.endpoint %}text-warning{% else %}text-light{% endif %} px-5 py-2" style="text-decoration: none; font-size: 0.9rem" href="{{ url_for('master_inventory') }}">Inventory</a>
+                    <a class="nav-link {% if request.endpoint and 'inventory' in request.endpoint and 'riwayat' not in request.endpoint %}text-warning{% else %}text-light{% endif %} px-5 py-2" style="text-decoration: none; font-size: 0.85rem;" href="{{ url_for('master_inventory') }}">Inventory</a>
                   </li>
                   {% if current_user.role == 'Admin' %}
                   <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint and 'consumable' in request.endpoint and 'riwayat' not in request.endpoint %}text-warning{% else %}text-light{% endif %} px-5 py-2" style="text-decoration: none; font-size: 0.9rem" href="{{ url_for('master_consumable') }}">Consumable</a>
+                    <a class="nav-link {% if request.endpoint and 'consumable' in request.endpoint and 'riwayat' not in request.endpoint %}text-warning{% else %}text-light{% endif %} px-5 py-2" style="text-decoration: none; font-size: 0.85rem;" href="{{ url_for('master_consumable') }}">Consumable</a>
                   </li>
                   {% endif %}
                 </ul>
@@ -220,7 +283,7 @@
           
           <div class="accordion-item" style="background: transparent; border: none">
             <h2 class="accordion-header" id="headingRiwayatMobile">
-              <button class="accordion-button {% if not (request.endpoint and 'riwayat' in request.endpoint) %}collapsed{% endif %} px-4" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRiwayatMobile" style="background: transparent; color: #cbd5e1; box-shadow: none;" aria-expanded="{% if request.endpoint and 'riwayat' in request.endpoint %}true{% else %}false{% endif %}">
+              <button class="accordion-button {% if not (request.endpoint and 'riwayat' in request.endpoint) %}collapsed{% endif %} px-4 py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRiwayatMobile" style="background: transparent; color: #cbd5e1; box-shadow: none; font-size: 0.9rem;" aria-expanded="{% if request.endpoint and 'riwayat' in request.endpoint %}true{% else %}false{% endif %}">
                 <i class="bi bi-clock-history me-2"></i> Riwayat Transaksi
               </button>
             </h2>
@@ -228,10 +291,10 @@
               <div class="accordion-body p-0" style="background-color: rgba(0, 0, 0, 0.2)">
                 <ul class="nav flex-column">
                   <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'riwayat_inventory' %}text-warning{% else %}text-light{% endif %} px-5 py-2" style="text-decoration: none; font-size: 0.9rem" href="{{ url_for('riwayat_inventory') }}">Inventory</a>
+                    <a class="nav-link {% if request.endpoint == 'riwayat_inventory' %}text-warning{% else %}text-light{% endif %} px-5 py-2" style="text-decoration: none; font-size: 0.85rem;" href="{{ url_for('riwayat_inventory') }}">Inventory</a>
                   </li>
                   <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'riwayat_consumable' %}text-warning{% else %}text-light{% endif %} px-5 py-2" style="text-decoration: none; font-size: 0.9rem" href="{{ url_for('riwayat_consumable') }}">Consumable</a>
+                    <a class="nav-link {% if request.endpoint == 'riwayat_consumable' %}text-warning{% else %}text-light{% endif %} px-5 py-2" style="text-decoration: none; font-size: 0.85rem;" href="{{ url_for('riwayat_consumable') }}">Consumable</a>
                   </li>
                 </ul>
               </div>
@@ -240,33 +303,33 @@
 
           {% if current_user.role == 'Admin' %}
           <div class="nav-item mt-3">
-            <small class="text-uppercase fw-bold text-secondary ms-4 mb-2 d-block" style="font-size: 0.7rem;">Pengaturan Sistem</small>
-            <a class="nav-link {% if request.endpoint == 'master_lokasi' %}text-warning{% else %}text-light{% endif %} px-4 py-2" style="text-decoration: none" href="{{ url_for('master_lokasi') }}">
+            <small class="text-uppercase fw-bold text-secondary ms-4 mb-2 d-block" style="font-size: 0.65rem;">Pengaturan Sistem</small>
+            <a class="nav-link {% if request.endpoint == 'master_lokasi' %}text-warning{% else %}text-light{% endif %} px-4 py-2" style="text-decoration: none; font-size: 0.9rem;" href="{{ url_for('master_lokasi') }}">
               <i class="bi bi-geo-alt me-2"></i> Area & Lokasi
             </a>
           </div>
           
           <div class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'master_karyawan' %}text-warning{% else %}text-light{% endif %} px-4 py-2" style="text-decoration: none" href="{{ url_for('master_karyawan') }}">
+            <a class="nav-link {% if request.endpoint == 'master_karyawan' %}text-warning{% else %}text-light{% endif %} px-4 py-2" style="text-decoration: none; font-size: 0.9rem;" href="{{ url_for('master_karyawan') }}">
               <i class="bi bi-person-vcard me-2"></i> Data Karyawan
             </a>
           </div>
 
           <div class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'users' %}text-warning{% else %}text-light{% endif %} px-4 py-2" style="text-decoration: none" href="{{ url_for('users') }}">
+            <a class="nav-link {% if request.endpoint == 'users' %}text-warning{% else %}text-light{% endif %} px-4 py-2" style="text-decoration: none; font-size: 0.9rem;" href="{{ url_for('users') }}">
               <i class="bi bi-people me-2"></i> Manajemen Pengguna
             </a>
           </div>
           {% endif %}
 
           <div class="nav-item mt-3">
-            <small class="text-uppercase fw-bold text-secondary ms-4 mb-2 d-block" style="font-size: 0.7rem;">Akun Anda</small>
-            <a class="nav-link {% if request.endpoint == 'profil' %}text-warning{% else %}text-light{% endif %} px-4 py-2" style="text-decoration: none" href="{{ url_for('profil') }}">
+            <small class="text-uppercase fw-bold text-secondary ms-4 mb-2 d-block" style="font-size: 0.65rem;">Akun Anda</small>
+            <a class="nav-link {% if request.endpoint == 'profil' %}text-warning{% else %}text-light{% endif %} px-4 py-2" style="text-decoration: none; font-size: 0.9rem;" href="{{ url_for('profil') }}">
               <i class="bi bi-person-circle me-2"></i> Profil Saya
             </a>
           </div>
-          <div class="nav-item mt-2">
-            <a class="nav-link text-danger px-4 py-2" style="text-decoration: none" href="{{ url_for('logout') }}">
+          <div class="nav-item mt-1">
+            <a class="nav-link text-danger px-4 py-2" style="text-decoration: none; font-size: 0.9rem;" href="{{ url_for('logout') }}">
               <i class="bi bi-box-arrow-right me-2"></i> Keluar Sistem
             </a>
           </div>
@@ -277,5 +340,6 @@
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
   </body>
 </html>

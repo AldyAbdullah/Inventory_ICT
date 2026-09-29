@@ -8,20 +8,25 @@ from flask_login import login_required, current_user
 from main import app, admin_required
 from models import db, Inventory, Lokasi, Transaksi, Karyawan, StatusAset
 
-
 @app.route('/master_inventory', methods=['GET'])
 @login_required
 def master_inventory():
     search_query = request.args.get('search', '').strip()
     filter_kategori = request.args.get('kategori', '').strip()
-    filter_tipe = request.args.get('tipe', '').strip()
     filter_lokasi = request.args.get('lokasi', '').strip()
     filter_status = request.args.get('status', '').strip()
     page = request.args.get('page', 1, type=int)
 
     query = Inventory.query
 
-    # Pencarian Universal
+    # 1. Terapkan Filter Aktif ke Tabel Utama
+    if filter_kategori:
+        query = query.filter_by(kategori=filter_kategori)
+    if filter_lokasi:
+        query = query.filter_by(lokasi_id=filter_lokasi)
+    if filter_status:
+        query = query.filter_by(status_id=filter_status)
+
     if search_query:
         query = query.filter(or_(
             Inventory.kode_barang.ilike(f'%{search_query}%'),
@@ -31,37 +36,74 @@ def master_inventory():
             Inventory.karyawan_terkait.has(Karyawan.nama.ilike(f'%{search_query}%')),
             Inventory.karyawan_terkait.has(Karyawan.payroll.ilike(f'%{search_query}%'))
         ))
-    
-    # Filter Berdasarkan Dropdown
-    if filter_kategori:
-        query = query.filter_by(kategori=filter_kategori)
-    if filter_tipe:
-        query = query.filter_by(unit_type=filter_tipe)
-    if filter_lokasi:
-        query = query.filter_by(lokasi_id=filter_lokasi)
-    if filter_status:
-        query = query.filter_by(status_id=filter_status)
 
-    # Paginasi (10 data per halaman)
+    # Eksekusi data untuk tabel (Paginasi)
     data = query.order_by(Inventory.id.desc()).paginate(page=page, per_page=10, error_out=False)
 
-    # Menyiapkan data unik untuk dropdown filter
-    kategori_list = [k[0] for k in db.session.query(Inventory.kategori).distinct().filter(Inventory.kategori != None, Inventory.kategori != '').all()]
-    tipe_list = [t[0] for t in db.session.query(Inventory.unit_type).distinct().filter(Inventory.unit_type != None, Inventory.unit_type != '').all()]
-    lokasi_list = Lokasi.query.all()
-    status_list = StatusAset.query.all()
+    # === LOGIKA CASCADING FILTER (Kategori, Lokasi, Status) ===
+    base_query = Inventory.query
+    
+    # Dropdown 1: Kategori
+    cat_q = base_query
+    if filter_lokasi: cat_q = cat_q.filter_by(lokasi_id=filter_lokasi)
+    if filter_status: cat_q = cat_q.filter_by(status_id=filter_status)
+    kategori_list = [k[0] for k in cat_q.with_entities(Inventory.kategori).distinct().filter(Inventory.kategori != None, Inventory.kategori != '').all()]
+
+    # Dropdown 2: Lokasi
+    lok_q = base_query
+    if filter_kategori: lok_q = lok_q.filter_by(kategori=filter_kategori)
+    if filter_status: lok_q = lok_q.filter_by(status_id=filter_status)
+    lokasi_ids = [l[0] for l in lok_q.with_entities(Inventory.lokasi_id).distinct().filter(Inventory.lokasi_id != None).all()]
+    lokasi_list = Lokasi.query.filter(Lokasi.id.in_(lokasi_ids)).all() if lokasi_ids else []
+
+    # Dropdown 3: Status
+    stat_q = base_query
+    if filter_kategori: stat_q = stat_q.filter_by(kategori=filter_kategori)
+    if filter_lokasi: stat_q = stat_q.filter_by(lokasi_id=filter_lokasi)
+    status_ids = [s[0] for s in stat_q.with_entities(Inventory.status_id).distinct().filter(Inventory.status_id != None).all()]
+    status_list = StatusAset.query.filter(StatusAset.id.in_(status_ids)).all() if status_ids else []
+
+    # === PERHITUNGAN UNTUK KARTU WIDGET ===
+    all_inventory = Inventory.query.all()
+    total_aset = len(all_inventory)
+    
+    total_baik = 0
+    total_dipinjamkan = 0
+    total_rusak = 0
+    total_missing = 0
+    total_dibuang = 0
+    
+    for item in all_inventory:
+        if item.karyawan_id:
+            total_dipinjamkan += 1
+        if item.status_terkait:
+            st = item.status_terkait.nama_status.lower()
+            if 'baik' in st: total_baik += 1
+            elif 'hilang' in st or 'missing' in st: total_missing += 1
+            elif 'disposal' in st or 'dibuang' in st: total_dibuang += 1
+            elif 'rusak' in st: total_rusak += 1
+                
+    pct_baik = round((total_baik / total_aset * 100), 1) if total_aset > 0 else 0
+    pct_dipinjamkan = round((total_dipinjamkan / total_aset * 100), 1) if total_aset > 0 else 0
+    pct_rusak = round((total_rusak / total_aset * 100), 1) if total_aset > 0 else 0
+    pct_missing = round((total_missing / total_aset * 100), 1) if total_aset > 0 else 0
+    pct_dibuang = round((total_dibuang / total_aset * 100), 1) if total_aset > 0 else 0
 
     return render_template('inventory/master.html', 
                            data=data,
                            search_query=search_query,
                            filter_kategori=filter_kategori,
-                           filter_tipe=filter_tipe,
                            filter_lokasi=filter_lokasi,
                            filter_status=filter_status,
                            kategori_list=kategori_list,
-                           tipe_list=tipe_list,
                            lokasi_list=lokasi_list,
-                           status_list=status_list)
+                           status_list=status_list,
+                           total_aset=total_aset,
+                           total_baik=total_baik, pct_baik=pct_baik,
+                           total_dipinjamkan=total_dipinjamkan, pct_dipinjamkan=pct_dipinjamkan,
+                           total_rusak=total_rusak, pct_rusak=pct_rusak,
+                           total_missing=total_missing, pct_missing=pct_missing,
+                           total_dibuang=total_dibuang, pct_dibuang=pct_dibuang)
 
 @app.route('/tambah_inventory', methods=['GET', 'POST'])
 @login_required
@@ -273,7 +315,6 @@ def edit_inventory(id):
 def export_inventory():
     search = request.args.get('search', '').strip()
     filter_kategori = request.args.get('kategori', '').strip()
-    filter_tipe = request.args.get('tipe', '').strip()
     filter_lokasi = request.args.get('lokasi', '').strip()
     filter_status = request.args.get('status', '').strip()
     
@@ -287,7 +328,6 @@ def export_inventory():
             Inventory.brand.ilike(f"%{search}%")
         ))
     if filter_kategori: query = query.filter(Inventory.kategori == filter_kategori)
-    if filter_tipe: query = query.filter(Inventory.unit_type == filter_tipe)
     if filter_lokasi: query = query.filter(Inventory.lokasi_id == filter_lokasi)
     if filter_status: query = query.filter(Inventory.status_id == filter_status)
         
@@ -348,7 +388,14 @@ def export_inventory():
                     worksheet.write(row_idx + 1, idx, val, cell_format)
 
     output.seek(0)
-    return send_file(output, download_name="Laporan_Data_Inventory.xlsx", as_attachment=True)
+    
+    # PERBAIKAN: Menambahkan mimetype agar terbaca sebagai fail Excel untuk diunduh
+    return send_file(
+        output, 
+        download_name="Laporan_Data_Inventory.xlsx", 
+        as_attachment=True,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
 @app.route('/export_riwayat_inventory')
 @login_required
@@ -358,7 +405,6 @@ def export_riwayat_inventory():
     start_date = request.args.get('start_date', '').strip()
     end_date = request.args.get('end_date', '').strip()
     
-    # Hanya ambil riwayat Mutasi dan Masuk (Tolak 'Edit')
     query = Transaksi.query.filter(Transaksi.inventory_id != None, Transaksi.jenis != 'Edit')
     
     if search:
@@ -423,4 +469,11 @@ def export_riwayat_inventory():
                     worksheet.write(row_idx + 1, idx, val, cell_format)
 
     output.seek(0)
-    return send_file(output, download_name="Laporan_Riwayat_Inventory.xlsx", as_attachment=True)
+    
+    # PERBAIKAN: Menambahkan mimetype agar terbaca sebagai fail Excel untuk diunduh
+    return send_file(
+        output, 
+        download_name="Laporan_Riwayat_Inventory.xlsx", 
+        as_attachment=True,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )

@@ -10,7 +10,7 @@ Tomori{% endblock %} {% block content %}
   <div>
     <a
       href="{{ url_for('export_riwayat_consumable', search=request.args.get('search', ''), start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}"
-      class="btn btn-success shadow-sm"
+      class="btn btn-success shadow-sm" hx-boost="false"
     >
       <i class="bi bi-file-earmark-excel me-1"></i> Export Data
     </a>

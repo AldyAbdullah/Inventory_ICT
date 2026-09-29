@@ -79,16 +79,17 @@
                     <hr class="text-muted my-4">
 
                     <!-- Dropdown Penugasan Karyawan -->
-                    <div class="mb-4 p-3 bg-light border rounded">
-                        <label for="karyawan_id" class="form-label fw-bold text-primary"><i class="bi bi-person-badge me-2"></i>Penugasan Karyawan (PIC)</label>
-                        <p class="small text-muted mb-2">Jika diisi, lokasi aset akan otomatis diarahkan ke <b>Senoro Field - User/Employee</b>. Kosongkan jika ini adalah aset cadangan (ICT ASSET).</p>
-                        <select class="form-select border-primary" id="karyawan_id" name="karyawan_id">
-                            <option value=""></option> <!-- Value kosong penting untuk placeholder Select2 -->
-                            {% for karyawan in karyawan_list %}
-                            <option value="{{ karyawan.id }}">{{ karyawan.nama }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+<div class="mb-4 p-3 bg-light border rounded">
+    <label for="karyawan_id" class="form-label fw-bold text-primary"><i class="bi bi-person-badge me-2"></i>Penugasan Karyawan (PIC)</label>
+    <p class="small text-muted mb-2">Jika diisi, lokasi aset akan otomatis diarahkan ke <b>Senoro Field - User/Employee</b>. Biarkan pada pilihan default jika ini adalah aset cadangan.</p>
+    <select class="form-select border-primary" id="karyawan_id" name="karyawan_id">
+        <!-- Value kosong agar dibaca sistem sebagai null/tanpa PIC, namun tampilannya ICT ASSET -->
+        <option value="" selected>ICT ASSET</option> 
+        {% for karyawan in karyawan_list %}
+        <option value="{{ karyawan.id }}">{{ karyawan.nama }}</option>
+        {% endfor %}
+    </select>
+</div>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
@@ -163,8 +164,7 @@
 $(document).ready(function() {
     // 1. Inisialisasi Dropdown Pintar (Select2)
     $('#karyawan_id').select2({
-        placeholder: "-- Ketik Nama atau Payroll --",
-        allowClear: true,
+
         width: '100%' 
     });
     

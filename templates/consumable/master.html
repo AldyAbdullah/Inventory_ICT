@@ -8,8 +8,8 @@
     <p class="text-muted mb-0">Kelola barang habis pakai, stok, dan riwayat mutasinya.</p>
   </div>
   <div class="d-flex gap-2">
-    <!-- Tombol diubah menjadi hanya ikon -->
-    <a href="{{ url_for('export_consumable', search=search_query, kategori=filter_kategori, tipe=filter_tipe, lokasi=filter_lokasi) }}" class="btn btn-success shadow-sm" title="Export ke Excel">
+    <!-- DIBERSIHKAN: Atribut hx-boost="false" dihapus karena sudah kembali ke sistem normal -->
+    <a href="{{ url_for('export_consumable', search=search_query, kategori=filter_kategori, brand=filter_brand, lokasi=filter_lokasi) }}" class="btn btn-success shadow-sm" title="Export ke Excel">
       <i class="bi bi-file-earmark-excel"></i>
     </a>
     <a href="{{ url_for('tambah_consumable') }}" class="btn btn-primary shadow-sm" title="Tambah Barang Baru">
@@ -57,11 +57,11 @@
             </select>
           </div>
           <div class="mb-2">
-            <label class="form-label small fw-semibold mb-1">Tipe Unit</label>
-            <select name="tipe" class="form-select form-select-sm">
-              <option value="">Semua Tipe</option>
-              {% for tipe in tipe_list %}
-              <option value="{{ tipe }}" {% if filter_tipe == tipe %}selected{% endif %}>{{ tipe }}</option>
+            <label class="form-label small fw-semibold mb-1">Brand</label>
+            <select name="brand" class="form-select form-select-sm">
+              <option value="">Semua Brand</option>
+              {% for brand in brand_list %}
+              <option value="{{ brand }}" {% if filter_brand == brand %}selected{% endif %}>{{ brand }}</option>
               {% endfor %}
             </select>
           </div>
@@ -80,7 +80,7 @@
           </div>
         </div>
 
-        {% if search_query or filter_kategori or filter_tipe or filter_lokasi %}
+        {% if search_query or filter_kategori or filter_brand or filter_lokasi %}
         <a href="{{ url_for('master_consumable') }}" class="btn btn-danger border-0 text-white" title="Hapus Filter"><i class="bi bi-x-lg"></i></a>
         {% endif %}
       </div>
@@ -157,7 +157,7 @@
             <tr>
               <td colspan="7" class="text-center py-5 text-muted">
                 <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                {% if search_query or filter_kategori or filter_tipe or filter_lokasi %} Tidak ada data yang sesuai filter pencarian. {% else %} Belum ada data barang habis pakai. {% endif %}
+                {% if search_query or filter_kategori or filter_brand or filter_lokasi %} Tidak ada data yang sesuai filter pencarian. {% else %} Belum ada data barang habis pakai. {% endif %}
               </td>
             </tr>
             {% endfor %}
@@ -165,8 +165,8 @@
         </table>
       </div>
 
-      <!-- Toolbar Aksi Massal (Muncul otomatis saat checkbox dipilih) -->
-      <div id="bulkActionBar" class="justify-content-between align-items-center px-4">
+      <!-- Toolbar Aksi Massal -->
+      <div id="bulkActionBar" class="d-none justify-content-between align-items-center px-4 py-3 bg-light border-top">
         <div class="d-flex align-items-center gap-2">
           <input class="form-check-input border-secondary m-0" type="checkbox" id="selectAllBottom" style="width: 1.1em; height: 1.1em;" />
           <label class="small fw-semibold text-muted mb-0" for="selectAllBottom" style="cursor: pointer; user-select: none">
@@ -174,11 +174,10 @@
           </label>
         </div>
         <div class="d-flex gap-2">
-          <!-- Tombol diarahkan ke Transaksi Massal -->
-          <button type="button" class="btn btn-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center" onclick="submitBulkTransaksi()" title="Transaksi Massal (Masuk/Keluar)" style="width: 34px; height: 34px">
+          <button type="button" class="btn btn-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center" onclick="submitBulkTransaksi()" title="Transaksi Massal (Masuk/Keluar)" style="width: 36px; height: 36px">
             <i class="bi bi-box-seam"></i>
           </button>
-          <button type="button" class="btn btn-danger rounded-circle shadow-sm d-flex align-items-center justify-content-center" onclick="submitBulkDelete()" title="Hapus Massal" style="width: 34px; height: 34px">
+          <button type="button" class="btn btn-danger rounded-circle shadow-sm d-flex align-items-center justify-content-center" onclick="submitBulkDelete()" title="Hapus Massal" style="width: 36px; height: 36px">
             <i class="bi bi-trash"></i>
           </button>
         </div>
@@ -191,13 +190,13 @@
       <ul class="pagination justify-content-center mb-0" id="paginationBox">
         {% if data.has_prev %}
         <li class="page-item">
-          <a class="page-link" href="{{ url_for('master_consumable', page=data.prev_num, search=search_query, kategori=filter_kategori, tipe=filter_tipe, lokasi=filter_lokasi) }}">Sebelumnya</a>
+          <a class="page-link" href="{{ url_for('master_consumable', page=data.prev_num, search=search_query, kategori=filter_kategori, brand=filter_brand, lokasi=filter_lokasi) }}">Sebelumnya</a>
         </li>
         {% endif %}
         <li class="page-item active"><span class="page-link">{{ data.page }}</span></li>
         {% if data.has_next %}
         <li class="page-item">
-          <a class="page-link" href="{{ url_for('master_consumable', page=data.next_num, search=search_query, kategori=filter_kategori, tipe=filter_tipe, lokasi=filter_lokasi) }}">Selanjutnya</a>
+          <a class="page-link" href="{{ url_for('master_consumable', page=data.next_num, search=search_query, kategori=filter_kategori, brand=filter_brand, lokasi=filter_lokasi) }}">Selanjutnya</a>
         </li>
         {% endif %}
       </ul>
@@ -206,11 +205,13 @@
 </div>
 
 <script>
-  // 1. Skrip AJAX Pencarian (Sama seperti Inventory)
+  // DIBERSIHKAN: Dikembalikan menggunakan DOMContentLoaded standar (Bukan format HTMX)
   document.addEventListener("DOMContentLoaded", function () {
     const filterForm = document.getElementById("filterForm");
     const tableBody = document.getElementById("tableBody");
     const paginationBox = document.getElementById("paginationBox");
+
+    if (!filterForm || !tableBody) return; 
 
     function fetchResults() {
       tableBody.style.opacity = "0.5";
@@ -233,7 +234,6 @@
           tableBody.style.opacity = "1";
           window.history.pushState({}, "", url);
           
-          // Reset UI checkbox setelah ajax
           updateBulkBar(); 
         })
         .catch((error) => {
@@ -260,50 +260,56 @@
     selectInputs.forEach((select) => {
       select.addEventListener("change", fetchResults);
     });
-  });
 
-  // 2. Skrip Cekboks Massal
-  function toggleRow(row, event) {
-    if (event.target.closest("button") || event.target.closest("a") || event.target.closest(".dropdown-menu")) return;
-    const checkbox = row.querySelector(".item-checkbox");
-    checkbox.checked = !checkbox.checked;
-    if (checkbox.checked) row.classList.add("selected");
-    else row.classList.remove("selected");
-    updateBulkBar();
-  }
-
-  function updateBulkBar() {
-    const checkedCount = document.querySelectorAll(".item-checkbox:checked").length;
-    const totalCount = document.querySelectorAll(".item-checkbox").length;
-    const bulkBar = document.getElementById("bulkActionBar");
-    const selectAllCheckbox = document.getElementById("selectAllBottom");
-
-    document.getElementById("selectedCount").innerText = checkedCount;
-
-    if (checkedCount > 0) {
-      bulkBar.classList.add("active");
-      if(selectAllCheckbox) selectAllCheckbox.checked = checkedCount === totalCount && totalCount > 0;
-    } else {
-      bulkBar.classList.remove("active");
-      if(selectAllCheckbox) selectAllCheckbox.checked = false;
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", function () {
+    // Event listener 'Pilih Semua' di dalam DOMContentLoaded
     const selectAllBtn = document.getElementById("selectAllBottom");
     if (selectAllBtn) {
       selectAllBtn.addEventListener("change", function () {
         const isChecked = this.checked;
         document.querySelectorAll(".selectable-row").forEach((row) => {
           const cb = row.querySelector(".item-checkbox");
-          cb.checked = isChecked;
-          if (isChecked) row.classList.add("selected");
-          else row.classList.remove("selected");
+          if (cb) {
+            cb.checked = isChecked;
+            if (isChecked) row.classList.add("selected");
+            else row.classList.remove("selected");
+          }
         });
         updateBulkBar();
       });
     }
   });
+
+  // Fungsi Global untuk Aksi Massal
+  function toggleRow(row, event) {
+    if (event.target.closest("button") || event.target.closest("a") || event.target.closest(".dropdown-menu") || event.target.closest("input")) return;
+    const checkbox = row.querySelector(".item-checkbox");
+    if (!checkbox) return;
+    checkbox.checked = !checkbox.checked;
+    if (checkbox.checked) row.classList.add("selected");
+    else row.classList.remove("selected");
+    updateBulkBar();
+  }
+
+  // Fungsi Update Toolbar (Menggunakan manipulasi kelas d-none dan d-flex Bootstrap)
+  function updateBulkBar() {
+    const checkedCount = document.querySelectorAll(".item-checkbox:checked").length;
+    const totalCount = document.querySelectorAll(".item-checkbox").length;
+    const bulkBar = document.getElementById("bulkActionBar");
+    const selectAllCheckbox = document.getElementById("selectAllBottom");
+
+    const countDisplay = document.getElementById("selectedCount");
+    if(countDisplay) countDisplay.innerText = checkedCount;
+
+    if (checkedCount > 0) {
+      bulkBar.classList.remove("d-none");
+      bulkBar.classList.add("d-flex");
+      if(selectAllCheckbox) selectAllCheckbox.checked = (checkedCount === totalCount && totalCount > 0);
+    } else {
+      bulkBar.classList.remove("d-flex");
+      bulkBar.classList.add("d-none");
+      if(selectAllCheckbox) selectAllCheckbox.checked = false;
+    }
+  }
 
   function submitBulkDelete() {
     if (confirm("Yakin ingin menghapus semua barang yang dipilih secara massal?")) {

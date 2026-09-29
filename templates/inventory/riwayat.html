@@ -8,7 +8,7 @@
         <p class="text-muted mb-0">Pantau aktivitas registrasi dan perpindahan lokasi aset.</p>
     </div>
     <div>
-        <a href="{{ url_for('export_riwayat_inventory', search=request.args.get('search', ''), start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="btn btn-success shadow-sm">
+        <a href="{{ url_for('export_riwayat_inventory', search=request.args.get('search', ''), start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="btn btn-success shadow-sm" hx-boost="false">
             <i class="bi bi-file-earmark-excel me-1"></i> Export Data
         </a>
     </div>
