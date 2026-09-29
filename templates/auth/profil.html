@@ -12,6 +12,18 @@
             <span class="text-muted d-block">Kelola informasi akun dan kata sandi Anda</span>
         </div>
 
+        <!-- BLOK NOTIFIKASI FLASH MESSAGE DITAMBAHKAN DI SINI -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show shadow-sm mb-4" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>{{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
         <div class="card shadow-sm border-0">
             <div class="card-body p-4">
                 <form action="{{ url_for('profil') }}" method="POST">
