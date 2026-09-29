@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}Master Karyawan - Inventaris Tomori{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1" style="color: #0a2540;">Data Master Karyawan</h4>
+        <p class="text-muted mb-0">Kelola data karyawan untuk penugasan aset (PIC).</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-success shadow-sm" data-bs-toggle="modal" data-bs-target="#modalImport">
+            <i class="bi bi-file-earmark-excel me-1"></i> Import Excel
+        </button>
+        <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#modalTambah">
+            <i class="bi bi-plus-lg me-1"></i> Tambah Manual
+        </button>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 fw-bold text-primary">Daftar Karyawan</h6>
+        <form method="GET" action="{{ url_for('master_karyawan') }}" class="d-flex w-25">
+            <div class="input-group input-group-sm">
+                <input type="text" name="search" class="form-control" placeholder="Cari nama atau payroll..." value="{{ search_query }}">
+                <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
+                {% if search_query %}
+                    <a href="{{ url_for('master_karyawan') }}" class="btn btn-danger"><i class="bi bi-x-lg"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" width="5%">No</th>
+                        <th width="20%">No. Payroll</th>
+                        <th width="45%">Nama Lengkap</th>
+                        <th width="30%">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in data %}
+                    <tr>
+                        <td class="ps-4">{{ loop.index }}</td>
+                        <td><span class="font-monospace bg-light border px-2 py-1 rounded">{{ item.payroll }}</span></td>
+                        <td class="fw-semibold text-dark">{{ item.nama }}</td>
+                        <td>
+                            <span class="badge {% if item.status == 'Aktif' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ item.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="text-center py-4 text-muted">Belum ada data karyawan.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tambah Manual -->
+<div class="modal fade" id="modalTambah" tabindex="-1">
+    <div class="modal-dialog">
+       <form action="{{ url_for('master_karyawan') }}" method="POST" class="modal-content">
+    <!-- TAMBAHKAN BARIS INI -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    
+    <div class="modal-header">
+                <h5 class="modal-title fw-bold">Tambah Karyawan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">No. Payroll</label>
+                    <input type="text" name="payroll" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nama Lengkap</label>
+                    <input type="text" name="nama" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="Aktif">Aktif</option>
+                        <option value="Tidak Aktif">Tidak Aktif</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary px-4">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Import Excel -->
+<div class="modal fade" id="modalImport" tabindex="-1">
+    <div class="modal-dialog">
+       <form action="{{ url_for('import_karyawan') }}" method="POST" enctype="multipart/form-data" class="modal-content">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    
+    <div class="modal-header">
+                <h5 class="modal-title fw-bold">Import Data Karyawan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="bi bi-file-earmark-excel text-success mb-3" style="font-size: 3rem;"></i>
+                <p class="text-muted small mb-4">Pastikan urutan kolom di file Excel Anda adalah:<br><b>Kolom A:</b> Payroll, <b>Kolom B:</b> Nama, <b>Kolom C:</b> Status (Opsional)</p>
+                <input type="file" name="file_excel" class="form-control" accept=".xlsx, .xls" required>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pb-4">
+                <button type="submit" class="btn btn-success px-5">Upload & Proses</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -6,7 +6,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="fw-bold mb-1" style="color: #0a2540;">Tambah Data Inventory</h4>
-        <p class="text-muted mb-0">Registrasi perangkat IT ber-SN baru ke dalam sistem.</p>
+        <p class="text-muted mb-0">Registrasi perangkat IT baru ke dalam sistem.</p>
     </div>
     <div>
         <a href="{{ url_for('master_inventory') }}" class="btn btn-outline-secondary shadow-sm">
@@ -39,8 +39,9 @@
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="kode_barang" class="form-label fw-semibold">Kode Aset <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="kode_barang" name="kode_barang" required placeholder="Contoh: INV-001">
+                            <label for="kode_barang" class="form-label fw-semibold">Kode Aset</label>
+                            <input type="text" class="form-control" id="kode_barang" name="kode_barang" placeholder="Kosongkan untuk otomatis">
+                            <small class="text-muted d-block mt-1">Biarkan kosong agar sistem membuatkan kode otomatis (cth: INV-0001).</small>
                         </div>
                         <div class="col-md-6">
                             <label for="serial_number" class="form-label fw-semibold">Serial Number (SN) <span class="text-danger">*</span></label>
@@ -50,7 +51,18 @@
 
                     <div class="mb-3">
                         <label for="nama_barang" class="form-label fw-semibold">Nama Perangkat <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="nama_barang" name="nama_barang" required placeholder="Contoh: Access Point Cisco Meraki">
+                        <input type="text" class="form-control" id="nama_barang" name="nama_barang" required placeholder="Contoh: Access Point Cisco Meraki / Laptop Bisnis">
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="Brand" class="form-label fw-semibold">Brand <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="brand" name="brand" required placeholder="Contoh: Lenovo, HP, Dell, Cisco">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="vendor" class="form-label fw-semibold">Vendor / Supplier</label>
+                            <input type="text" class="form-control" id="vendor" name="vendor" placeholder="Nama PT Vendor pengadaan">
+                        </div>
                     </div>
 
                     <div class="row mb-3">
@@ -63,27 +75,48 @@
                             <input type="text" class="form-control" id="unit_type" name="unit_type" placeholder="Contoh: MR46, T14 Gen 2">
                         </div>
                     </div>
+                    
+                    <hr class="text-muted my-4">
 
-                    <div class="mb-4">
-                        <label for="lokasi_id" class="form-label fw-semibold">Lokasi Alokasi Saat Ini</label>
-                        <select class="form-select" id="lokasi_id" name="lokasi_id">
-                            <option value="" selected>-- Belum Dialokasikan --</option>
-                            {% for lokasi in lokasi_list %}
-                            <option value="{{ lokasi.id }}">{{ lokasi.main_lokasi }} - {{ lokasi.nama_lokasi }}</option>
+                    <!-- Dropdown Penugasan Karyawan -->
+                    <div class="mb-4 p-3 bg-light border rounded">
+                        <label for="karyawan_id" class="form-label fw-bold text-primary"><i class="bi bi-person-badge me-2"></i>Penugasan Karyawan (PIC)</label>
+                        <p class="small text-muted mb-2">Jika diisi, lokasi aset akan otomatis diarahkan ke <b>Senoro Field - User/Employee</b>. Kosongkan jika ini adalah aset cadangan (ICT ASSET).</p>
+                        <select class="form-select border-primary" id="karyawan_id" name="karyawan_id">
+                            <option value=""></option> <!-- Value kosong penting untuk placeholder Select2 -->
+                            {% for karyawan in karyawan_list %}
+                            <option value="{{ karyawan.id }}">{{ karyawan.nama }}</option>
                             {% endfor %}
                         </select>
                     </div>
 
-                    <div class="mb-4">
-                        <label for="notes" class="form-label fw-semibold">Catatan / Kondisi</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Contoh: Kondisi baru, garansi 1 tahun..."></textarea>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="status_id" class="form-label fw-semibold">Status Aset <span class="text-danger">*</span></label>
+                            <select class="form-select" id="status_id" name="status_id" required>
+                                <option value="" selected disabled>-- Pilih Status --</option>
+                                {% for status in status_list %}
+                                <option value="{{ status.id }}">{{ status.nama_status }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="lokasi_id" class="form-label fw-semibold">Alokasi Lokasi Manual</label>
+                            <select class="form-select" id="lokasi_id" name="lokasi_id">
+                                <option value=""></option> <!-- Value kosong penting untuk placeholder Select2 -->
+                                {% for lokasi in lokasi_list %}
+                                <option value="{{ lokasi.id }}">{{ lokasi.main_lokasi }} - {{ lokasi.nama_lokasi }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted mt-1 d-block">Diabaikan jika PIC Karyawan diisi.</small>
+                        </div>
                     </div>
 
                     <hr class="text-muted">
                     
                     <div class="d-flex justify-content-end mt-4">
                         <button type="submit" class="btn btn-primary px-4 shadow-sm">
-                            <i class="bi bi-save me-1"></i> Simpan Data
+                            <i class="bi bi-save me-1"></i> Simpan Data Aset
                         </button>
                     </div>
                 </form>
@@ -96,13 +129,91 @@
             <div class="card-body">
                 <h6 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle me-2"></i>Panduan Pengisian</h6>
                 <ul class="text-muted small ps-3 mb-0" style="line-height: 1.8;">
-                    <li><strong>Kode Aset:</strong> Harus unik dan tidak boleh sama dengan barang lain.</li>
-                    <li><strong>Serial Number:</strong> Wajib diisi. Gunakan *barcode scanner* jika tersedia.</li>
-                    <li><strong>Kategori & Tipe Unit:</strong> Kategori bersifat umum (cth: Printer), Tipe Unit bersifat spesifik (cth: L3110). Keduanya opsional.</li>
-                    <li><strong>Lokasi:</strong> Default "Belum Dialokasikan". Pilih dari daftar jika barang langsung ditempatkan di lapangan.</li>
+                    <li><strong>Kode Aset:</strong> Harus unik dan tidak boleh sama dengan barang lain. Kosongkan jika ingin dibuat otomatis.</li>
+                    <li><strong>Aturan SN:</strong> Serial Number boleh sama antar perangkat asalkan <strong>Brand</strong>-nya berbeda.</li>
+                    <li><strong>Otomatisasi Lokasi:</strong> Jika Anda memilih Karyawan di kolom Penugasan, sistem akan mengabaikan pilihan Lokasi Manual Anda dan menaruh aset tersebut di <em>Senoro Field - User/Employee</em>.</li>
                 </ul>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Pustaka Select2 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<style>
+    /* Styling agar Select2 menyatu dengan gaya Bootstrap 5 */
+    .select2-container .select2-selection--single {
+        height: 38px;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 36px;
+        color: #212529;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    }
+</style>
+
+<script>
+$(document).ready(function() {
+    // 1. Inisialisasi Dropdown Pintar (Select2)
+    $('#karyawan_id').select2({
+        placeholder: "-- Ketik Nama atau Payroll --",
+        allowClear: true,
+        width: '100%' 
+    });
+    
+    $('#lokasi_id').select2({
+        placeholder: "-- Pilih atau Cari Lokasi --",
+        allowClear: true,
+        width: '100%'
+    });
+
+    // 2. Logika Otomatisasi Lokasi
+    function sesuaikanLokasi() {
+        let karyawanVal = $('#karyawan_id').val();
+        
+        if (karyawanVal) {
+            // Jika ada Karyawan: Cari dan pilih otomatis "User/Employee"
+            $('#lokasi_id option').each(function() {
+                if ($(this).text().includes('User/Employee')) {
+                    $('#lokasi_id').val($(this).val()).trigger('change.select2');
+                }
+            });
+            
+            // Kunci visual dropdown lokasi menggunakan class khusus Select2
+            $('#lokasi_id').next('.select2-container').css({
+                'pointer-events': 'none',
+                'opacity': '0.6',
+                'background-color': '#f8f9fa'
+            });
+            $('#lokasi_id').removeAttr('required');
+        } else {
+            // Jika ICT ASSET: Buka kembali kuncinya
+            $('#lokasi_id').next('.select2-container').css({
+                'pointer-events': 'auto',
+                'opacity': '1',
+                'background-color': 'transparent'
+            });
+            $('#lokasi_id').attr('required', 'required');
+            
+            // Kosongkan pilihan jika sebelumnya otomatis User/Employee
+            if ($('#lokasi_id option:selected').text().includes('User/Employee')) {
+                $('#lokasi_id').val('').trigger('change.select2');
+            }
+        }
+    }
+
+    // Pantau setiap kali pilihan Karyawan diubah
+    $('#karyawan_id').on('change', sesuaikanLokasi);
+    
+    // Jalankan satu kali saat halaman dimuat
+    sesuaikanLokasi();
+});
+</script>
 {% endblock %}

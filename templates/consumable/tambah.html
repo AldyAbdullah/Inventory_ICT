@@ -9,6 +9,18 @@
     </a>
 </div>
 
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-circle-fill me-2"></i>{{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
 <div class="card shadow-sm border-0">
     <div class="card-body p-4">
         <form method="POST" action="{{ url_for('tambah_consumable') }}">
@@ -16,29 +28,39 @@
             
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Kode Barang</label>
+                    <label class="form-label fw-semibold">Kode Barang <span class="text-danger">*</span></label>
                     <input type="text" name="kode_barang" class="form-control" required placeholder="Contoh: CNS-001">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Nama Barang</label>
+                    <label class="form-label fw-semibold">Nama Barang <span class="text-danger">*</span></label>
                     <input type="text" name="nama_barang" class="form-control" required placeholder="Contoh: Kertas HVS A4 80gr">
                 </div>
                 
+                <!-- TAMBAHAN: Brand dan Vendor -->
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Kategori</label>
+                    <label class="form-label fw-semibold">Brand Barang</label>
+                    <input type="text" name="brand" class="form-control" placeholder="Contoh: PaperOne, Epson, Logitech">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Vendor / Supplier</label>
+                    <input type="text" name="vendor" class="form-control" placeholder="Nama PT Vendor pengadaan">
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Kategori <span class="text-danger">*</span></label>
                     <input type="text" name="kategori" class="form-control" required placeholder="Contoh: ATK, Tinta, Kabel">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Tipe Unit / Merek</label>
-                    <input type="text" name="unit_type" class="form-control" placeholder="Contoh: PaperOne, Epson">
+                    <label class="form-label fw-semibold">Tipe Unit</label>
+                    <input type="text" name="unit_type" class="form-control" placeholder="Contoh: Catridge 664, UTP Cat6">
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label fw-semibold">Stok Awal</label>
+                    <label class="form-label fw-semibold">Stok Awal <span class="text-danger">*</span></label>
                     <input type="number" name="stok" class="form-control" min="0" required value="0">
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label fw-semibold">Satuan</label>
+                    <label class="form-label fw-semibold">Satuan <span class="text-danger">*</span></label>
                     <input type="text" name="satuan" class="form-control" required placeholder="Contoh: Rim, Pcs, Box">
                 </div>
                 <div class="col-md-4">
@@ -50,17 +72,12 @@
                         {% endfor %}
                     </select>
                 </div>
-
-                <div class="col-12">
-                    <label class="form-label fw-semibold">Catatan Tambahan</label>
-                    <textarea name="notes" class="form-control" rows="3" placeholder="Opsional"></textarea>
-                </div>
             </div>
 
-            <hr class="my-4">
+            <hr class="my-4 text-muted">
             <div class="d-flex justify-content-end gap-2">
-                <button type="reset" class="btn btn-light border">Reset Form</button>
-                <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-1"></i> Simpan Data</button>
+                <button type="reset" class="btn btn-light border shadow-sm">Reset Form</button>
+                <button type="submit" class="btn btn-primary px-4 shadow-sm"><i class="bi bi-save me-1"></i> Simpan Data</button>
             </div>
         </form>
     </div>

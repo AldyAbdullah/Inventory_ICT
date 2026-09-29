@@ -119,7 +119,6 @@ Tomori{% endblock %} {% block content %}
             <th width="23%">Nama Barang</th>
             <th width="10%">Jenis</th>
             <th width="10%">Jumlah</th>
-            <th width="20%">Keterangan</th>
             <th class="pe-4" width="10%">PIC</th>
           </tr>
         </thead>
@@ -161,9 +160,6 @@ Tomori{% endblock %} {% block content %}
               <small class="text-muted fw-normal"
                 >{{ item.consumable.satuan if item.consumable else '' }}</small
               >
-            </td>
-            <td>
-              <small class="text-muted">{{ item.keterangan or '-' }}</small>
             </td>
             <td class="pe-4">
               <small>

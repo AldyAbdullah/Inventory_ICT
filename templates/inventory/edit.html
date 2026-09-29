@@ -5,7 +5,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="fw-bold mb-1" style="color: #0a2540;">Edit Data Inventory</h4>
-        <p class="text-muted mb-0">Perbarui informasi perangkat ber-SN.</p>
+        <p class="text-muted mb-0">Perbarui informasi perangkat dan alokasi PIC.</p>
     </div>
     <a href="{{ url_for('master_inventory') }}" class="btn btn-outline-secondary shadow-sm">
         <i class="bi bi-arrow-left me-1"></i> Kembali
@@ -23,64 +23,238 @@
   {% endif %}
 {% endwith %}
 
-<div class="card shadow-sm border-0 col-lg-8">
-    <div class="card-header bg-white py-3">
-        <h6 class="m-0 fw-bold text-warning"><i class="bi bi-pencil-square me-2"></i>Form Edit Inventory</h6>
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 fw-bold text-warning"><i class="bi bi-pencil-square me-2"></i>Form Edit Inventory</h6>
+            </div>
+            <div class="card-body p-4">
+                <form action="{{ url_for('edit_inventory', id=barang.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="kode_barang" class="form-label fw-semibold">Kode Aset <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control bg-light" id="kode_barang" name="kode_barang" value="{{ barang.kode_barang }}" required readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="serial_number" class="form-label fw-semibold">Serial Number (SN) <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control font-monospace" id="serial_number" name="serial_number" value="{{ barang.serial_number }}" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="nama_barang" class="form-label fw-semibold">Nama Perangkat <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="nama_barang" name="nama_barang" value="{{ barang.nama_barang }}" required>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="Brand" class="form-label fw-semibold">Brand <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="brand" name="brand" value="{{ barang.brand or '' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="vendor" class="form-label fw-semibold">Vendor / Supplier</label>
+                            <input type="text" class="form-control" id="vendor" name="vendor" value="{{ barang.vendor or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="kategori" class="form-label fw-semibold">Kategori Barang</label>
+                            <input type="text" class="form-control" id="kategori" name="kategori" value="{{ barang.kategori or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="unit_type" class="form-label fw-semibold">Tipe Unit / Model</label>
+                            <input type="text" class="form-control" id="unit_type" name="unit_type" value="{{ barang.unit_type or '' }}">
+                        </div>
+                    </div>
+
+                    <hr class="text-muted my-4">
+
+                    <!-- Dropdown Penugasan Karyawan -->
+                    <div class="mb-4 p-3 bg-light border rounded">
+                        <label for="karyawan_id" class="form-label fw-bold text-primary"><i class="bi bi-person-badge me-2"></i>Penugasan Karyawan (PIC)</label>
+                        <p class="small text-muted mb-2">Jika diisi, lokasi aset otomatis diarahkan ke <b>Senoro Field - User/Employee</b>.</p>
+                        <select class="form-select border-primary" id="karyawan_id" name="karyawan_id">
+                            <option value=""></option>
+                            {% for karyawan in karyawan_list %}
+                            <!-- Menampilkan NAMA saja sesuai request terbaru -->
+                            <option value="{{ karyawan.id }}" {% if barang.karyawan_id == karyawan.id %}selected{% endif %}>
+                                {{ karyawan.nama }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="status_id" class="form-label fw-semibold">Status Aset <span class="text-danger">*</span></label>
+                            <select class="form-select" id="status_id" name="status_id" required>
+                                <option value="" disabled {% if not barang.status_id %}selected{% endif %}>-- Pilih Status --</option>
+                                {% for status in status_list %}
+                                <option value="{{ status.id }}" {% if barang.status_id == status.id %}selected{% endif %}>
+                                    {{ status.nama_status }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="lokasi_id" class="form-label fw-semibold">Alokasi Lokasi Manual</label>
+                            <select class="form-select" id="lokasi_id" name="lokasi_id">
+                                <option value=""></option>
+                                {% for lokasi in lokasi_list %}
+                                <option value="{{ lokasi.id }}" {% if barang.lokasi_id == lokasi.id %}selected{% endif %}>
+                                    {{ lokasi.main_lokasi }} - {{ lokasi.nama_lokasi }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted mt-1 d-block">Diabaikan jika PIC Karyawan diisi.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end mt-4">
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                            <i class="bi bi-save me-1"></i> Perbarui Data
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- TABEL RIWAYAT BARANG -->
+        <div class="card shadow-sm border-0 mt-4 mb-5">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 fw-bold text-secondary"><i class="bi bi-clock-history me-2"></i>Jejak Riwayat Aset Ini</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Tanggal & Waktu</th>
+                                <th>Jenis Transaksi</th>
+                                <th>Admin (Operator)</th>
+                                <th>Keterangan</th>
+                            </tr>
+                        </thead>
+                       <tbody>
+                            {% for tr in riwayat %}
+                            <!-- Jika jenis transaksi adalah 'Edit', beri background kuning muda -->
+                            <tr class="{% if tr.jenis == 'Edit' %}bg-warning bg-opacity-10{% endif %}">
+                                <td class="ps-4 text-muted small">{{ tr.tanggal.strftime('%d %b %Y, %H:%M') }}</td>
+                                <td>
+                                    <!-- Badge disesuaikan warnanya -->
+                                    <span class="badge {% if tr.jenis == 'Masuk' %}bg-success{% elif tr.jenis == 'Edit' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">
+                                        {{ tr.jenis }}
+                                    </span>
+                                </td>
+                                <td class="fw-medium">{{ tr.user.nama_lengkap if tr.user else 'Sistem' }}</td>
+                                <td class="text-muted small">{{ tr.keterangan or '-' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="text-center py-3 text-muted small">Belum ada riwayat transaksi.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card-body p-4">
-        <form action="{{ url_for('edit_inventory', id=barang.id) }}" method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label for="kode_barang" class="form-label fw-semibold">Kode Aset <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="kode_barang" name="kode_barang" value="{{ barang.kode_barang }}" required>
-                </div>
-                <div class="col-md-6">
-                    <label for="serial_number" class="form-label fw-semibold">Serial Number (SN) <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control font-monospace" id="serial_number" name="serial_number" value="{{ barang.serial_number }}" required>
-                </div>
+    
+    <!-- PANDUAN PENGISIAN DI SAMPING -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 bg-light">
+            <div class="card-body">
+                <h6 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle me-2"></i>Panduan Pengisian</h6>
+                <ul class="text-muted small ps-3 mb-0" style="line-height: 1.8;">
+                    <li><strong>Kode Aset:</strong> Tidak bisa diubah (dikunci) untuk menjaga integritas data.</li>
+                    <li><strong>Aturan SN:</strong> Serial Number boleh sama antar perangkat asalkan <strong>Brand</strong>-nya berbeda.</li>
+                    <li><strong>Otomatisasi Lokasi:</strong> Jika Anda memilih Karyawan di kolom Penugasan, sistem akan memindahkan aset tersebut ke <em>Senoro Field - User/Employee</em>.</li>
+                    <li><strong>Status Aset:</strong> Mengubah status (misal dari Baik ke Rusak) akan otomatis tersimpan dalam riwayat.</li>
+                </ul>
             </div>
-
-            <div class="mb-3">
-                <label for="nama_barang" class="form-label fw-semibold">Nama Perangkat <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="nama_barang" name="nama_barang" value="{{ barang.nama_barang }}" required>
-            </div>
-
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label for="kategori" class="form-label fw-semibold">Kategori Barang</label>
-                    <input type="text" class="form-control" id="kategori" name="kategori" value="{{ barang.kategori or '' }}">
-                </div>
-                <div class="col-md-6">
-                    <label for="unit_type" class="form-label fw-semibold">Tipe Unit / Model</label>
-                    <input type="text" class="form-control" id="unit_type" name="unit_type" value="{{ barang.unit_type or '' }}">
-                </div>
-            </div>
-
-            <div class="mb-4">
-                <label for="lokasi_id" class="form-label fw-semibold">Lokasi Alokasi Saat Ini</label>
-                <select class="form-select" id="lokasi_id" name="lokasi_id">
-                    <option value="">-- Belum Dialokasikan --</option>
-                    {% for lokasi in lokasi_list %}
-                    <option value="{{ lokasi.id }}" {% if barang.lokasi_id == lokasi.id %}selected{% endif %}>
-                        {{ lokasi.main_lokasi }} - {{ lokasi.nama_lokasi }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="mb-4">
-                <label for="notes" class="form-label fw-semibold">Catatan / Kondisi</label>
-                <textarea class="form-control" id="notes" name="notes" rows="3">{{ barang.notes or '' }}</textarea>
-            </div>
-            
-            <div class="d-flex justify-content-end mt-4">
-                <button type="submit" class="btn btn-primary px-4 shadow-sm">
-                    <i class="bi bi-save me-1"></i> Perbarui Data
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
+
+<!-- Pustaka Select2 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<style>
+    /* Styling agar Select2 menyatu dengan gaya Bootstrap 5 */
+    .select2-container .select2-selection--single {
+        height: 38px;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 36px;
+        color: #212529;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    }
+</style>
+
+<script>
+$(document).ready(function() {
+    // 1. Inisialisasi Dropdown Pintar (Select2)
+    $('#karyawan_id').select2({
+        placeholder: "-- Ketik Nama Karyawan --",
+        allowClear: true,
+        width: '100%' 
+    });
+    
+    $('#lokasi_id').select2({
+        placeholder: "-- Pilih atau Cari Lokasi --",
+        allowClear: true,
+        width: '100%'
+    });
+
+    // 2. Logika Otomatisasi Lokasi
+    function sesuaikanLokasi() {
+        let karyawanVal = $('#karyawan_id').val();
+        
+        if (karyawanVal) {
+            // Jika ada Karyawan: Cari dan pilih otomatis "User/Employee"
+            $('#lokasi_id option').each(function() {
+                if ($(this).text().includes('User/Employee')) {
+                    $('#lokasi_id').val($(this).val()).trigger('change.select2');
+                }
+            });
+            
+            // Kunci visual dropdown lokasi menggunakan class khusus Select2
+            $('#lokasi_id').next('.select2-container').css({
+                'pointer-events': 'none',
+                'opacity': '0.6',
+                'background-color': '#f8f9fa'
+            });
+            $('#lokasi_id').removeAttr('required');
+        } else {
+            // Jika ICT ASSET: Buka kembali kuncinya
+            $('#lokasi_id').next('.select2-container').css({
+                'pointer-events': 'auto',
+                'opacity': '1',
+                'background-color': 'transparent'
+            });
+            $('#lokasi_id').attr('required', 'required');
+            
+            // Kosongkan pilihan jika sebelumnya otomatis User/Employee
+            if ($('#lokasi_id option:selected').text().includes('User/Employee')) {
+                $('#lokasi_id').val('').trigger('change.select2');
+            }
+        }
+    }
+
+    // Pantau setiap kali pilihan Karyawan diubah
+    $('#karyawan_id').on('change', sesuaikanLokasi);
+    
+    // Jalankan satu kali saat halaman dimuat
+    sesuaikanLokasi();
+});
+</script>
 {% endblock %}

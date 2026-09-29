@@ -37,4 +37,4 @@ def admin_required(f):
     return decorated_function
 
 # Registrasi semua pecahan rute dari dalam folder 'routes'
-from routes import routes_main, routes_inventory, routes_consumable
+from routes import routes_main, routes_inventory, routes_consumable, routes_karyawan

@@ -23,19 +23,34 @@ class Lokasi(db.Model):
     inventories = db.relationship('Inventory', backref='lokasi', lazy=True)
     consumables = db.relationship('Consumable', backref='lokasi', lazy=True)
 
+# TABEL BARU: Master Karyawan
+class Karyawan(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    payroll = db.Column(db.String(50), unique=True, nullable=False)
+    nama = db.Column(db.String(150), nullable=False)
+    status = db.Column(db.String(50), default='Aktif') # Aktif / Tidak Aktif
+    inventories = db.relationship('Inventory', backref='karyawan_terkait', lazy=True)
+
+# TABEL BARU: Master Status Aset
+class StatusAset(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nama_status = db.Column(db.String(50), unique=True, nullable=False)
+    inventories = db.relationship('Inventory', backref='status_terkait', lazy=True)
+
 class Inventory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     kode_barang = db.Column(db.String(50), unique=True, nullable=False)
     nama_barang = db.Column(db.String(150), nullable=False)
-    serial_number = db.Column(db.String(100), unique=True, nullable=False)
+    brand = db.Column(db.String(100)) # Kolom Baru
+    serial_number = db.Column(db.String(100), nullable=False) # Aturan 'unique=True' telah dihapus
     kategori = db.Column(db.String(50))
     unit_type = db.Column(db.String(100))
+    vendor = db.Column(db.String(100)) # Kolom Baru
     lokasi_id = db.Column(db.Integer, db.ForeignKey('lokasi.id'))
-    notes = db.Column(db.Text)
+    karyawan_id = db.Column(db.Integer, db.ForeignKey('karyawan.id'), nullable=True) # Relasi ke Karyawan
+    status_id = db.Column(db.Integer, db.ForeignKey('status_aset.id'), nullable=True) # Relasi ke StatusAset
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=waktu_lokal)
-    
-    # (Relasi ganda ke tabel Transaksi telah dihapus dari sini agar rapi)
 
 class Consumable(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -43,14 +58,13 @@ class Consumable(db.Model):
     nama_barang = db.Column(db.String(150), nullable=False)
     kategori = db.Column(db.String(50))
     unit_type = db.Column(db.String(100))
+    brand = db.Column(db.String(100))
+    vendor = db.Column(db.String(100))
     lokasi_id = db.Column(db.Integer, db.ForeignKey('lokasi.id'))
     stok = db.Column(db.Integer, default=0)
     satuan = db.Column(db.String(20))
-    notes = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=waktu_lokal)
-    
-    # (Relasi ganda ke tabel Transaksi telah dihapus dari sini agar rapi)
 
 class Transaksi(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -60,9 +74,8 @@ class Transaksi(db.Model):
     consumable_id = db.Column(db.Integer, db.ForeignKey('consumable.id'), nullable=True)
     jenis = db.Column(db.String(20), nullable=False)
     jumlah = db.Column(db.Integer, nullable=False, default=1)
-    keterangan = db.Column(db.String(200))
+    keterangan = db.Column(db.String(255))
     
-    # INI ADALAH RELASI YANG BENAR (Semua dikumpulkan di sini):
     user = db.relationship('User', backref='transaksi', lazy=True)
     inventory = db.relationship('Inventory', backref='transaksi_item', lazy=True)
     consumable = db.relationship('Consumable', backref='transaksi_item', lazy=True)

@@ -276,21 +276,28 @@ def cetak_qr(kode):
 @app.route('/riwayat_inventory')
 @login_required
 def riwayat_inventory():
-    search = request.args.get('search', '')
-    start_date, end_date = request.args.get('start_date', ''), request.args.get('end_date', '')
-    
-    # Ambil hanya transaksi yang memiliki inventory_id
-    query = Transaksi.query.join(Inventory).filter(Transaksi.inventory_id != None)
-    
+    search = request.args.get('search', '').strip()
+    start_date = request.args.get('start_date', '').strip()
+    end_date = request.args.get('end_date', '').strip()
+    page = request.args.get('page', 1, type=int)
+
+    # PASTIKAN BARIS INI MENGANDUNG filter(Transaksi.jenis != 'Edit')
+    query = Transaksi.query.filter(Transaksi.inventory_id != None, Transaksi.jenis != 'Edit')
+
     if search:
-        query = query.filter(db.or_(Inventory.nama_barang.ilike(f"%{search}%"), Inventory.serial_number.ilike(f"%{search}%"), Transaksi.keterangan.ilike(f"%{search}%")))
+        query = query.join(Inventory).filter(or_(
+            Inventory.nama_barang.ilike(f"%{search}%"),
+            Inventory.serial_number.ilike(f"%{search}%"),
+            Inventory.kode_barang.ilike(f"%{search}%")
+        ))
+
     if start_date:
-        query = query.filter(Transaksi.tanggal >= datetime.strptime(start_date, '%Y-%m-%d'))
+        query = query.filter(Transaksi.tanggal >= f"{start_date} 00:00:00")
     if end_date:
-        query = query.filter(Transaksi.tanggal <= datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
-        
-    data = query.order_by(Transaksi.tanggal.desc()).paginate(page=request.args.get('page', 1, type=int), per_page=20, error_out=False)
-    return render_template('inventory/riwayat.html', data=data, search_query=search, start_date=start_date, end_date=end_date)
+        query = query.filter(Transaksi.tanggal <= f"{end_date} 23:59:59")
+
+    data = query.order_by(Transaksi.tanggal.desc()).paginate(page=page, per_page=15, error_out=False)
+    return render_template('inventory/riwayat.html', data=data)
 
 @app.route('/riwayat_consumable')
 @login_required
