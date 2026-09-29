@@ -7,6 +7,7 @@ import calendar
 import qrcode
 import io
 import base64
+from sqlalchemy import or_
 
 from main import app, admin_required
 from models import db, User, Lokasi, Inventory, Consumable, Transaksi
