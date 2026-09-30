@@ -50,8 +50,8 @@
 
       .main-content { 
           width: 100%; 
-          overflow-y: auto; /* Memastikan main content bisa di-scroll */
-          height: 100vh;    /* Membatasi tinggi agar scroll bar muncul di area ini */
+          overflow-y: auto; 
+          height: 100vh;    
           display: flex; 
           flex-direction: column; 
       }
@@ -79,7 +79,6 @@
       .dropdown-menu { animation: fadeIn 0.2s ease-in-out; }
       @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
       
-      /* Tambahan untuk Custom Scrollbar pada Main Content */
       .main-content::-webkit-scrollbar { width: 8px; }
       .main-content::-webkit-scrollbar-track { background: #f1f5f9; }
       .main-content::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
@@ -130,8 +129,9 @@
 
           <div class="accordion-item" style="background: transparent; border: none">
             <h2 class="accordion-header" id="headingRiwayat">
+              <!-- PERBAIKAN: Mengubah "Riwayat Transaksi" menjadi "Riwayat Mutasi" -->
               <button class="accordion-button {% if not (request.endpoint and 'riwayat' in request.endpoint) %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRiwayat" aria-expanded="{% if request.endpoint and 'riwayat' in request.endpoint %}true{% else %}false{% endif %}">
-                <i class="bi bi-clock-history me-2"></i> Riwayat Transaksi
+                <i class="bi bi-clock-history me-2"></i> Riwayat Mutasi
               </button>
             </h2>
             <div id="collapseRiwayat" class="accordion-collapse collapse {% if request.endpoint and 'riwayat' in request.endpoint %}show{% endif %}" data-bs-parent="#sidebarAccordion">
@@ -155,11 +155,19 @@
           {% if current_user.role == 'Admin' %}
           <div class="nav-item mt-3">
             <small class="text-uppercase fw-bold text-secondary ms-3 mb-2 d-block" style="font-size: 0.65rem; letter-spacing: 1px;">Pengaturan Sistem</small>
+            
+            <!-- PERBAIKAN: Menambahkan link Master Kategori & Satuan -->
+            <a class="nav-link {% if request.endpoint == 'master_kategori_satuan' %}active{% endif %}" href="{{ url_for('master_kategori_satuan') }}">
+              <i class="bi bi-tags"></i> Kategori & Satuan
+            </a>
+          </div>
+          
+          <div class="nav-item">
             <a class="nav-link {% if request.endpoint == 'master_lokasi' %}active{% endif %}" href="{{ url_for('master_lokasi') }}">
               <i class="bi bi-geo-alt"></i> Area & Lokasi
             </a>
           </div>
-          
+
           <div class="nav-item">
             <a class="nav-link {% if request.endpoint == 'master_karyawan' %}active{% endif %}" href="{{ url_for('master_karyawan') }}">
               <i class="bi bi-person-vcard"></i> Data Karyawan
@@ -190,7 +198,7 @@
       <!-- Main Content Area -->
       <div class="main-content">
         
-        <!-- Topbar Navbar Universal (Diperbarui) -->
+        <!-- Topbar Navbar Universal -->
         <div class="bg-white py-1 px-3 d-flex justify-content-between align-items-center shadow-sm position-sticky top-0" style="z-index: 1020; min-height: 50px;">
           <div class="d-flex align-items-center d-lg-none">
             <button class="btn btn-sm btn-light border-0 py-1 px-2 me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
@@ -210,7 +218,6 @@
                   Hi, {% if current_user.is_authenticated %}{{ current_user.nama_lengkap or current_user.payroll }}{% else %}Guest{% endif %}
                 </span>
               </div>
-              <!-- Ukuran ikon profil diperkecil (width/height 32px) -->
               <div class="bg-primary bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm border border-2 border-white" style="width: 32px; height: 32px;">
                 <i class="bi bi-person-fill fs-6"></i>
               </div>
@@ -283,8 +290,9 @@
           
           <div class="accordion-item" style="background: transparent; border: none">
             <h2 class="accordion-header" id="headingRiwayatMobile">
+              <!-- PERBAIKAN: Mengubah "Riwayat Transaksi" menjadi "Riwayat Mutasi" -->
               <button class="accordion-button {% if not (request.endpoint and 'riwayat' in request.endpoint) %}collapsed{% endif %} px-4 py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRiwayatMobile" style="background: transparent; color: #cbd5e1; box-shadow: none; font-size: 0.9rem;" aria-expanded="{% if request.endpoint and 'riwayat' in request.endpoint %}true{% else %}false{% endif %}">
-                <i class="bi bi-clock-history me-2"></i> Riwayat Transaksi
+                <i class="bi bi-clock-history me-2"></i> Riwayat Mutasi
               </button>
             </h2>
             <div id="collapseRiwayatMobile" class="accordion-collapse collapse {% if request.endpoint and 'riwayat' in request.endpoint %}show{% endif %}" data-bs-parent="#mobileSidebarAccordion">
@@ -304,11 +312,19 @@
           {% if current_user.role == 'Admin' %}
           <div class="nav-item mt-3">
             <small class="text-uppercase fw-bold text-secondary ms-4 mb-2 d-block" style="font-size: 0.65rem;">Pengaturan Sistem</small>
+            
+            <!-- PERBAIKAN: Menambahkan link Master Kategori & Satuan di sidebar HP -->
+            <a class="nav-link {% if request.endpoint == 'master_kategori_satuan' %}text-warning{% else %}text-light{% endif %} px-4 py-2" style="text-decoration: none; font-size: 0.9rem;" href="{{ url_for('master_kategori_satuan') }}">
+              <i class="bi bi-tags me-2"></i> Kategori & Satuan
+            </a>
+          </div>
+          
+          <div class="nav-item">
             <a class="nav-link {% if request.endpoint == 'master_lokasi' %}text-warning{% else %}text-light{% endif %} px-4 py-2" style="text-decoration: none; font-size: 0.9rem;" href="{{ url_for('master_lokasi') }}">
               <i class="bi bi-geo-alt me-2"></i> Area & Lokasi
             </a>
           </div>
-          
+
           <div class="nav-item">
             <a class="nav-link {% if request.endpoint == 'master_karyawan' %}text-warning{% else %}text-light{% endif %} px-4 py-2" style="text-decoration: none; font-size: 0.9rem;" href="{{ url_for('master_karyawan') }}">
               <i class="bi bi-person-vcard me-2"></i> Data Karyawan

@@ -5,7 +5,8 @@ import random
 # Mengarahkan Python untuk membaca modul di folder utama (satu tingkat di atas folder seed)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from main import app
-from models import db, User, Karyawan, Lokasi, StatusAset, Inventory, Consumable, Transaksi
+# PERBAIKAN: Tambahkan SatuanBarang pada import
+from models import db, User, Karyawan, Lokasi, StatusAset, Inventory, Consumable, Transaksi, KategoriBarang, SatuanBarang
 from werkzeug.security import generate_password_hash
 
 def reset_and_seed():
@@ -51,49 +52,71 @@ def reset_and_seed():
             Karyawan(payroll="TM-003", nama="Andi Pratama", status="Aktif"),
         ]
         db.session.add_all(karyawan_data)
+
+        print("7. Mengisi tabel Master Kategori & Satuan Barang...")
+        # PERBAIKAN: Hapus atribut satuan dari KategoriBarang
+        kategori_data = [
+            KategoriBarang(nama_kategori="PC/Laptop", jenis="Inventory"),
+            KategoriBarang(nama_kategori="Networking", jenis="Inventory"),
+            KategoriBarang(nama_kategori="ATK", jenis="Consumable"),
+            KategoriBarang(nama_kategori="Networking", jenis="Consumable"),
+            KategoriBarang(nama_kategori="Tinta/Toner", jenis="Consumable")
+        ]
+        db.session.add_all(kategori_data)
         
-        # Simpan sesi sementara agar ID dari Lokasi, Status, dan Karyawan bisa digunakan
+        # PERBAIKAN: Tambahkan tabel Master SatuanBarang
+        satuan_data = [
+            SatuanBarang(nama_satuan="Rim"),
+            SatuanBarang(nama_satuan="Roll"),
+            SatuanBarang(nama_satuan="Botol"),
+            SatuanBarang(nama_satuan="Pcs"),
+            SatuanBarang(nama_satuan="Unit")
+        ]
+        db.session.add_all(satuan_data)
+        
+        # Simpan sesi sementara agar ID bisa digunakan
         db.session.commit()
 
-        print("7. Mengisi tabel Master Inventory...")
+        print("8. Mengisi tabel Master Inventory...")
         inventory_data = [
             Inventory(
                 kode_barang="INV-0001", serial_number="LNV-112233", nama_barang="Laptop Bisnis",
-                brand="Lenovo", vendor="PT Lintas Teknologi", kategori="PC/Laptop", unit_type="ThinkPad T14 Gen 2",
+                brand="Lenovo", vendor="PT Lintas Teknologi", kategori_id=1, unit_type="ThinkPad T14 Gen 2",
                 karyawan_id=1, status_id=1, lokasi_id=2
             ),
             Inventory(
                 kode_barang="INV-0002", serial_number="HP-998877", nama_barang="Laptop Operasional",
-                brand="HP", vendor="PT Lintas Teknologi", kategori="PC/Laptop", unit_type="ProBook 440 G8",
+                brand="HP", vendor="PT Lintas Teknologi", kategori_id=1, unit_type="ProBook 440 G8",
                 karyawan_id=2, status_id=1, lokasi_id=2
             ),
             Inventory(
                 kode_barang="INV-0003", serial_number="CS-555444", nama_barang="Access Point Wireless",
-                brand="Cisco", vendor="PT Jaringan Nusantara", kategori="Networking", unit_type="Meraki MR46",
+                brand="Cisco", vendor="PT Jaringan Nusantara", kategori_id=2, unit_type="Meraki MR46",
                 karyawan_id=None, status_id=1, lokasi_id=5
             )
         ]
         db.session.add_all(inventory_data)
 
-        print("8. Mengisi tabel Consumable...")
+        print("9. Mengisi tabel Consumable...")
+        # PERBAIKAN: Ubah satuan (teks) menjadi satuan_id (angka relasi)
         consumable_data = [
             Consumable(
                 kode_barang="CNS-0001", nama_barang="Kertas HVS A4 80gr", brand="PaperOne", vendor="CV Mulia",
-                kategori="ATK", unit_type="-", stok=50, satuan="Rim", lokasi_id=1
+                kategori_id=3, unit_type="-", stok=50, satuan_id=1, lokasi_id=1
             ),
             Consumable(
                 kode_barang="CNS-0002", nama_barang="Kabel UTP Cat 6", brand="Belden", vendor="PT Jaringan Nusantara",
-                kategori="Networking", unit_type="Roll 305m", stok=5, satuan="Roll", lokasi_id=1
+                kategori_id=4, unit_type="Roll 305m", stok=5, satuan_id=2, lokasi_id=1
             ),
             Consumable(
                 kode_barang="CNS-0003", nama_barang="Tinta Printer Hitam", brand="Epson", vendor="CV Mulia",
-                kategori="Tinta/Toner", unit_type="003 Black", stok=15, satuan="Botol", lokasi_id=4
+                kategori_id=5, unit_type="003 Black", stok=15, satuan_id=3, lokasi_id=4
             )
         ]
         db.session.add_all(consumable_data)
         db.session.commit()
 
-        print("9. Membuat Riwayat Transaksi (Jejak Audit)...")
+        print("10. Membuat Riwayat Transaksi (Jejak Audit)...")
         # Riwayat Inventory Masuk
         transaksi_data = []
         for inv in Inventory.query.all():

@@ -8,15 +8,16 @@
         <p class="text-muted mb-0">Perbarui informasi perangkat dan alokasi PIC.</p>
     </div>
     <a href="{{ url_for('master_inventory') }}" class="btn btn-outline-secondary shadow-sm">
-        <i class="bi bi-arrow-left me-1"></i> Kembali
+        <i class="bi bi-arrow-left me-1"></i> Kembali ke Master
     </a>
 </div>
 
+<!-- Flash Messages (Sangat penting karena sekarang halaman redirect ke dirinya sendiri) -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
-      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
-        {{ message }}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>{{ message }}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
     {% endfor %}
@@ -31,12 +32,13 @@
             </div>
             <div class="card-body p-4">
                 <form action="{{ url_for('edit_inventory', id=barang.id) }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}"/>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
+                            <!-- PERBAIKAN: Kode Aset dibuka kuncinya agar bisa diedit manual (Tetap wajib diisi) -->
                             <label for="kode_barang" class="form-label fw-semibold">Kode Aset <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control bg-light" id="kode_barang" name="kode_barang" value="{{ barang.kode_barang }}" required readonly>
+                            <input type="text" class="form-control text-uppercase" id="kode_barang" name="kode_barang" value="{{ barang.kode_barang }}" required>
                         </div>
                         <div class="col-md-6">
                             <label for="serial_number" class="form-label fw-semibold">Serial Number (SN) <span class="text-danger">*</span></label>
@@ -62,13 +64,28 @@
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="kategori" class="form-label fw-semibold">Kategori Barang</label>
-                            <input type="text" class="form-control" id="kategori" name="kategori" value="{{ barang.kategori or '' }}">
+                            <!-- PERBAIKAN: Kategori menggunakan Dropdown dengan Select2, memanggil data relasi -->
+                            <label for="kategori_id" class="form-label fw-semibold">Kategori Barang</label>
+                            <select class="form-select" id="kategori_id" name="kategori_id">
+                                <option value=""></option>
+                                {% for kat in kategori_list %}
+                                <option value="{{ kat.id }}" {% if barang.kategori_id == kat.id %}selected{% endif %}>
+                                    {{ kat.nama_kategori }}
+                                </option>
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label for="unit_type" class="form-label fw-semibold">Tipe Unit / Model</label>
                             <input type="text" class="form-control" id="unit_type" name="unit_type" value="{{ barang.unit_type or '' }}">
                         </div>
+                    </div>
+
+                    <!-- PERBAIKAN: Tambahan form Keterangan (Opsional) -->
+                    <div class="mb-4">
+                        <label for="keterangan" class="form-label fw-semibold">Keterangan Tambahan <span class="badge bg-light text-secondary ms-1 fw-normal border">Opsional</span></label>
+                        <textarea class="form-control" id="keterangan" name="keterangan" rows="2" placeholder="Tuliskan catatan khusus terkait pembaruan data atau mutasi lokasi aset..."></textarea>
+                        <small class="text-muted d-block mt-1">Keterangan ini akan disimpan ke dalam tabel jejak riwayat mutasi.</small>
                     </div>
 
                     <hr class="text-muted my-4">
@@ -78,12 +95,10 @@
                         <label for="karyawan_id" class="form-label fw-bold text-primary"><i class="bi bi-person-badge me-2"></i>Penugasan Karyawan (PIC)</label>
                         <p class="small text-muted mb-2">Jika diisi, lokasi aset otomatis diarahkan ke <b>Senoro Field - User/Employee</b>.</p>
                         <select class="form-select border-primary" id="karyawan_id" name="karyawan_id">
-                            <!-- Terpilih otomatis jika karyawan_id kosong dari database -->
-                            <option value="" {% if not barang.karyawan_id %}selected{% endif %}>ICT ASSET</option>
+                            <option value="" {% if not barang.karyawan_id %}selected{% endif %}>ICT ASSET (Gudang/Cadangan)</option>
                             {% for karyawan in karyawan_list %}
-                            <!-- Menampilkan NAMA saja sesuai request terbaru -->
                             <option value="{{ karyawan.id }}" {% if barang.karyawan_id == karyawan.id %}selected{% endif %}>
-                                {{ karyawan.nama }}
+                                {{ karyawan.nama }} - {{ karyawan.payroll }}
                             </option>
                             {% endfor %}
                         </select>
@@ -130,32 +145,31 @@
                 <h6 class="m-0 fw-bold text-secondary"><i class="bi bi-clock-history me-2"></i>Jejak Riwayat Aset Ini</h6>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
+                <div class="table-responsive table-scrollable" style="max-height: 400px;">
                     <table class="table table-hover align-middle mb-0 text-sm">
                         <thead class="table-light">
                             <tr>
                                 <th class="ps-4">Tanggal & Waktu</th>
                                 <th>Jenis Transaksi</th>
                                 <th>Admin (Operator)</th>
-                                <th>Keterangan</th>
+                                <th>Keterangan Jejak Audit</th>
                             </tr>
                         </thead>
                        <tbody>
                             {% for tr in riwayat %}
-                            <!-- Jika jenis transaksi adalah 'Edit', beri background kuning muda -->
                             <tr class="{% if tr.jenis == 'Edit' %}bg-warning bg-opacity-10{% endif %}">
                                 <td class="ps-4 text-muted small">{{ tr.tanggal.strftime('%d %b %Y, %H:%M') }}</td>
                                 <td>
-                                    <!-- Badge disesuaikan warnanya -->
                                     <span class="badge {% if tr.jenis == 'Masuk' %}bg-success{% elif tr.jenis == 'Edit' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">
                                         {{ tr.jenis }}
                                     </span>
                                 </td>
                                 <td class="fw-medium">{{ tr.user.nama_lengkap if tr.user else 'Sistem' }}</td>
-                                <td class="text-muted small">{{ tr.keterangan or '-' }}</td>
+                                <!-- Menampilkan keterangan perubahan yang dikirim dari backend (Termasuk catatan tambahan dari textarea) -->
+                                <td class="text-muted small fw-medium">{{ tr.keterangan or '-' }}</td>
                             </tr>
                             {% else %}
-                            <tr><td colspan="4" class="text-center py-3 text-muted small">Belum ada riwayat transaksi.</td></tr>
+                            <tr><td colspan="4" class="text-center py-4 text-muted small"><i class="bi bi-inbox me-1"></i>Belum ada riwayat transaksi.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -170,7 +184,7 @@
             <div class="card-body">
                 <h6 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle me-2"></i>Panduan Pengisian</h6>
                 <ul class="text-muted small ps-3 mb-0" style="line-height: 1.8;">
-                    <li><strong>Kode Aset:</strong> Tidak bisa diubah (dikunci) untuk menjaga integritas data.</li>
+                    <li><strong>Kode Aset:</strong> Bisa diubah manual jika terjadi kesalahan input fisik.</li>
                     <li><strong>Aturan SN:</strong> Serial Number boleh sama antar perangkat asalkan <strong>Brand</strong>-nya berbeda.</li>
                     <li><strong>Otomatisasi Lokasi:</strong> Jika Anda memilih Karyawan di kolom Penugasan, sistem akan memindahkan aset tersebut ke <em>Senoro Field - User/Employee</em>.</li>
                     <li><strong>Status Aset:</strong> Mengubah status (misal dari Baik ke Rusak) akan otomatis tersimpan dalam riwayat.</li>
@@ -186,7 +200,6 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <style>
-    /* Styling agar Select2 menyatu dengan gaya Bootstrap 5 */
     .select2-container .select2-selection--single {
         height: 38px;
         border: 1px solid #dee2e6;
@@ -204,8 +217,13 @@
 <script>
 $(document).ready(function() {
     // 1. Inisialisasi Dropdown Pintar (Select2)
+    $('#kategori_id').select2({
+        placeholder: "Cari/Pilih Kategori...",
+        allowClear: true,
+        width: '100%'
+    });
+    
     $('#karyawan_id').select2({
-        // placeholder dan allowClear dihapus agar "ICT ASSET" bisa muncul
         width: '100%' 
     });
     
@@ -220,14 +238,12 @@ $(document).ready(function() {
         let karyawanVal = $('#karyawan_id').val();
         
         if (karyawanVal) {
-            // Jika ada Karyawan: Cari dan pilih otomatis "User/Employee"
             $('#lokasi_id option').each(function() {
                 if ($(this).text().includes('User/Employee')) {
                     $('#lokasi_id').val($(this).val()).trigger('change.select2');
                 }
             });
             
-            // Kunci visual dropdown lokasi menggunakan class khusus Select2
             $('#lokasi_id').next('.select2-container').css({
                 'pointer-events': 'none',
                 'opacity': '0.6',
@@ -235,7 +251,6 @@ $(document).ready(function() {
             });
             $('#lokasi_id').removeAttr('required');
         } else {
-            // Jika ICT ASSET: Buka kembali kuncinya
             $('#lokasi_id').next('.select2-container').css({
                 'pointer-events': 'auto',
                 'opacity': '1',
@@ -243,17 +258,13 @@ $(document).ready(function() {
             });
             $('#lokasi_id').attr('required', 'required');
             
-            // Kosongkan pilihan jika sebelumnya otomatis User/Employee
             if ($('#lokasi_id option:selected').text().includes('User/Employee')) {
                 $('#lokasi_id').val('').trigger('change.select2');
             }
         }
     }
 
-    // Pantau setiap kali pilihan Karyawan diubah
     $('#karyawan_id').on('change', sesuaikanLokasi);
-    
-    // Jalankan satu kali saat halaman dimuat
     sesuaikanLokasi();
 });
 </script>

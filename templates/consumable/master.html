@@ -8,8 +8,7 @@
     <p class="text-muted mb-0">Kelola barang habis pakai, stok, dan riwayat mutasinya.</p>
   </div>
   <div class="d-flex gap-2">
-    <!-- DIBERSIHKAN: Atribut hx-boost="false" dihapus karena sudah kembali ke sistem normal -->
-    <a href="{{ url_for('export_consumable', search=search_query, kategori=filter_kategori, brand=filter_brand, lokasi=filter_lokasi) }}" class="btn btn-success shadow-sm" title="Export ke Excel">
+    <a href="{{ url_for('export_consumable', search=search_query, kategori=filter_kategori, tipe=filter_tipe, lokasi=filter_lokasi) }}" class="btn btn-success shadow-sm" title="Export ke Excel">
       <i class="bi bi-file-earmark-excel"></i>
     </a>
     <a href="{{ url_for('tambah_consumable') }}" class="btn btn-primary shadow-sm" title="Tambah Barang Baru">
@@ -33,7 +32,7 @@
   <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
     <h6 class="m-0 fw-bold text-primary">Daftar Consumable Aktif</h6>
 
-    <!-- FORM PENCARIAN & FILTER (DENGAN AJAX) -->
+    <!-- FORM PENCARIAN & FILTER -->
     <form id="filterForm" method="GET" action="{{ url_for('master_consumable') }}" class="d-flex" style="min-width: 400px">
       <div class="input-group input-group-sm">
         <input type="text" name="search" class="form-control bg-light border-0" placeholder="Cari barang, brand, kode..." value="{{ search_query }}" />
@@ -47,24 +46,28 @@
 
         <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0" aria-labelledby="dropdownFilter" style="width: 320px">
           <h6 class="dropdown-header px-0 text-dark fw-bold mb-2">Filter Data Consumable</h6>
+          
           <div class="mb-2">
             <label class="form-label small fw-semibold mb-1">Kategori</label>
             <select name="kategori" class="form-select form-select-sm">
               <option value="">Semua Kategori</option>
+              <!-- PERBAIKAN: Mengambil ID dan Nama Kategori dari relasi master -->
               {% for kat in kategori_list %}
-              <option value="{{ kat }}" {% if filter_kategori == kat %}selected{% endif %}>{{ kat }}</option>
+              <option value="{{ kat.id }}" {% if filter_kategori|string == kat.id|string %}selected{% endif %}>{{ kat.nama_kategori }}</option>
               {% endfor %}
             </select>
           </div>
+          
           <div class="mb-2">
-            <label class="form-label small fw-semibold mb-1">Brand</label>
-            <select name="brand" class="form-select form-select-sm">
-              <option value="">Semua Brand</option>
-              {% for brand in brand_list %}
-              <option value="{{ brand }}" {% if filter_brand == brand %}selected{% endif %}>{{ brand }}</option>
+            <label class="form-label small fw-semibold mb-1">Tipe Unit</label>
+            <select name="tipe" class="form-select form-select-sm">
+              <option value="">Semua Tipe</option>
+              {% for tipe in tipe_list %}
+              <option value="{{ tipe }}" {% if filter_tipe == tipe %}selected{% endif %}>{{ tipe }}</option>
               {% endfor %}
             </select>
           </div>
+          
           <div class="mb-3">
             <label class="form-label small fw-semibold mb-1">Lokasi Gudang</label>
             <select name="lokasi" class="form-select form-select-sm">
@@ -74,13 +77,14 @@
               {% endfor %}
             </select>
           </div>
+          
           <div class="d-flex justify-content-end gap-2 mt-3">
             <a href="{{ url_for('master_consumable') }}" class="btn btn-sm btn-light border">Reset</a>
             <button type="submit" class="btn btn-sm btn-primary px-3">Terapkan</button>
           </div>
         </div>
 
-        {% if search_query or filter_kategori or filter_brand or filter_lokasi %}
+        {% if search_query or filter_kategori or filter_tipe or filter_lokasi %}
         <a href="{{ url_for('master_consumable') }}" class="btn btn-danger border-0 text-white" title="Hapus Filter"><i class="bi bi-x-lg"></i></a>
         {% endif %}
       </div>
@@ -88,7 +92,8 @@
   </div>
 
   <form id="bulkForm" method="POST" action="">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <!-- Hapus / sesuaikan CSRF Token ini jika di environment Anda menyebabkan error (tidak pakai flask-wtf) -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}" />
 
     <div class="card-body p-0">
       <div class="table-responsive table-scrollable pb-0" style="min-height: 280px">
@@ -97,8 +102,8 @@
             <tr>
               <th class="ps-4" width="5%">No</th>
               <th width="15%">Kode Barang</th>
-              <th width="20%">Nama & Brand</th>
-              <th width="20%">Kategori & Spesifikasi</th>
+              <th width="20%">Nama, Brand, Vendor</th>
+              <th width="20%">Kategori & Tipe</th>
               <th width="15%">Lokasi Gudang</th>
               <th width="12%">Sisa Stok</th>
               <th class="text-center pe-4" width="13%">Aksi</th>
@@ -115,12 +120,14 @@
                 <span class="badge bg-light text-dark border"><i class="bi bi-upc-scan me-1"></i>{{ item.kode_barang }}</span>
               </td>
               <td>
+                <!-- PERBAIKAN: Menghapus label "Brand" dan menggabungkannya seperti tabel Inventory -->
                 <span class="fw-semibold text-primary" style="font-size: 0.95rem;">{{ item.nama_barang }}</span><br />
-                <small class="text-muted">Brand: {{ item.brand or '-' }}</small>
+                <small class="text-muted">{{ item.brand or '-' }} | {{ item.vendor or '-' }}</small>
               </td>
               <td>
-                <span class="fw-medium text-dark"><i class="bi bi-tag me-1"></i>{{ item.kategori or 'Tanpa Kategori' }}</span><br />
-                <small class="text-muted">Tipe: {{ item.unit_type or '-' }}</small>
+                <!-- PERBAIKAN: Menghapus label "Tipe" dan memanggil kategori dari relasi master -->
+                <span class="fw-medium text-dark"><i class="bi bi-tag me-1"></i>{{ item.kategori_terkait.nama_kategori if item.kategori_id and item.kategori_terkait else 'Tanpa Kategori' }}</span><br />
+                <small class="text-muted">{{ item.unit_type or '-' }}</small>
               </td>
               <td>
                 {% if item.lokasi %}
@@ -131,8 +138,9 @@
                 {% endif %}
               </td>
               <td>
+                <!-- PERBAIKAN: Memanggil satuan dari relasi tabel SatuanBarang -->
                 <span class="badge {% if item.stok <= 5 %}bg-danger{% else %}bg-success{% endif %} fs-6">
-                  {{ item.stok }} {{ item.satuan }}
+                  {{ item.stok }} {{ item.satuan_terkait.nama_satuan if item.satuan_id and item.satuan_terkait else '' }}
                 </span>
               </td>
               <td class="text-center pe-4">
@@ -157,7 +165,7 @@
             <tr>
               <td colspan="7" class="text-center py-5 text-muted">
                 <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                {% if search_query or filter_kategori or filter_brand or filter_lokasi %} Tidak ada data yang sesuai filter pencarian. {% else %} Belum ada data barang habis pakai. {% endif %}
+                {% if search_query or filter_kategori or filter_tipe or filter_lokasi %} Tidak ada data yang sesuai filter pencarian. {% else %} Belum ada data barang habis pakai. {% endif %}
               </td>
             </tr>
             {% endfor %}
@@ -190,13 +198,13 @@
       <ul class="pagination justify-content-center mb-0" id="paginationBox">
         {% if data.has_prev %}
         <li class="page-item">
-          <a class="page-link" href="{{ url_for('master_consumable', page=data.prev_num, search=search_query, kategori=filter_kategori, brand=filter_brand, lokasi=filter_lokasi) }}">Sebelumnya</a>
+          <a class="page-link" href="{{ url_for('master_consumable', page=data.prev_num, search=search_query, kategori=filter_kategori, tipe=filter_tipe, lokasi=filter_lokasi) }}">Sebelumnya</a>
         </li>
         {% endif %}
         <li class="page-item active"><span class="page-link">{{ data.page }}</span></li>
         {% if data.has_next %}
         <li class="page-item">
-          <a class="page-link" href="{{ url_for('master_consumable', page=data.next_num, search=search_query, kategori=filter_kategori, brand=filter_brand, lokasi=filter_lokasi) }}">Selanjutnya</a>
+          <a class="page-link" href="{{ url_for('master_consumable', page=data.next_num, search=search_query, kategori=filter_kategori, tipe=filter_tipe, lokasi=filter_lokasi) }}">Selanjutnya</a>
         </li>
         {% endif %}
       </ul>
@@ -205,7 +213,6 @@
 </div>
 
 <script>
-  // DIBERSIHKAN: Dikembalikan menggunakan DOMContentLoaded standar (Bukan format HTMX)
   document.addEventListener("DOMContentLoaded", function () {
     const filterForm = document.getElementById("filterForm");
     const tableBody = document.getElementById("tableBody");
@@ -261,7 +268,7 @@
       select.addEventListener("change", fetchResults);
     });
 
-    // Event listener 'Pilih Semua' di dalam DOMContentLoaded
+    // Event listener 'Pilih Semua'
     const selectAllBtn = document.getElementById("selectAllBottom");
     if (selectAllBtn) {
       selectAllBtn.addEventListener("change", function () {
@@ -290,7 +297,7 @@
     updateBulkBar();
   }
 
-  // Fungsi Update Toolbar (Menggunakan manipulasi kelas d-none dan d-flex Bootstrap)
+  // Fungsi Update Toolbar
   function updateBulkBar() {
     const checkedCount = document.querySelectorAll(".item-checkbox:checked").length;
     const totalCount = document.querySelectorAll(".item-checkbox").length;

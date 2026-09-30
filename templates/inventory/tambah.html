@@ -10,12 +10,12 @@
     </div>
     <div>
         <a href="{{ url_for('master_inventory') }}" class="btn btn-outline-secondary shadow-sm">
-            <i class="bi bi-arrow-left me-1"></i> Kembali
+            <i class="bi bi-arrow-left me-1"></i> Kembali ke Master
         </a>
     </div>
 </div>
 
-<!-- Flash Messages -->
+<!-- Flash Messages (Notifikasi Redirect) -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
@@ -35,13 +35,15 @@
             </div>
             <div class="card-body p-4">
                 <form action="{{ url_for('tambah_inventory') }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <!-- Hapus tag csrf_token di bawah jika sistem Anda tidak mewajibkannya -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}"/>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="kode_barang" class="form-label fw-semibold">Kode Aset</label>
-                            <input type="text" class="form-control" id="kode_barang" name="kode_barang" placeholder="Kosongkan untuk otomatis">
-                            <small class="text-muted d-block mt-1">Biarkan kosong agar sistem membuatkan kode otomatis (cth: INV-0001).</small>
+                            <!-- PERBAIKAN: Kode aset kini wajib diisi manual -->
+                            <label for="kode_barang" class="form-label fw-semibold">Kode Aset <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control font-monospace text-uppercase" id="kode_barang" name="kode_barang" required placeholder="Contoh: INV-0123">
+                            <small class="text-muted d-block mt-1">Harus diketik manual sesuai standar penomoran fisik aset perusahaan.</small>
                         </div>
                         <div class="col-md-6">
                             <label for="serial_number" class="form-label fw-semibold">Serial Number (SN) <span class="text-danger">*</span></label>
@@ -67,29 +69,42 @@
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="kategori" class="form-label fw-semibold">Kategori Barang</label>
-                            <input type="text" class="form-control" id="kategori" name="kategori" placeholder="Contoh: Perangkat Jaringan, PC/Laptop">
+                            <!-- PERBAIKAN: Input kategori berubah menjadi Select (Dropdown) relasi tabel -->
+                            <label for="kategori_id" class="form-label fw-semibold">Kategori Barang</label>
+                            <select class="form-select" id="kategori_id" name="kategori_id">
+                                <option value=""></option> <!-- Placeholder wajib untuk Select2 -->
+                                {% for kat in kategori_list %}
+                                <option value="{{ kat.id }}">{{ kat.nama_kategori }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label for="unit_type" class="form-label fw-semibold">Tipe Unit / Model</label>
                             <input type="text" class="form-control" id="unit_type" name="unit_type" placeholder="Contoh: MR46, T14 Gen 2">
                         </div>
                     </div>
+
+                    <!-- PERBAIKAN: Penambahan field Keterangan Tambahan -->
+                    <div class="mb-4">
+                        <label for="keterangan" class="form-label fw-semibold">Keterangan Tambahan <span class="badge bg-light text-secondary ms-1 fw-normal border">Opsional</span></label>
+                        <textarea class="form-control" id="keterangan" name="keterangan" rows="2" placeholder="Catatan khusus saat pendaftaran aset pertama kali..."></textarea>
+                        <small class="text-muted d-block mt-1">Keterangan ini akan muncul di kolom Riwayat Mutasi sebagai catatan awal.</small>
+                    </div>
                     
                     <hr class="text-muted my-4">
 
                     <!-- Dropdown Penugasan Karyawan -->
-<div class="mb-4 p-3 bg-light border rounded">
-    <label for="karyawan_id" class="form-label fw-bold text-primary"><i class="bi bi-person-badge me-2"></i>Penugasan Karyawan (PIC)</label>
-    <p class="small text-muted mb-2">Jika diisi, lokasi aset akan otomatis diarahkan ke <b>Senoro Field - User/Employee</b>. Biarkan pada pilihan default jika ini adalah aset cadangan.</p>
-    <select class="form-select border-primary" id="karyawan_id" name="karyawan_id">
-        <!-- Value kosong agar dibaca sistem sebagai null/tanpa PIC, namun tampilannya ICT ASSET -->
-        <option value="" selected>ICT ASSET</option> 
-        {% for karyawan in karyawan_list %}
-        <option value="{{ karyawan.id }}">{{ karyawan.nama }}</option>
-        {% endfor %}
-    </select>
-</div>
+                    <div class="mb-4 p-3 bg-light border rounded">
+                        <label for="karyawan_id" class="form-label fw-bold text-primary"><i class="bi bi-person-badge me-2"></i>Penugasan Karyawan (PIC)</label>
+                        <p class="small text-muted mb-2">Jika diisi, lokasi aset akan otomatis diarahkan ke <b>Senoro Field - User/Employee</b>. Biarkan pada pilihan default jika ini adalah aset cadangan.</p>
+                        <select class="form-select border-primary" id="karyawan_id" name="karyawan_id">
+                            <!-- Value kosong agar dibaca sistem sebagai null/tanpa PIC, namun tampilannya ICT ASSET -->
+                            <option value="" selected>ICT ASSET (Gudang/Cadangan)</option> 
+                            {% for karyawan in karyawan_list %}
+                            <option value="{{ karyawan.id }}">{{ karyawan.nama }} - {{ karyawan.payroll }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
@@ -130,8 +145,9 @@
             <div class="card-body">
                 <h6 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle me-2"></i>Panduan Pengisian</h6>
                 <ul class="text-muted small ps-3 mb-0" style="line-height: 1.8;">
-                    <li><strong>Kode Aset:</strong> Harus unik dan tidak boleh sama dengan barang lain. Kosongkan jika ingin dibuat otomatis.</li>
+                    <li><strong>Kode Aset:</strong> Wajib diisi manual. Harus unik dan tidak boleh sama dengan barang lain di dalam sistem.</li>
                     <li><strong>Aturan SN:</strong> Serial Number boleh sama antar perangkat asalkan <strong>Brand</strong>-nya berbeda.</li>
+                    <li><strong>Standar Kategori:</strong> Jika kategori aset yang Anda maksud tidak ada, silakan tambahkan di menu Pengaturan Sistem (Kategori & Satuan).</li>
                     <li><strong>Otomatisasi Lokasi:</strong> Jika Anda memilih Karyawan di kolom Penugasan, sistem akan mengabaikan pilihan Lokasi Manual Anda dan menaruh aset tersebut di <em>Senoro Field - User/Employee</em>.</li>
                 </ul>
             </div>
@@ -163,8 +179,13 @@
 <script>
 $(document).ready(function() {
     // 1. Inisialisasi Dropdown Pintar (Select2)
-    $('#karyawan_id').select2({
+    $('#kategori_id').select2({
+        placeholder: "Cari/Pilih Kategori...",
+        allowClear: true,
+        width: '100%'
+    });
 
+    $('#karyawan_id').select2({
         width: '100%' 
     });
     

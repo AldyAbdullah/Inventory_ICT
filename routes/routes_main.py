@@ -1,17 +1,16 @@
-from flask import render_template, request, redirect, url_for, flash, send_file
+from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-from sqlalchemy import func
+from sqlalchemy import func, or_
 import calendar
 import qrcode
 import io
 import base64
-from sqlalchemy import or_
 
 from main import app, admin_required
-from models import db, User, Lokasi, Inventory, Consumable, Transaksi
-from export_utils import generate_excel_report
+# PERBAIKAN: KategoriBarang diimpor di sini
+from models import db, User, Lokasi, Inventory, Consumable, Transaksi, KategoriBarang, SatuanBarang
 
 # ---------------------------------------------------------
 # 1. RUTE AUTENTIKASI & PENGGUNA
@@ -21,12 +20,10 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     if request.method == 'POST':
-        # Mengubah query pencarian menggunakan payroll
         user = User.query.filter_by(payroll=request.form['payroll']).first()
         if user and check_password_hash(user.password, request.form['password']):
             login_user(user, remember=bool(request.form.get('remember')))
             return redirect(request.args.get('next') or url_for('index'))
-        # Flash message disesuaikan bahasanya
         flash('No. Payroll atau password salah.', 'error')
     return render_template('auth/login.html')
 
@@ -54,7 +51,6 @@ def profil():
         current_user.jabatan = jabatan
         
         if password_baru:
-            from werkzeug.security import generate_password_hash
             current_user.password = generate_password_hash(password_baru)
             
         db.session.commit()
@@ -83,7 +79,6 @@ def tambah_user():
         flash('Nomor Payroll sudah terdaftar!', 'danger')
         return redirect(url_for('users'))
 
-    from werkzeug.security import generate_password_hash
     hashed_pw = generate_password_hash(password)
     
     new_user = User(
@@ -106,7 +101,6 @@ def edit_user(id):
     
     password_baru = request.form.get('password')
     if password_baru:
-        from werkzeug.security import generate_password_hash
         user.password = generate_password_hash(password_baru)
         
     db.session.commit()
@@ -131,13 +125,10 @@ def hapus_user(id):
 @app.route('/')
 @login_required
 def index():
-    # 1. Hitung Nilai untuk Kartu Ringkasan
     total_inventory = Inventory.query.filter_by(is_active=True).count()
     total_consumable = Consumable.query.filter_by(is_active=True).count()
-    # Menganggap stok kritis adalah jika stok <= 5
     stok_kritis = Consumable.query.filter(Consumable.is_active==True, Consumable.stok <= 5).count()
 
-    # 2. Persiapkan Array untuk Data Grafik
     labels = []
     inv_masuk = []
     inv_keluar = []
@@ -146,26 +137,20 @@ def index():
 
     sekarang = datetime.now()
     
-    # Looping untuk 6 bulan terakhir (dari 5 bulan lalu sampai bulan ini)
     for i in range(5, -1, -1):
-        # Hitung kalkulasi bulan dan tahun mundur
         m = sekarang.month - i
         y = sekarang.year
         while m <= 0:
             m += 12
             y -= 1
             
-        # Format label bulan (Cth: Sep 2026)
         bulan_nama = datetime(y, m, 1).strftime('%b %Y')
         labels.append(bulan_nama)
         
-        # Cari tanggal awal dan akhir untuk bulan tersebut
         start_date = datetime(y, m, 1)
         _, last_day = calendar.monthrange(y, m)
         end_date = datetime(y, m, last_day, 23, 59, 59)
         
-        # --- QUERY INVENTORY ---
-        # Untuk Inventory, kita menghitung JUMLAH BARIS transaksi (count)
         inv_m = Transaksi.query.filter(
             Transaksi.inventory_id != None,
             Transaksi.jenis == 'Masuk',
@@ -180,8 +165,6 @@ def index():
             Transaksi.tanggal <= end_date
         ).count()
         
-        # --- QUERY CONSUMABLE ---
-        # Untuk Consumable, kita menjumlahkan TOTAL QTY (sum jumlah), bukan sekadar hitung baris
         cons_m_query = db.session.query(func.sum(Transaksi.jumlah)).filter(
             Transaksi.consumable_id != None,
             Transaksi.jenis == 'Masuk',
@@ -196,13 +179,11 @@ def index():
             Transaksi.tanggal <= end_date
         ).scalar()
         
-        # Masukkan ke dalam array grafik
         inv_masuk.append(inv_m)
         inv_keluar.append(inv_k)
         cons_masuk.append(int(cons_m_query or 0))
         cons_keluar.append(int(cons_k_query or 0))
 
-    # Kirimkan semua variabel ke template HTML
     return render_template(
         'index.html',
         total_inventory=total_inventory,
@@ -214,6 +195,7 @@ def index():
         cons_masuk=cons_masuk,
         cons_keluar=cons_keluar
     )
+
 # ---------------------------------------------------------
 # 3. RUTE MASTER LOKASI
 # ---------------------------------------------------------
@@ -260,19 +242,82 @@ def hapus_lokasi(id):
     return redirect(url_for('master_lokasi'))
 
 # ---------------------------------------------------------
-# 4. RUTE RIWAYAT, EXPORT & CETAK QR
+# 4. RUTE MASTER KATEGORI & SATUAN BARANG
 # ---------------------------------------------------------
-@app.route('/cetak_qr/<kode>')
+@app.route('/master_kategori_satuan', methods=['GET', 'POST'])
 @login_required
-def cetak_qr(kode):
-    barang = Inventory.query.filter_by(kode_barang=kode).first() or Consumable.query.filter_by(kode_barang=kode).first_or_404()
-    qr = qrcode.QRCode(version=1, box_size=10, border=2)
-    qr.add_data(kode)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    buf = io.BytesIO()
-    img.save(buf, format='PNG')
-    return render_template('transaksi/cetak_qr.html', barang=barang, qr_image=base64.b64encode(buf.getvalue()).decode('utf-8'))
+@admin_required
+def master_kategori_satuan():
+    if request.method == 'POST':
+        nama_kategori = request.form.get('nama_kategori', '').strip()
+        jenis = request.form.get('jenis', '').strip()
+        # Satuan hanya ditangkap jika jenisnya Consumable
+        nama_satuan = request.form.get('satuan', '').strip() if jenis == 'Consumable' else ''
+
+        if not nama_kategori and not nama_satuan:
+            flash('Gagal! Harap isi minimal Nama Kategori atau Nama Satuan.', 'danger')
+            return redirect(url_for('master_kategori_satuan'))
+
+        pesan = []
+        
+        # Eksekusi simpan Kategori
+        if nama_kategori:
+            if KategoriBarang.query.filter_by(nama_kategori=nama_kategori, jenis=jenis).first():
+                pesan.append(f'Kategori "{nama_kategori}" sudah ada')
+            else:
+                db.session.add(KategoriBarang(nama_kategori=nama_kategori, jenis=jenis))
+                pesan.append(f'Kategori "{nama_kategori}" ditambahkan')
+
+        # Eksekusi simpan Satuan (Jika ada isinya)
+        if nama_satuan:
+            if SatuanBarang.query.filter_by(nama_satuan=nama_satuan).first():
+                pesan.append(f'Satuan "{nama_satuan}" sudah ada')
+            else:
+                db.session.add(SatuanBarang(nama_satuan=nama_satuan))
+                pesan.append(f'Satuan "{nama_satuan}" ditambahkan')
+
+        db.session.commit()
+        flash(" | ".join(pesan) + ".", 'success')
+        return redirect(url_for('master_kategori_satuan'))
+
+    # Ambil 3 data sekaligus untuk ditampilkan di HTML
+    kat_inventory = KategoriBarang.query.filter_by(jenis='Inventory').order_by(KategoriBarang.nama_kategori.asc()).all()
+    kat_consumable = KategoriBarang.query.filter_by(jenis='Consumable').order_by(KategoriBarang.nama_kategori.asc()).all()
+    data_satuan = SatuanBarang.query.order_by(SatuanBarang.nama_satuan.asc()).all()
+
+    return render_template('kategori/master.html', 
+                           kat_inventory=kat_inventory, 
+                           kat_consumable=kat_consumable, 
+                           data_satuan=data_satuan)
+
+@app.route('/hapus_kategori/<int:id>', methods=['GET'])
+@login_required
+@admin_required
+def hapus_kategori(id):
+    kategori = KategoriBarang.query.get_or_404(id)
+    if (kategori.jenis == 'Inventory' and kategori.inventories) or (kategori.jenis == 'Consumable' and kategori.consumables):
+        flash('Gagal! Kategori ini masih digunakan oleh aset aktif.', 'danger')
+    else:
+        db.session.delete(kategori)
+        db.session.commit()
+        flash('Kategori berhasil dihapus.', 'success')
+    return redirect(url_for('master_kategori_satuan'))
+
+@app.route('/hapus_satuan/<int:id>', methods=['GET'])
+@login_required
+@admin_required
+def hapus_satuan(id):
+    satuan = SatuanBarang.query.get_or_404(id)
+    if satuan.consumables:
+        flash('Gagal! Satuan ini masih digunakan oleh data Consumable.', 'danger')
+    else:
+        db.session.delete(satuan)
+        db.session.commit()
+        flash('Satuan berhasil dihapus.', 'success')
+    return redirect(url_for('master_kategori_satuan'))
+# ---------------------------------------------------------
+# 5. RUTE TAMPILAN RIWAYAT
+# ---------------------------------------------------------
 
 @app.route('/riwayat_inventory')
 @login_required
@@ -282,7 +327,6 @@ def riwayat_inventory():
     end_date = request.args.get('end_date', '').strip()
     page = request.args.get('page', 1, type=int)
 
-    # PASTIKAN BARIS INI MENGANDUNG filter(Transaksi.jenis != 'Edit')
     query = Transaksi.query.filter(Transaksi.inventory_id != None, Transaksi.jenis != 'Edit')
 
     if search:
@@ -306,7 +350,6 @@ def riwayat_consumable():
     search = request.args.get('search', '')
     start_date, end_date = request.args.get('start_date', ''), request.args.get('end_date', '')
     
-    # Ambil hanya transaksi yang memiliki consumable_id
     query = Transaksi.query.join(Consumable).filter(Transaksi.consumable_id != None)
     
     if search:
@@ -319,15 +362,8 @@ def riwayat_consumable():
     data = query.order_by(Transaksi.tanggal.desc()).paginate(page=request.args.get('page', 1, type=int), per_page=20, error_out=False)
     return render_template('consumable/riwayat.html', data=data, search_query=search, start_date=start_date, end_date=end_date)
 
-@app.route('/export_riwayat_excel')
-@login_required
-def export_riwayat_excel():
-    data_transaksi = Transaksi.query.order_by(Transaksi.tanggal.desc()).all()
-    output, nama_file = generate_excel_report(Inventory.query.all(), Consumable.query.all(), data_transaksi)
-    return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name=nama_file)
-
 # ---------------------------------------------------------
-# 5. ERROR HANDLERS
+# 6. ERROR HANDLERS
 # ---------------------------------------------------------
 @app.errorhandler(404)
 def page_not_found(e): 

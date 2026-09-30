@@ -23,15 +23,13 @@ class Lokasi(db.Model):
     inventories = db.relationship('Inventory', backref='lokasi', lazy=True)
     consumables = db.relationship('Consumable', backref='lokasi', lazy=True)
 
-# TABEL BARU: Master Karyawan
 class Karyawan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     payroll = db.Column(db.String(50), unique=True, nullable=False)
     nama = db.Column(db.String(150), nullable=False)
-    status = db.Column(db.String(50), default='Aktif') # Aktif / Tidak Aktif
+    status = db.Column(db.String(50), default='Aktif') 
     inventories = db.relationship('Inventory', backref='karyawan_terkait', lazy=True)
 
-# TABEL BARU: Master Status Aset
 class StatusAset(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nama_status = db.Column(db.String(50), unique=True, nullable=False)
@@ -41,28 +39,52 @@ class Inventory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     kode_barang = db.Column(db.String(50), unique=True, nullable=False)
     nama_barang = db.Column(db.String(150), nullable=False)
-    brand = db.Column(db.String(100)) # Kolom Baru
-    serial_number = db.Column(db.String(100), nullable=False) # Aturan 'unique=True' telah dihapus
-    kategori = db.Column(db.String(50))
+    brand = db.Column(db.String(100)) 
+    serial_number = db.Column(db.String(100), nullable=False) 
+    
+    # PERUBAHAN: Relasi Foreign Key ke KategoriBarang
+    kategori_id = db.Column(db.Integer, db.ForeignKey('kategori_barang.id'), nullable=True)
+    kategori_terkait = db.relationship('KategoriBarang', backref='inventories', lazy=True)
+    
     unit_type = db.Column(db.String(100))
-    vendor = db.Column(db.String(100)) # Kolom Baru
+    vendor = db.Column(db.String(100)) 
     lokasi_id = db.Column(db.Integer, db.ForeignKey('lokasi.id'))
-    karyawan_id = db.Column(db.Integer, db.ForeignKey('karyawan.id'), nullable=True) # Relasi ke Karyawan
-    status_id = db.Column(db.Integer, db.ForeignKey('status_aset.id'), nullable=True) # Relasi ke StatusAset
+    karyawan_id = db.Column(db.Integer, db.ForeignKey('karyawan.id'), nullable=True) 
+    status_id = db.Column(db.Integer, db.ForeignKey('status_aset.id'), nullable=True) 
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=waktu_lokal)
+
+# TABEL BARU: Master Kategori
+class KategoriBarang(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nama_kategori = db.Column(db.String(100), nullable=False)
+    jenis = db.Column(db.String(50), nullable=False) # 'Inventory' atau 'Consumable'
+
+# TABEL BARU: Master Satuan (Khusus Consumable)
+class SatuanBarang(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nama_satuan = db.Column(db.String(50), unique=True, nullable=False)
+
+# ... (Tabel Inventory tetap sama) ...
 
 class Consumable(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     kode_barang = db.Column(db.String(50), unique=True, nullable=False)
     nama_barang = db.Column(db.String(150), nullable=False)
-    kategori = db.Column(db.String(50))
+    
+    kategori_id = db.Column(db.Integer, db.ForeignKey('kategori_barang.id'), nullable=True)
+    kategori_terkait = db.relationship('KategoriBarang', backref='consumables', lazy=True)
+    
     unit_type = db.Column(db.String(100))
     brand = db.Column(db.String(100))
     vendor = db.Column(db.String(100))
     lokasi_id = db.Column(db.Integer, db.ForeignKey('lokasi.id'))
     stok = db.Column(db.Integer, default=0)
-    satuan = db.Column(db.String(20))
+    
+    # PERUBAHAN: Satuan sekarang berelasi ke tabel SatuanBarang
+    satuan_id = db.Column(db.Integer, db.ForeignKey('satuan_barang.id'), nullable=True)
+    satuan_terkait = db.relationship('SatuanBarang', backref='consumables', lazy=True)
+    
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=waktu_lokal)
 

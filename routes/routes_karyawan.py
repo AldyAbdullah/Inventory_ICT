@@ -22,11 +22,14 @@ def master_karyawan():
             flash('Data Karyawan berhasil ditambahkan.', 'success')
         return redirect(url_for('master_karyawan'))
         
-    # Logika GET (Tampilkan Tabel & Pencarian)
-    search = request.args.get('search', '')
+    # Logika GET (Tampilkan Tabel & Pencarian by Nama / Payroll)
+    search = request.args.get('search', '').strip()
     query = Karyawan.query
     if search:
-        query = query.filter(db.or_(Karyawan.nama.ilike(f"%{search}%"), Karyawan.payroll.ilike(f"%{search}%")))
+        query = query.filter(db.or_(
+            Karyawan.nama.ilike(f"%{search}%"), 
+            Karyawan.payroll.ilike(f"%{search}%")
+        ))
         
     data_karyawan = query.order_by(Karyawan.nama.asc()).all()
     return render_template('karyawan/master.html', data=data_karyawan, search_query=search)
@@ -72,4 +75,29 @@ def import_karyawan():
     else:
         flash('Gagal: Format file harus Excel (.xlsx)', 'danger')
         
+    return redirect(url_for('master_karyawan'))
+
+@app.route('/edit_karyawan/<int:id>', methods=['POST'])
+@login_required
+@admin_required
+def edit_karyawan(id):
+    karyawan = Karyawan.query.get_or_404(id)
+    
+    payroll_baru = request.form.get('payroll').strip()
+    nama_baru = request.form.get('nama').strip()
+    status_baru = request.form.get('status').strip()
+    
+    # Validasi jika payroll diubah agar tidak bentrok dengan data lain
+    if payroll_baru != karyawan.payroll:
+        cek_duplikat = Karyawan.query.filter_by(payroll=payroll_baru).first()
+        if cek_duplikat:
+            flash(f'Gagal: Payroll "{payroll_baru}" sudah digunakan oleh karyawan lain!', 'danger')
+            return redirect(url_for('master_karyawan'))
+            
+    karyawan.payroll = payroll_baru
+    karyawan.nama = nama_baru
+    karyawan.status = status_baru
+    
+    db.session.commit()
+    flash('Data Karyawan berhasil diperbarui.', 'success')
     return redirect(url_for('master_karyawan'))

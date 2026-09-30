@@ -8,7 +8,6 @@
     <p class="text-muted mb-0">Kelola dan pantau aset perangkat IT yang memiliki Serial Number unik.</p>
   </div>
   <div class="d-flex gap-2">
-    <!-- DIBERSIHKAN: Atribut hx-boost dihapus -->
     <a href="{{ url_for('export_inventory', search=search_query, kategori=filter_kategori, lokasi=filter_lokasi, status=filter_status) }}" class="btn btn-success shadow-sm" title="Export ke Excel">
       <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
     </a>
@@ -139,8 +138,9 @@
             <label class="form-label small fw-semibold mb-1">Kategori</label>
             <select name="kategori" class="form-select form-select-sm">
               <option value="">Semua Kategori</option>
+              <!-- PERBAIKAN: Mengambil ID dan Nama dari objek Master Kategori -->
               {% for kat in kategori_list %}
-              <option value="{{ kat }}" {% if filter_kategori == kat %}selected{% endif %}>{{ kat }}</option>
+              <option value="{{ kat.id }}" {% if filter_kategori|string == kat.id|string %}selected{% endif %}>{{ kat.nama_kategori }}</option>
               {% endfor %}
             </select>
           </div>
@@ -166,14 +166,12 @@
           </div>
           
           <div class="d-flex justify-content-end gap-2 mt-3">
-            <!-- DIBERSIHKAN: Atribut hx-boost dihapus -->
             <a href="{{ url_for('master_inventory') }}" class="btn btn-sm btn-light border">Reset</a>
             <button type="submit" class="btn btn-sm btn-primary px-3">Terapkan</button>
           </div>
         </div>
 
         {% if search_query or filter_kategori or filter_lokasi or filter_status %}
-        <!-- DIBERSIHKAN: Atribut hx-boost dihapus -->
         <a href="{{ url_for('master_inventory') }}" class="btn btn-danger border-0 text-white" title="Hapus Filter"><i class="bi bi-x-lg"></i></a>
         {% endif %}
       </div>
@@ -208,7 +206,8 @@
               <small class="text-muted">{{ item.brand or '-' }} | {{ item.vendor or '-' }}</small>
             </td>
             <td>
-              <span class="fw-medium text-dark"><i class="bi bi-tag me-1"></i>{{ item.kategori or '-' }}</span><br />
+              <!-- PERBAIKAN: Menampilkan relasi Kategori -->
+              <span class="fw-medium text-dark"><i class="bi bi-tag me-1"></i>{{ item.kategori_terkait.nama_kategori if item.kategori_id and item.kategori_terkait else '-' }}</span><br />
               <small class="text-muted">{{ item.unit_type or '-' }}</small>
             </td>
             <td>
@@ -275,7 +274,6 @@
 </div>
 
 <script>
-  // DIBERSIHKAN: Kembali menggunakan DOMContentLoaded agar stabil tanpa HTMX
   document.addEventListener("DOMContentLoaded", function () {
     const filterForm = document.getElementById("filterForm");
     const tableBody = document.getElementById("tableBody");

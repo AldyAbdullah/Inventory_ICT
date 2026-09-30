@@ -1,0 +1,206 @@
+{% extends 'base.html' %} 
+{% block title %}Master Data Aset - Inventaris Tomori{% endblock %} 
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-bold mb-1" style="color: #0a2540">Master Kategori & Satuan</h4>
+    <p class="text-muted mb-0">Kelola standarisasi penamaan kategori dan satuan barang.</p>
+  </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %} 
+  {% if messages %} 
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert">
+      <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %} 
+  {% endif %} 
+{% endwith %}
+
+<div class="row">
+  <!-- KIRI: Form Gabungan -->
+  <div class="col-md-4 mb-4">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-header bg-white py-3">
+        <h6 class="m-0 fw-bold text-primary">Tambah Data Master</h6>
+      </div>
+      <div class="card-body">
+        <form action="{{ url_for('master_kategori_satuan') }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}" />
+          
+          <div class="mb-4">
+            <label class="form-label fw-bold text-dark small">Pilih Jenis Aset</label>
+            <div class="d-flex gap-4 mt-1">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="jenis" id="radioInv" value="Inventory" checked onchange="toggleForm()">
+                <label class="form-check-label" for="radioInv" style="cursor: pointer;">Inventory IT</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="jenis" id="radioCns" value="Consumable" onchange="toggleForm()">
+                <label class="form-check-label" for="radioCns" style="cursor: pointer;">Consumable</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold text-dark small">Nama Kategori (Opsional)</label>
+            <input type="text" class="form-control" name="nama_kategori" id="inputKategori" placeholder="Misal: PC/Laptop, Networking...">
+          </div>
+
+          <div class="mb-4" id="divSatuan" style="display: none;">
+            <label class="form-label fw-bold text-dark small">Nama Satuan (Opsional)</label>
+            <input type="text" class="form-control" name="satuan" id="inputSatuan" placeholder="Misal: Pcs, Roll, Botol...">
+            <small class="text-muted" style="font-size: 0.75rem;">Isi form ini jika ingin menambahkan satuan baru.</small>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 shadow-sm"><i class="bi bi-save me-2"></i>Simpan Data</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- KANAN: Panel Daftar Data -->
+  <div class="col-md-8 mb-4">
+    
+    <!-- TAMPILAN INVENTORY -->
+    <div id="panelInventory">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+          <h6 class="m-0 fw-bold text-primary">Daftar Kategori: Inventory IT</h6>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive table-scrollable" style="max-height: 60vh;">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-4" width="10%">No</th>
+                  <th>Nama Kategori</th>
+                  <th width="15%" class="text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in kat_inventory %}
+                <tr>
+                  <td class="ps-4">{{ loop.index }}</td>
+                  <td class="fw-semibold text-dark"><i class="bi bi-pc-display text-secondary me-2"></i>{{ item.nama_kategori }}</td>
+                  <td class="text-center">
+                    <a href="{{ url_for('hapus_kategori', id=item.id) }}" class="btn btn-sm btn-light border text-danger" onclick="return confirm('Hapus kategori ini?');" title="Hapus"><i class="bi bi-trash"></i></a>
+                  </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3" class="text-center py-5 text-muted">Belum ada kategori Inventory.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAMPILAN CONSUMABLE -->
+    <div id="panelConsumable" style="display: none;">
+      <div class="row g-3">
+        <!-- Tabel Kategori Consumable -->
+        <div class="col-md-7">
+          <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3">
+              <h6 class="m-0 fw-bold text-primary">Kategori Consumable</h6>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive table-scrollable" style="max-height: 60vh;">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th class="ps-4" width="15%">No</th>
+                      <th>Nama Kategori</th>
+                      <th width="20%" class="text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in kat_consumable %}
+                    <tr>
+                      <td class="ps-4">{{ loop.index }}</td>
+                      <td class="fw-semibold text-dark"><i class="bi bi-box-seam text-secondary me-2"></i>{{ item.nama_kategori }}</td>
+                      <td class="text-center">
+                        <a href="{{ url_for('hapus_kategori', id=item.id) }}" class="btn btn-sm btn-light border text-danger" onclick="return confirm('Hapus kategori ini?');"><i class="bi bi-trash"></i></a>
+                      </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" class="text-center py-5 text-muted">Belum ada data.</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabel Satuan Consumable -->
+        <div class="col-md-5">
+          <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3">
+              <h6 class="m-0 fw-bold text-success">Satuan Consumable</h6>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive table-scrollable" style="max-height: 60vh;">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th class="ps-4" width="15%">No</th>
+                      <th>Nama Satuan</th>
+                      <th width="25%" class="text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in data_satuan %}
+                    <tr>
+                      <td class="ps-4">{{ loop.index }}</td>
+                      <td class="fw-semibold text-dark"><span class="badge bg-light text-dark border">{{ item.nama_satuan }}</span></td>
+                      <td class="text-center">
+                        <a href="{{ url_for('hapus_satuan', id=item.id) }}" class="btn btn-sm btn-light border text-danger" onclick="return confirm('Hapus satuan ini?');"><i class="bi bi-trash"></i></a>
+                      </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" class="text-center py-5 text-muted">Belum ada data.</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function toggleForm() {
+    const isConsumable = document.getElementById('radioCns').checked;
+    const divSatuan = document.getElementById('divSatuan');
+    const inputKategori = document.getElementById('inputKategori');
+    const panelInv = document.getElementById('panelInventory');
+    const panelCns = document.getElementById('panelConsumable');
+
+    if (isConsumable) {
+      divSatuan.style.display = 'block';
+      inputKategori.placeholder = "Misal: Tinta Printer, Kabel, ATK...";
+      panelInv.style.display = 'none';
+      panelCns.style.display = 'block';
+    } else {
+      divSatuan.style.display = 'none';
+      inputKategori.placeholder = "Misal: PC/Laptop, Networking...";
+      panelInv.style.display = 'block';
+      panelCns.style.display = 'none';
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    toggleForm();
+  });
+</script>
+{% endblock %}
