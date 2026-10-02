@@ -3,52 +3,83 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0" style="color: #0a2540;">Transaksi Massal Barang Habis Pakai</h4>
+    <div>
+        <h4 class="fw-bold mb-1" style="color: #0a2540;">Transaksi Mutasi Massal</h4>
+        <p class="text-muted mb-0">Perbarui stok (Masuk/Keluar) untuk banyak barang sekaligus.</p>
+    </div>
     <a href="{{ url_for('master_consumable') }}" class="btn btn-outline-secondary shadow-sm">
-        <i class="bi bi-arrow-left me-1"></i> Kembali
+        <i class="bi bi-arrow-left me-1"></i> Kembali ke Master
     </a>
 </div>
 
-<div class="card shadow-sm border-0">
-    <div class="card-body p-4">
-        <form method="POST" action="{{ url_for('transaksi_consumable_bulk') }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            <!-- Penanda bahwa ini adalah form eksekusi -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-circle-fill me-2"></i>{{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="card shadow-sm border-0 mb-5">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 fw-bold text-primary"><i class="bi bi-boxes me-2"></i>Daftar Barang Terpilih</h6>
+        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">{{ barangs|length }} Barang Akan Diproses</span>
+    </div>
+    <div class="card-body p-0">
+        <form id="bulkProcessForm" method="POST" action="{{ url_for('transaksi_consumable_bulk') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}"/>
             <input type="hidden" name="process_bulk" value="1"/>
             
-            <div class="table-responsive">
-                <table class="table align-middle">
+            <div class="table-responsive table-scrollable">
+                <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th width="35%">Nama Barang</th>
-                            <th width="15%">Sisa Stok</th>
-                            <th width="25%">Jenis Transaksi</th>
-                            <th width="25%">Jumlah</th>
+                            <th class="ps-4" width="25%">Barang</th>
+                            <th width="10%" class="text-center">Sisa Stok</th>
+                            <th width="18%">Jenis Transaksi</th>
+                            <th width="17%">Jumlah</th>
+                            <th width="27%" class="pe-4">Keterangan / Tujuan (Opsional)</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for barang in barangs %}
                         <tr>
-                            <td>
+                            <td class="ps-4">
                                 <input type="hidden" name="item_ids" value="{{ barang.id }}">
                                 <span class="fw-semibold text-primary">{{ barang.nama_barang }}</span><br>
-                                <small class="text-muted">Kode: {{ barang.kode_barang }}</small>
+                                <small class="text-muted"><i class="bi bi-upc-scan me-1"></i>{{ barang.kode_barang }}</small>
+                            </td>
+                            <td class="text-center">
+                                {% set nama_sat = barang.satuan_terkait.nama_satuan if barang.satuan_id and barang.satuan_terkait else '' %}
+                                <span class="badge {% if barang.stok <= 5 %}bg-danger{% else %}bg-secondary{% endif %} fs-6 px-2 py-1">
+                                    {{ barang.stok }} {{ nama_sat }}
+                                </span>
                             </td>
                             <td>
-                                <span class="badge bg-secondary fs-6">{{ barang.stok }} {{ barang.satuan }}</span>
-                            </td>
-                            <td>
-                                <select name="jenis_transaksi_{{ barang.id }}" class="form-select">
-                                    <option value="">-- Pilih Jenis --</option>
-                                    <option value="Masuk">Masuk (Tambah Stok)</option>
-                                    <option value="Keluar">Keluar (Ambil Stok)</option>
+                                <select name="jenis_transaksi_{{ barang.id }}" class="form-select select-jenis" data-id="{{ barang.id }}">
+                                    <option value="" selected>-- Abaikan / Batal --</option>
+                                    <option value="Masuk">Masuk (+ Stok)</option>
+                                    <option value="Keluar">Keluar (- Stok)</option>
                                 </select>
                             </td>
                             <td>
                                 <div class="input-group">
-                                    <input type="number" name="jumlah_{{ barang.id }}" class="form-control" min="1" placeholder="0">
-                                    <span class="input-group-text bg-light">{{ barang.satuan }}</span>
+                                    <input type="number" name="jumlah_{{ barang.id }}" id="jumlah_{{ barang.id }}" class="form-control input-jumlah" min="1" placeholder="0" disabled>
+                                    <span class="input-group-text bg-light text-muted" style="font-size: 0.85rem;">{{ nama_sat }}</span>
                                 </div>
+                            </td>
+                            <td class="pe-4">
+                                <input type="text" name="keterangan_{{ barang.id }}" id="keterangan_{{ barang.id }}" class="form-control input-keterangan" placeholder="Contoh: Stok dari vendor / Diambil Divisi A..." disabled>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                Tidak ada barang yang dipilih untuk transaksi massal.
                             </td>
                         </tr>
                         {% endfor %}
@@ -56,12 +87,73 @@
                 </table>
             </div>
 
-            <hr class="my-4 text-muted">
-            <div class="d-flex justify-content-end gap-2">
-                <a href="{{ url_for('master_consumable') }}" class="btn btn-light border shadow-sm">Batal</a>
-                <button type="submit" class="btn btn-primary px-4 shadow-sm"><i class="bi bi-save me-1"></i> Simpan Semua Transaksi</button>
+            <div class="card-footer bg-light p-4 border-top-0 rounded-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted small">
+                        <i class="bi bi-info-circle me-1"></i> Baris dengan pilihan <strong>"-- Abaikan / Batal --"</strong> tidak akan diproses oleh sistem.
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('master_consumable') }}" class="btn btn-light border shadow-sm px-4">Batal</a>
+                        <button type="submit" id="btnSubmitBulk" class="btn btn-primary px-4 shadow-sm" {% if not barangs %}disabled{% endif %}>
+                            <i class="bi bi-save me-1"></i> Eksekusi Transaksi Terpilih
+                        </button>
+                    </div>
+                </div>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const selects = document.querySelectorAll('.select-jenis');
+
+    selects.forEach(select => {
+        select.addEventListener('change', function() {
+            const rowId = this.getAttribute('data-id');
+            const jumlahInput = document.getElementById('jumlah_' + rowId);
+            const ketInput = document.getElementById('keterangan_' + rowId);
+
+            if (this.value !== "") {
+                // Aktifkan input jika transaksi dipilih
+                jumlahInput.disabled = false;
+                jumlahInput.required = true;
+                ketInput.disabled = false;
+                
+                // Beri warna background khusus agar user fokus
+                if (this.value === 'Masuk') {
+                    this.classList.remove('bg-danger', 'bg-opacity-10', 'text-danger');
+                    this.classList.add('bg-success', 'bg-opacity-10', 'text-success', 'fw-bold');
+                } else if (this.value === 'Keluar') {
+                    this.classList.remove('bg-success', 'bg-opacity-10', 'text-success');
+                    this.classList.add('bg-danger', 'bg-opacity-10', 'text-danger', 'fw-bold');
+                }
+            } else {
+                // Matikan & reset input jika dibatalkan/diabaikan
+                jumlahInput.disabled = true;
+                jumlahInput.required = false;
+                jumlahInput.value = "";
+                ketInput.disabled = true;
+                ketInput.value = "";
+                
+                this.className = 'form-select select-jenis'; // Kembalikan ke style normal
+            }
+        });
+    });
+
+    // Validasi tambahan sebelum submit agar tidak mengirim data kosong jika semua di-abaikan
+    const form = document.getElementById('bulkProcessForm');
+    form.addEventListener('submit', function(e) {
+        let hasActiveTransaction = false;
+        selects.forEach(sel => {
+            if (sel.value !== "") hasActiveTransaction = true;
+        });
+
+        if (!hasActiveTransaction) {
+            e.preventDefault();
+            alert("Harap pilih setidaknya satu jenis transaksi (Masuk/Keluar) pada salah satu barang sebelum menyimpan.");
+        }
+    });
+});
+</script>
 {% endblock %}

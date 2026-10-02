@@ -6,13 +6,17 @@
   <div>
     <h4 class="fw-bold mb-1" style="color: #0a2540">Master Data Consumable</h4>
     <p class="text-muted mb-0">Kelola barang habis pakai, stok, dan riwayat mutasinya.</p>
+    <!-- PENAMBAHAN TANGGAL HARI INI -->
+    <small class="badge bg-light text-secondary border mt-2">
+      <i class="bi bi-clock-history me-1"></i>Data per: <strong>{{ dt.now().strftime('%d %B %Y') }}</strong>
+    </small>
   </div>
   <div class="d-flex gap-2">
     <a href="{{ url_for('export_consumable', search=search_query, kategori=filter_kategori, tipe=filter_tipe, lokasi=filter_lokasi) }}" class="btn btn-success shadow-sm" title="Export ke Excel">
-      <i class="bi bi-file-earmark-excel"></i>
+      <i class="bi bi-file-earmark-excel"></i> Export Excel
     </a>
     <a href="{{ url_for('tambah_consumable') }}" class="btn btn-primary shadow-sm" title="Tambah Barang Baru">
-      <i class="bi bi-plus-lg"></i>
+      <i class="bi bi-plus-lg me-1"></i> Tambah Consumable
     </a>
   </div>
 </div>
@@ -51,7 +55,6 @@
             <label class="form-label small fw-semibold mb-1">Kategori</label>
             <select name="kategori" class="form-select form-select-sm">
               <option value="">Semua Kategori</option>
-              <!-- PERBAIKAN: Mengambil ID dan Nama Kategori dari relasi master -->
               {% for kat in kategori_list %}
               <option value="{{ kat.id }}" {% if filter_kategori|string == kat.id|string %}selected{% endif %}>{{ kat.nama_kategori }}</option>
               {% endfor %}
@@ -71,9 +74,12 @@
           <div class="mb-3">
             <label class="form-label small fw-semibold mb-1">Lokasi Gudang</label>
             <select name="lokasi" class="form-select form-select-sm">
-              <option value="">Semua Lokasi</option>
+              <option value="">Semua Lokasi Gudang</option>
               {% for lok in lokasi_list %}
-              <option value="{{ lok.id }}" {% if filter_lokasi|string == lok.id|string %}selected{% endif %}>{{ lok.main_lokasi }} - {{ lok.nama_lokasi }}</option>
+              <!-- Menyembunyikan opsi User/Employee di filter -->
+              {% if lok.main.nama_main != 'User / Employee' %}
+              <option value="{{ lok.id }}" {% if filter_lokasi|string == lok.id|string %}selected{% endif %}>{{ lok.main.nama_main }} - {{ lok.nama_sub }}</option>
+              {% endif %}
               {% endfor %}
             </select>
           </div>
@@ -92,17 +98,16 @@
   </div>
 
   <form id="bulkForm" method="POST" action="">
-    <!-- Hapus / sesuaikan CSRF Token ini jika di environment Anda menyebabkan error (tidak pakai flask-wtf) -->
     <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}" />
 
     <div class="card-body p-0">
       <div class="table-responsive table-scrollable pb-0" style="min-height: 280px">
-        <table class="table table-hover table-sm align-middle mb-0">
+        <table class="table table-hover table-sm align-middle mb-0 text-nowrap">
           <thead class="table-light">
             <tr>
               <th class="ps-4" width="5%">No</th>
               <th width="15%">Kode Barang</th>
-              <th width="20%">Nama, Brand, Vendor</th>
+              <th width="20%">Nama, Brand & Vendor</th>
               <th width="20%">Kategori & Tipe</th>
               <th width="15%">Lokasi Gudang</th>
               <th width="12%">Sisa Stok</th>
@@ -120,26 +125,35 @@
                 <span class="badge bg-light text-dark border"><i class="bi bi-upc-scan me-1"></i>{{ item.kode_barang }}</span>
               </td>
               <td>
-                <!-- PERBAIKAN: Menghapus label "Brand" dan menggabungkannya seperti tabel Inventory -->
                 <span class="fw-semibold text-primary" style="font-size: 0.95rem;">{{ item.nama_barang }}</span><br />
                 <small class="text-muted">{{ item.brand or '-' }} | {{ item.vendor or '-' }}</small>
               </td>
               <td>
-                <!-- PERBAIKAN: Menghapus label "Tipe" dan memanggil kategori dari relasi master -->
                 <span class="fw-medium text-dark"><i class="bi bi-tag me-1"></i>{{ item.kategori_terkait.nama_kategori if item.kategori_id and item.kategori_terkait else 'Tanpa Kategori' }}</span><br />
                 <small class="text-muted">{{ item.unit_type or '-' }}</small>
               </td>
+              
+              <!-- PERBAIKAN: Kolom Lokasi menggunakan MainLokasi dan SubLokasi -->
               <td>
                 {% if item.lokasi %}
-                <div style="font-size: 0.9rem">{{ item.lokasi.main_lokasi }}</div>
-                <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{ item.lokasi.nama_lokasi }}</small>
+                  <div class="text-dark fw-medium" style="font-size: 0.9rem;">
+                    {{ item.lokasi.main.nama_main if item.lokasi.main else 'Belum Dialokasikan' }}
+                  </div>
+                  <small class="text-muted">
+                    <i class="bi bi-geo-alt me-1"></i>
+                    {% if item.lokasi.nama_sub != '-' %}
+                      {{ item.lokasi.nama_sub }}
+                    {% else %}
+                      -
+                    {% endif %}
+                  </small>
                 {% else %}
-                <span class="text-muted" style="font-size: 0.9rem">Belum Dialokasikan</span>
+                  <span class="text-muted" style="font-size: 0.9rem">Belum Dialokasikan</span>
                 {% endif %}
               </td>
+              
               <td>
-                <!-- PERBAIKAN: Memanggil satuan dari relasi tabel SatuanBarang -->
-                <span class="badge {% if item.stok <= 5 %}bg-danger{% else %}bg-success{% endif %} fs-6">
+                <span class="badge {% if item.stok <= 5 %}bg-danger{% else %}bg-success{% endif %} fs-6 px-2 py-1">
                   {{ item.stok }} {{ item.satuan_terkait.nama_satuan if item.satuan_id and item.satuan_terkait else '' }}
                 </span>
               </td>

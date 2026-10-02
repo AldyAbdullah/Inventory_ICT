@@ -4,13 +4,16 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from sqlalchemy import func, or_
 import calendar
-import qrcode
-import io
-import base64
 
 from main import app, admin_required
 # PERBAIKAN: KategoriBarang diimpor di sini
-from models import db, User, Lokasi, Inventory, Consumable, Transaksi, KategoriBarang, SatuanBarang
+from models import db, User, MainLokasi, SubLokasi, Inventory, Consumable, Transaksi, KategoriBarang, SatuanBarang
+
+from datetime import datetime
+
+@app.context_processor
+def inject_datetime():
+    return {'dt': datetime}
 
 # ---------------------------------------------------------
 # 1. RUTE AUTENTIKASI & PENGGUNA
@@ -197,50 +200,105 @@ def index():
     )
 
 # ---------------------------------------------------------
-# 3. RUTE MASTER LOKASI
+# 3. RUTE MASTER LOKASI (Hierarki Main & Sub Lokasi)
 # ---------------------------------------------------------
 @app.route('/lokasi')
 @login_required
 @admin_required
 def master_lokasi():
-    data_lokasi = Lokasi.query.order_by(Lokasi.main_lokasi.asc(), Lokasi.nama_lokasi.asc()).all()
-    return render_template('lokasi/master.html', data=data_lokasi)
+    # Ambil semua MainLokasi dan ikutkan (join) data SubLokasinya
+    main_lokasi_list = MainLokasi.query.order_by(MainLokasi.nama_main.asc()).all()
+    sub_lokasi_list = SubLokasi.query.join(MainLokasi).order_by(MainLokasi.nama_main.asc(), SubLokasi.nama_sub.asc()).all()
+    
+    return render_template('lokasi/master.html', main_lokasi_list=main_lokasi_list, sub_lokasi_list=sub_lokasi_list)
 
-@app.route('/tambah_lokasi', methods=['GET', 'POST'])
+@app.route('/tambah_lokasi', methods=['GET'])
 @login_required
 @admin_required
 def tambah_lokasi():
-    if request.method == 'POST':
-        main_lokasi = request.form.get('main_lokasi', '').strip()
-        nama_lokasi = request.form.get('nama_lokasi', '').strip() 
-        
-        cek_lokasi = Lokasi.query.filter(Lokasi.main_lokasi.ilike(main_lokasi), Lokasi.nama_lokasi.ilike(nama_lokasi)).first()
-        if cek_lokasi:
-            flash(f'Gagal! Sub Lokasi "{nama_lokasi}" sudah ada di dalam Main Lokasi "{main_lokasi}".', 'danger')
-            return redirect(url_for('tambah_lokasi'))
-            
-        lokasi_baru = Lokasi(main_lokasi=main_lokasi, nama_lokasi=nama_lokasi)
-        db.session.add(lokasi_baru)
-        db.session.commit()
-        flash('Titik lokasi baru berhasil ditambahkan.', 'success')
-        return redirect(url_for('master_lokasi'))
-        
-    main_lokasi_list = [m[0] for m in db.session.query(Lokasi.main_lokasi).distinct().all()]
+    # Menarik data Main Lokasi untuk diisi ke dalam Dropdown di form Sub Lokasi
+    main_lokasi_list = MainLokasi.query.order_by(MainLokasi.nama_main.asc()).all()
     return render_template('lokasi/tambah.html', main_lokasi_list=main_lokasi_list)
 
-@app.route('/hapus_lokasi/<int:id>')
+@app.route('/tambah_main_lokasi', methods=['POST'])
 @login_required
 @admin_required
-def hapus_lokasi(id):
-    lokasi = Lokasi.query.get_or_404(id)
-    if lokasi.inventories or lokasi.consumables:
-        flash(f'Gagal! Sub Lokasi "{lokasi.nama_lokasi}" masih berisi aset.', 'danger')
+def tambah_main_lokasi():
+    nama_main = request.form.get('nama_main', '').strip()
+    keterangan = request.form.get('keterangan', '').strip()
+    
+    if MainLokasi.query.filter(MainLokasi.nama_main.ilike(nama_main)).first():
+        flash(f'Gagal! Main Lokasi "{nama_main}" sudah ada.', 'danger')
     else:
-        db.session.delete(lokasi)
+        db.session.add(MainLokasi(nama_main=nama_main, keterangan=keterangan))
         db.session.commit()
-        flash('Lokasi berhasil dihapus.', 'success')
+        flash(f'Main Lokasi "{nama_main}" berhasil ditambahkan.', 'success')
+        
     return redirect(url_for('master_lokasi'))
 
+@app.route('/tambah_sub_lokasi', methods=['POST'])
+@login_required
+@admin_required
+def tambah_sub_lokasi():
+    main_lokasi_id = request.form.get('main_lokasi_id')
+    nama_sub = request.form.get('nama_sub', '').strip()
+    keterangan = request.form.get('keterangan', '').strip()
+    
+    if not main_lokasi_id:
+        flash('Pilih Main Lokasi terlebih dahulu.', 'danger')
+        return redirect(url_for('master_lokasi'))
+        
+    cek = SubLokasi.query.filter_by(main_lokasi_id=main_lokasi_id).filter(SubLokasi.nama_sub.ilike(nama_sub)).first()
+    if cek:
+        flash(f'Gagal! Sub Lokasi "{nama_sub}" sudah ada di area ini.', 'danger')
+    else:
+        db.session.add(SubLokasi(main_lokasi_id=main_lokasi_id, nama_sub=nama_sub, keterangan=keterangan))
+        db.session.commit()
+        flash(f'Sub Lokasi "{nama_sub}" berhasil ditambahkan.', 'success')
+        
+    return redirect(url_for('master_lokasi'))
+
+@app.route('/edit_main_lokasi/<int:id>', methods=['POST'])
+@login_required
+@admin_required
+def edit_main_lokasi(id):
+    main_loc = MainLokasi.query.get_or_404(id)
+    nama_main_baru = request.form.get('nama_main', '').strip()
+    keterangan_baru = request.form.get('keterangan', '').strip()
+    
+    # Cek apakah nama main lokasi baru sudah dipakai oleh data lain
+    cek = MainLokasi.query.filter(MainLokasi.id != id, MainLokasi.nama_main.ilike(nama_main_baru)).first()
+    if cek:
+        flash(f'Gagal! Main Lokasi "{nama_main_baru}" sudah terdaftar.', 'danger')
+    else:
+        main_loc.nama_main = nama_main_baru
+        main_loc.keterangan = keterangan_baru
+        db.session.commit()
+        flash('Data Main Lokasi berhasil diperbarui.', 'success')
+        
+    return redirect(url_for('master_lokasi'))
+
+@app.route('/edit_sub_lokasi/<int:id>', methods=['POST'])
+@login_required
+@admin_required
+def edit_sub_lokasi(id):
+    sub_loc = SubLokasi.query.get_or_404(id)
+    main_lokasi_id = request.form.get('main_lokasi_id')
+    nama_sub_baru = request.form.get('nama_sub', '').strip()
+    keterangan_baru = request.form.get('keterangan', '').strip()
+    
+    # Cek duplikasi nama sub lokasi di dalam main lokasi yang sama
+    cek = SubLokasi.query.filter(SubLokasi.id != id, SubLokasi.main_lokasi_id == main_lokasi_id, SubLokasi.nama_sub.ilike(nama_sub_baru)).first()
+    if cek:
+        flash(f'Gagal! Sub Lokasi "{nama_sub_baru}" sudah ada di area tersebut.', 'danger')
+    else:
+        sub_loc.main_lokasi_id = main_lokasi_id
+        sub_loc.nama_sub = nama_sub_baru
+        sub_loc.keterangan = keterangan_baru
+        db.session.commit()
+        flash('Data Sub Lokasi berhasil diperbarui.', 'success')
+        
+    return redirect(url_for('master_lokasi'))
 # ---------------------------------------------------------
 # 4. RUTE MASTER KATEGORI & SATUAN BARANG
 # ---------------------------------------------------------

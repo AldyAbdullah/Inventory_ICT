@@ -4,61 +4,185 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1" style="color: #0a2540;">Master Area & Lokasi</h4>
-        <p class="text-muted mb-0">Kelola Main Location dan Sub Location penempatan aset.</p>
+        <h4 class="fw-bold mb-1" style="color: #0a2540;">Data Master Lokasi</h4>
+        <p class="text-muted mb-0">Kelola hierarki Area Utama (Main) dan Titik Spesifik (Sub).</p>
     </div>
     <a href="{{ url_for('tambah_lokasi') }}" class="btn btn-primary shadow-sm">
-        <i class="bi bi-plus-lg me-1"></i> Tambah Lokasi
+        <i class="bi bi-plus-lg me-1"></i> Tambah Lokasi Baru
     </a>
 </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
+{% with messages = get_flashed_messages(with_categories=true) %} 
+  {% if messages %} 
     {% for category, message in messages %}
-      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-      </div>
-    {% endfor %}
-  {% endif %}
+    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert">
+      <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %} 
+  {% endif %} 
 {% endwith %}
 
-<div class="card shadow-sm border-0">
-    <div class="card-body p-0">
+<!-- TABS NAVIGATION -->
+<ul class="nav nav-tabs" id="lokasiTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold px-4" id="main-tab" data-bs-toggle="tab" data-bs-target="#mainLoc" type="button" role="tab" aria-controls="mainLoc" aria-selected="true">
+            <i class="bi bi-building me-1"></i> Main Location
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold px-4 text-muted" id="sub-tab" data-bs-toggle="tab" data-bs-target="#subLoc" type="button" role="tab" aria-controls="subLoc" aria-selected="false">
+            <i class="bi bi-geo-alt me-1"></i> Sub Location
+        </button>
+    </li>
+</ul>
+
+<!-- TABS CONTENT -->
+<div class="tab-content shadow-sm" id="lokasiTabsContent">
+    
+    <!-- TAB 1: MAIN LOCATION -->
+    <div class="tab-pane fade show active bg-white border border-top-0 rounded-bottom p-0" id="mainLoc" role="tabpanel" aria-labelledby="main-tab">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th class="ps-4" width="10%">No</th>
+                        <th class="ps-4" width="5%">No</th>
                         <th width="35%">Main Location (Area Utama)</th>
-                        <th width="35%">Sub Location (Titik Spesifik)</th>
-                        <th class="text-center pe-4" width="20%">Aksi</th>
+                        <th width="45%">Keterangan</th>
+                        <th class="text-end pe-4" width="15%">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in data %}
+                    {% for item in main_lokasi_list %}
                     <tr>
-                        <td class="ps-4">{{ loop.index }}</td>
-                        <td class="fw-semibold text-primary">
-                            <i class="bi bi-building me-2"></i>{{ item.main_lokasi }}
-                        </td>
-                        <td>
-                            <i class="bi bi-geo-alt me-2 text-muted"></i>{{ item.nama_lokasi }}
-                        </td>
-                        <td class="text-center pe-4">
-                            <a href="{{ url_for('hapus_lokasi', id=item.id) }}" class="btn btn-sm btn-outline-danger border-0" onclick="return confirm('Hapus lokasi ini? Pastikan tidak ada aset di lokasi ini.');">
-                                <i class="bi bi-trash"></i> Hapus
-                            </a>
+                        <td class="ps-4 text-muted">{{ loop.index }}</td>
+                        <td class="fw-bold text-dark">{{ item.nama_main }}</td>
+                        <td class="text-muted">{{ item.keterangan or '-' }}</td>
+                        <td class="text-end pe-4">
+                            <button type="button" class="btn btn-sm btn-light text-primary border" data-bs-toggle="modal" data-bs-target="#editMain{{ item.id }}">
+                                <i class="bi bi-pencil-square"></i> Edit
+                            </button>
                         </td>
                     </tr>
                     {% else %}
-                    <tr>
-                        <td colspan="4" class="text-center py-4 text-muted">Belum ada data lokasi.</td>
-                    </tr>
+                    <tr><td colspan="4" class="text-center py-5 text-muted">Belum ada data Main Location.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+        
+        <!-- MODAL EDIT MAIN LOKASI (Dikeluarkan dari tabel) -->
+        {% for item in main_lokasi_list %}
+        <div class="modal fade" id="editMain{{ item.id }}" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <form action="{{ url_for('edit_main_lokasi', id=item.id) }}" method="POST" class="modal-content">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}"/>
+                    <div class="modal-header border-bottom-0">
+                        <h5 class="modal-title fw-bold">Edit Main Location</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body py-0">
+                        <div class="mb-3">
+                            <label class="form-label fw-medium small">Nama Area Utama</label>
+                            <input type="text" class="form-control" name="nama_main" value="{{ item.nama_main }}" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-medium small">Keterangan</label>
+                            <textarea class="form-control" name="keterangan" rows="2">{{ item.keterangan or '' }}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary px-4">Simpan Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- TAB 2: SUB LOCATION -->
+    <div class="tab-pane fade bg-white border border-top-0 rounded-bottom p-0" id="subLoc" role="tabpanel" aria-labelledby="sub-tab">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" width="5%">No</th>
+                        <th width="25%">Main Location</th>
+                        <th width="30%">Sub Location (Titik Spesifik)</th>
+                        <th width="25%">Keterangan</th>
+                        <th class="text-end pe-4" width="15%">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in sub_lokasi_list %}
+                    <tr>
+                        <td class="ps-4 text-muted">{{ loop.index }}</td>
+                        <td><span class="badge bg-secondary">{{ item.main.nama_main }}</span></td>
+                        <td class="fw-bold text-dark">{{ item.nama_sub }}</td>
+                        <td class="text-muted">{{ item.keterangan or '-' }}</td>
+                        <td class="text-end pe-4">
+                            <button type="button" class="btn btn-sm btn-light text-primary border" data-bs-toggle="modal" data-bs-target="#editSub{{ item.id }}">
+                                <i class="bi bi-pencil-square"></i> Edit
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center py-5 text-muted">Belum ada data Sub Location.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- MODAL EDIT SUB LOKASI (Dikeluarkan dari tabel) -->
+        {% for item in sub_lokasi_list %}
+        <div class="modal fade" id="editSub{{ item.id }}" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <form action="{{ url_for('edit_sub_lokasi', id=item.id) }}" method="POST" class="modal-content">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}"/>
+                    <div class="modal-header border-bottom-0">
+                        <h5 class="modal-title fw-bold">Edit Sub Location</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body py-0">
+                        <div class="mb-3">
+                            <label class="form-label fw-medium small">Pindah Main Location</label>
+                            <select class="form-select" name="main_lokasi_id" required>
+                                {% for m in main_lokasi_list %}
+                                    <option value="{{ m.id }}" {% if m.id == item.main_lokasi_id %}selected{% endif %}>{{ m.nama_main }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-medium small">Nama Titik Spesifik</label>
+                            <input type="text" class="form-control" name="nama_sub" value="{{ item.nama_sub }}" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-medium small">Keterangan</label>
+                            <textarea class="form-control" name="keterangan" rows="2">{{ item.keterangan or '' }}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary px-4">Simpan Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
     </div>
 </div>
+
+<!-- Tambahan JS agar Tab berwarna saat aktif -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var triggerTabList = [].slice.call(document.querySelectorAll('#lokasiTabs button'))
+        triggerTabList.forEach(function (triggerEl) {
+            triggerEl.addEventListener('click', function () {
+                triggerTabList.forEach(el => el.classList.add('text-muted'));
+                this.classList.remove('text-muted');
+            })
+        })
+    });
+</script>
 {% endblock %}

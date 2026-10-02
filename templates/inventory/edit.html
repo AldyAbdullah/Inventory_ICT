@@ -12,7 +12,6 @@
     </a>
 </div>
 
-<!-- Flash Messages (Sangat penting karena sekarang halaman redirect ke dirinya sendiri) -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
@@ -24,7 +23,7 @@
   {% endif %}
 {% endwith %}
 
-<div class="row">
+<div class="row pb-5">
     <div class="col-lg-8">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3">
@@ -36,9 +35,8 @@
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <!-- PERBAIKAN: Kode Aset dibuka kuncinya agar bisa diedit manual (Tetap wajib diisi) -->
                             <label for="kode_barang" class="form-label fw-semibold">Kode Aset <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control text-uppercase" id="kode_barang" name="kode_barang" value="{{ barang.kode_barang }}" required>
+                            <input type="text" class="form-control text-uppercase font-monospace" id="kode_barang" name="kode_barang" value="{{ barang.kode_barang }}" required>
                         </div>
                         <div class="col-md-6">
                             <label for="serial_number" class="form-label fw-semibold">Serial Number (SN) <span class="text-danger">*</span></label>
@@ -53,7 +51,7 @@
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="Brand" class="form-label fw-semibold">Brand <span class="text-danger">*</span></label>
+                            <label for="brand" class="form-label fw-semibold">Brand <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="brand" name="brand" value="{{ barang.brand or '' }}" required>
                         </div>
                         <div class="col-md-6">
@@ -64,10 +62,9 @@
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <!-- PERBAIKAN: Kategori menggunakan Dropdown dengan Select2, memanggil data relasi -->
                             <label for="kategori_id" class="form-label fw-semibold">Kategori Barang</label>
                             <select class="form-select" id="kategori_id" name="kategori_id">
-                                <option value=""></option>
+                                <option value="">-- Tidak Ada Kategori --</option>
                                 {% for kat in kategori_list %}
                                 <option value="{{ kat.id }}" {% if barang.kategori_id == kat.id %}selected{% endif %}>
                                     {{ kat.nama_kategori }}
@@ -81,7 +78,6 @@
                         </div>
                     </div>
 
-                    <!-- PERBAIKAN: Tambahan form Keterangan (Opsional) -->
                     <div class="mb-4">
                         <label for="keterangan" class="form-label fw-semibold">Keterangan Tambahan <span class="badge bg-light text-secondary ms-1 fw-normal border">Opsional</span></label>
                         <textarea class="form-control" id="keterangan" name="keterangan" rows="2" placeholder="Tuliskan catatan khusus terkait pembaruan data atau mutasi lokasi aset..."></textarea>
@@ -90,22 +86,9 @@
 
                     <hr class="text-muted my-4">
 
-                    <!-- Dropdown Penugasan Karyawan -->
-                    <div class="mb-4 p-3 bg-light border rounded">
-                        <label for="karyawan_id" class="form-label fw-bold text-primary"><i class="bi bi-person-badge me-2"></i>Penugasan Karyawan (PIC)</label>
-                        <p class="small text-muted mb-2">Jika diisi, lokasi aset otomatis diarahkan ke <b>Senoro Field - User/Employee</b>.</p>
-                        <select class="form-select border-primary" id="karyawan_id" name="karyawan_id">
-                            <option value="" {% if not barang.karyawan_id %}selected{% endif %}>ICT ASSET (Gudang/Cadangan)</option>
-                            {% for karyawan in karyawan_list %}
-                            <option value="{{ karyawan.id }}" {% if barang.karyawan_id == karyawan.id %}selected{% endif %}>
-                                {{ karyawan.nama }} - {{ karyawan.payroll }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="row mb-4">
-                        <div class="col-md-6">
+                    <!-- Status & Radio Button Kepemilikan (Desain Ramping) -->
+                    <div class="row mb-4 align-items-end">
+                        <div class="col-md-5">
                             <label for="status_id" class="form-label fw-semibold">Status Aset <span class="text-danger">*</span></label>
                             <select class="form-select" id="status_id" name="status_id" required>
                                 <option value="" disabled {% if not barang.status_id %}selected{% endif %}>-- Pilih Status --</option>
@@ -116,21 +99,69 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label for="lokasi_id" class="form-label fw-semibold">Alokasi Lokasi Manual</label>
-                            <select class="form-select" id="lokasi_id" name="lokasi_id">
-                                <option value=""></option>
-                                {% for lokasi in lokasi_list %}
-                                <option value="{{ lokasi.id }}" {% if barang.lokasi_id == lokasi.id %}selected{% endif %}>
-                                    {{ lokasi.main_lokasi }} - {{ lokasi.nama_lokasi }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                            <small class="text-muted mt-1 d-block">Diabaikan jika PIC Karyawan diisi.</small>
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold">Jenis Kepemilikan Aset <span class="text-danger">*</span></label>
+                            <div class="d-flex gap-3 p-2 bg-light border rounded">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="radio" name="jenis_kepemilikan" id="radioICT" value="ict" {% if not barang.karyawan_id %}checked{% endif %} style="cursor: pointer;">
+                                    <label class="form-check-label fw-bold text-primary" for="radioICT" style="cursor: pointer;">
+                                        <i class="bi bi-hdd-stack me-1"></i>ICT Asset
+                                    </label>
+                                </div>
+                                <div class="form-check mb-0 ms-2">
+                                    <input class="form-check-input" type="radio" name="jenis_kepemilikan" id="radioPIC" value="pic" {% if barang.karyawan_id %}checked{% endif %} style="cursor: pointer;">
+                                    <label class="form-check-label fw-bold text-success" for="radioPIC" style="cursor: pointer;">
+                                        <i class="bi bi-person-badge me-1"></i>Aset Personal (PIC)
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- BAGIAN DINAMIS: PIC -->
+                    <div id="picContainer" style="display: none;" class="p-3 bg-success bg-opacity-10 border border-success border-opacity-25 rounded mb-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="karyawan_id" class="form-label fw-semibold mb-1 text-success"><i class="bi bi-person-fill me-1"></i>User / PIC 1 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="karyawan_id" name="karyawan_id">
+                                    <option value="">-- Pilih PIC 1 --</option>
+                                    {% for karyawan in karyawan_list %}
+                                    <option value="{{ karyawan.id }}" {% if barang.karyawan_id == karyawan.id %}selected{% endif %}>
+                                        {{ karyawan.nama }} - {{ karyawan.payroll }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="karyawan_id_2" class="form-label fw-semibold mb-1 text-success"><i class="bi bi-person-plus-fill me-1"></i>User / PIC 2 <span class="badge bg-white text-secondary ms-1 fw-normal border">Opsional</span></label>
+                                <select class="form-select" id="karyawan_id_2" name="karyawan_id_2">
+                                    <option value="">-- Tidak Ada / Kosong --</option>
+                                    {% for karyawan in karyawan_list %}
+                                    <option value="{{ karyawan.id }}" {% if barang.karyawan_id_2 == karyawan.id %}selected{% endif %}>
+                                        {{ karyawan.nama }} - {{ karyawan.payroll }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BAGIAN DINAMIS: LOKASI ICT -->
+                    <div id="lokasiContainer" class="p-3 bg-primary bg-opacity-10 border border-primary border-opacity-25 rounded mb-4">
+                        <label for="lokasi_id" class="form-label fw-semibold mb-1 text-primary"><i class="bi bi-geo-alt-fill me-1"></i>Alokasi Lokasi Gudang / Area <span class="text-danger">*</span></label>
+                        <select class="form-select" id="lokasi_id" name="lokasi_id" required>
+                            <option value="">-- Pilih Lokasi Gudang --</option>
+                            {% for lokasi in sub_lokasi_list %}
+                            <option value="{{ lokasi.id }}" {% if barang.lokasi_id == lokasi.id %}selected{% endif %}>
+                                {{ lokasi.main.nama_main }} - {{ lokasi.nama_sub }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     
-                    <div class="d-flex justify-content-end mt-4">
+                    <hr class="text-muted">
+
+                    <div class="d-flex justify-content-end mt-4 mb-4">
                         <button type="submit" class="btn btn-primary px-4 shadow-sm">
                             <i class="bi bi-save me-1"></i> Perbarui Data
                         </button>
@@ -140,7 +171,7 @@
         </div>
         
         <!-- TABEL RIWAYAT BARANG -->
-        <div class="card shadow-sm border-0 mt-4 mb-5">
+        <div class="card shadow-sm border-0 mb-5">
             <div class="card-header bg-white py-3">
                 <h6 class="m-0 fw-bold text-secondary"><i class="bi bi-clock-history me-2"></i>Jejak Riwayat Aset Ini</h6>
             </div>
@@ -165,7 +196,6 @@
                                     </span>
                                 </td>
                                 <td class="fw-medium">{{ tr.user.nama_lengkap if tr.user else 'Sistem' }}</td>
-                                <!-- Menampilkan keterangan perubahan yang dikirim dari backend (Termasuk catatan tambahan dari textarea) -->
                                 <td class="text-muted small fw-medium">{{ tr.keterangan or '-' }}</td>
                             </tr>
                             {% else %}
@@ -178,16 +208,16 @@
         </div>
     </div>
     
-    <!-- PANDUAN PENGISIAN DI SAMPING -->
+    <!-- PANDUAN PENGISIAN (STICKY SAMA SEPERTI TAMBAH) -->
     <div class="col-lg-4">
-        <div class="card shadow-sm border-0 bg-light">
+        <div class="card shadow-sm border-0 bg-light sticky-top" style="top: 85px; z-index: 1;">
             <div class="card-body">
                 <h6 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle me-2"></i>Panduan Pengisian</h6>
                 <ul class="text-muted small ps-3 mb-0" style="line-height: 1.8;">
                     <li><strong>Kode Aset:</strong> Bisa diubah manual jika terjadi kesalahan input fisik.</li>
                     <li><strong>Aturan SN:</strong> Serial Number boleh sama antar perangkat asalkan <strong>Brand</strong>-nya berbeda.</li>
-                    <li><strong>Otomatisasi Lokasi:</strong> Jika Anda memilih Karyawan di kolom Penugasan, sistem akan memindahkan aset tersebut ke <em>Senoro Field - User/Employee</em>.</li>
-                    <li><strong>Status Aset:</strong> Mengubah status (misal dari Baik ke Rusak) akan otomatis tersimpan dalam riwayat.</li>
+                    <li><strong>Sistem PIC B2B:</strong> Mengubah kepemilikan menjadi "Aset Personal" akan otomatis memindahkan aset ini ke <em>User / Employee</em> dan tercatat dalam riwayat mutasi.</li>
+                    <li><strong>Status Aset:</strong> Perubahan status (misal dari Good ke Broken) akan otomatis tersimpan dalam riwayat jejak audit.</li>
                 </ul>
             </div>
         </div>
@@ -216,56 +246,57 @@
 
 <script>
 $(document).ready(function() {
-    // 1. Inisialisasi Dropdown Pintar (Select2)
-    $('#kategori_id').select2({
-        placeholder: "Cari/Pilih Kategori...",
-        allowClear: true,
-        width: '100%'
-    });
-    
-    $('#karyawan_id').select2({
-        width: '100%' 
-    });
-    
-    $('#lokasi_id').select2({
-        placeholder: "-- Pilih atau Cari Lokasi --",
-        allowClear: true,
-        width: '100%'
-    });
+    // 1. Inisialisasi Select2
+    $('#kategori_id').select2({ width: '100%' });
+    $('#karyawan_id').select2({ width: '100%' });
+    $('#karyawan_id_2').select2({ width: '100%' });
+    $('#lokasi_id').select2({ width: '100%' });
 
-    // 2. Logika Otomatisasi Lokasi
-    function sesuaikanLokasi() {
-        let karyawanVal = $('#karyawan_id').val();
-        
-        if (karyawanVal) {
-            $('#lokasi_id option').each(function() {
-                if ($(this).text().includes('User/Employee')) {
-                    $('#lokasi_id').val($(this).val()).trigger('change.select2');
-                }
-            });
-            
-            $('#lokasi_id').next('.select2-container').css({
-                'pointer-events': 'none',
-                'opacity': '0.6',
-                'background-color': '#f8f9fa'
-            });
-            $('#lokasi_id').removeAttr('required');
-        } else {
-            $('#lokasi_id').next('.select2-container').css({
-                'pointer-events': 'auto',
-                'opacity': '1',
-                'background-color': 'transparent'
-            });
-            $('#lokasi_id').attr('required', 'required');
-            
-            if ($('#lokasi_id option:selected').text().includes('User/Employee')) {
-                $('#lokasi_id').val('').trigger('change.select2');
-            }
+    // 2. Logika Pencegahan Duplikasi PIC
+    function updatePICOptions() {
+        var pic1 = $('#karyawan_id').val();
+        var pic2 = $('#karyawan_id_2').val();
+
+        $('#karyawan_id option').prop('disabled', false);
+        $('#karyawan_id_2 option').prop('disabled', false);
+
+        if (pic1) {
+            $('#karyawan_id_2 option[value="' + pic1 + '"]').prop('disabled', true);
+        }
+        if (pic2) {
+            $('#karyawan_id option[value="' + pic2 + '"]').prop('disabled', true);
         }
     }
 
-    $('#karyawan_id').on('change', sesuaikanLokasi);
-    sesuaikanLokasi();
+    $('#karyawan_id, #karyawan_id_2').on('change', updatePICOptions);
+    
+    // Panggil sekali saat load untuk mengunci opsi jika sedang edit data yang sudah ada PIC-nya
+    updatePICOptions();
+
+    // 3. Logika Radio Button untuk Tampil/Sembunyi Form
+    function sesuaikanForm() {
+        if ($('#radioICT').is(':checked')) {
+            $('#picContainer').hide();
+            $('#lokasiContainer').show();
+            
+            $('#karyawan_id').val('').trigger('change.select2').removeAttr('required');
+            $('#karyawan_id_2').val('').trigger('change.select2');
+            
+            $('#lokasi_id').attr('required', 'required');
+        } else {
+            $('#picContainer').show();
+            $('#lokasiContainer').hide();
+            
+            $('#karyawan_id').attr('required', 'required');
+            
+            $('#lokasi_id').val('').trigger('change.select2').removeAttr('required');
+        }
+    }
+
+    $('input[name="jenis_kepemilikan"]').on('change', sesuaikanForm);
+    
+    // Jalankan satu kali saat halaman dimuat
+    sesuaikanForm();
 });
 </script>
 {% endblock %}

@@ -24,7 +24,7 @@
   {% endif %}
 {% endwith %}
 
-<div class="row">
+<div class="row pb-5">
     <div class="col-lg-8">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3">
@@ -36,9 +36,8 @@
                     
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <!-- PERBAIKAN: Readonly dihapus agar kode barang bisa dikoreksi -->
                             <label class="form-label fw-semibold">Kode Barang <span class="text-danger">*</span></label>
-                            <input type="text" name="kode_barang" class="form-control text-uppercase" required value="{{ barang.kode_barang }}">
+                            <input type="text" name="kode_barang" class="form-control text-uppercase font-monospace" required value="{{ barang.kode_barang }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Nama Barang <span class="text-danger">*</span></label>
@@ -55,10 +54,9 @@
                         </div>
 
                         <div class="col-md-6">
-                            <!-- PERBAIKAN: Menggunakan Dropdown Select2 dari Master Kategori -->
                             <label class="form-label fw-semibold">Kategori Barang</label>
                             <select name="kategori_id" id="kategori_id" class="form-select">
-                                <option value=""></option>
+                                <option value="">-- Pilih Kategori --</option>
                                 {% for kat in kategori_list %}
                                 <option value="{{ kat.id }}" {% if barang.kategori_id == kat.id %}selected{% endif %}>
                                     {{ kat.nama_kategori }}
@@ -77,10 +75,9 @@
                             <small class="text-muted d-block mt-1">Hanya ubah untuk penyesuaian (koreksi).</small>
                         </div>
                         <div class="col-md-4">
-                            <!-- PERBAIKAN: Menggunakan Dropdown Select2 dari Master Satuan -->
                             <label class="form-label fw-semibold">Satuan <span class="text-danger">*</span></label>
                             <select name="satuan_id" id="satuan_id" class="form-select" required>
-                                <option value=""></option>
+                                <option value="">-- Pilih Satuan --</option>
                                 {% for sat in satuan_list %}
                                 <option value="{{ sat.id }}" {% if barang.satuan_id == sat.id %}selected{% endif %}>
                                     {{ sat.nama_satuan }}
@@ -91,17 +88,19 @@
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Lokasi Gudang</label>
                             <select name="lokasi_id" id="lokasi_id" class="form-select">
-                                <option value=""></option>
-                                {% for lokasi in lokasi_list %}
+                                <option value="">-- Pilih Lokasi --</option>
+                                {% for lokasi in sub_lokasi_list %}
+                                <!-- Menyembunyikan User/Employee dari pilihan consumable -->
+                                {% if lokasi.main.nama_main != 'User / Employee' %}
                                 <option value="{{ lokasi.id }}" {% if barang.lokasi_id == lokasi.id %}selected{% endif %}>
-                                    {{ lokasi.main_lokasi }} - {{ lokasi.nama_lokasi }}
+                                    {{ lokasi.main.nama_main }} - {{ lokasi.nama_sub }}
                                 </option>
+                                {% endif %}
                                 {% endfor %}
                             </select>
                         </div>
                     </div>
 
-                    <!-- PERBAIKAN: Input Keterangan Tambahan untuk Audit Trail -->
                     <div class="mb-4 mt-2">
                         <label for="keterangan" class="form-label fw-semibold">Keterangan Tambahan <span class="badge bg-light text-secondary ms-1 fw-normal border">Opsional</span></label>
                         <textarea class="form-control" id="keterangan" name="keterangan" rows="2" placeholder="Tuliskan alasan koreksi stok atau perubahan detail barang..."></textarea>
@@ -116,7 +115,7 @@
             </div>
         </div>
         
-        <!-- TAMBAHAN: TABEL RIWAYAT BARANG (Sama seperti halaman Inventory) -->
+        <!-- TABEL RIWAYAT BARANG -->
         <div class="card shadow-sm border-0 mt-4 mb-5">
             <div class="card-header bg-white py-3">
                 <h6 class="m-0 fw-bold text-secondary"><i class="bi bi-clock-history me-2"></i>Jejak Riwayat Mutasi Barang Ini</h6>
@@ -156,7 +155,8 @@
 
     <!-- PANDUAN PENGISIAN DI SAMPING -->
     <div class="col-lg-4">
-        <div class="card shadow-sm border-0 bg-light">
+        <!-- PERBAIKAN: Jarak top diubah menjadi 85px dan z-index disesuaikan -->
+        <div class="card shadow-sm border-0 bg-light sticky-top" style="top: 85px; z-index: 1;">
             <div class="card-body">
                 <h6 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle me-2"></i>Panduan Pengisian</h6>
                 <ul class="text-muted small ps-3 mb-0" style="line-height: 1.8;">
@@ -191,23 +191,9 @@
 
 <script>
 $(document).ready(function() {
-    $('#kategori_id').select2({
-        placeholder: "Cari/Pilih Kategori...",
-        allowClear: true,
-        width: '100%'
-    });
-    
-    $('#satuan_id').select2({
-        placeholder: "Cari Satuan...",
-        allowClear: true,
-        width: '100%'
-    });
-
-    $('#lokasi_id').select2({
-        placeholder: "-- Pilih atau Cari Lokasi --",
-        allowClear: true,
-        width: '100%'
-    });
+    $('#kategori_id').select2({ width: '100%' });
+    $('#satuan_id').select2({ width: '100%' });
+    $('#lokasi_id').select2({ width: '100%' });
 });
 </script>
 {% endblock %}

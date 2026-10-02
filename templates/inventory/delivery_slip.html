@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Slip - {{ tr.inventory.kode_barang }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0; 
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            color: #000;
+            margin: 0;
+            padding: 0;
+            line-height: 1.4;
+            background-color: #fff;
+            
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .container {
+            width: 210mm; 
+            height: 295mm; 
+            margin: 0 auto;
+            padding: 15mm; 
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden; 
+        }
+        
+        /* HEADER KOP SURAT (Tanpa garis putus-putus) */
+        .header-kop {
+            display: flex;
+            justify-content: space-between;
+            align-items: center; 
+            margin-bottom: 20px;
+            /* border-bottom dihapus */
+        }
+        .header-text { 
+            width: 52%; 
+        }
+        .header-title {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: 10px;
+            line-height: 1.3;
+            text-align: center; 
+        }
+        .header-address {
+            display: flex;
+            justify-content: space-between;
+            font-size: 8.5pt; 
+        }
+        .header-address-left { width: 60%; white-space: nowrap; text-align: left; } 
+        .header-address-right { width: 40%; color: #0000FF; text-align: right; } 
+        
+        .header-logo {
+            width: 45%;
+            text-align: right;
+        }
+        .header-logo img {
+            max-width: 100%;
+            height: auto;
+            max-height: 65px;
+        }
+
+        /* BANNER ABU-ABU */
+        .bg-gray {
+            background-color: #999999 !important;
+            color: #ffffff !important;
+            box-shadow: inset 0 0 0 1000px #999999 !important;
+        }
+        .banner-title {
+            text-align: center;
+            font-size: 18pt;
+            font-weight: bold;
+            letter-spacing: 2px;
+            padding: 8px 0;
+            margin-bottom: 20px;
+            margin-left: -15mm;
+            margin-right: -15mm;
+        }
+
+        /* INFO TABLE */
+        .info-table {
+            width: 100%;
+            margin-bottom: 20px;
+            font-size: 11pt;
+        }
+        .info-table td { padding: 3px 0; }
+        .info-table td:nth-child(1) { width: 120px; }
+        .info-table td:nth-child(2) { width: 15px; }
+
+        /* DATA TABLE (Disesuaikan tanpa Delivery/Return Date) */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .data-table th, .data-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .data-table th {
+            font-weight: bold;
+            font-size: 10pt;
+        }
+        
+        /* SIGNATURE TABLE */
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .signature-table th, .signature-table td {
+            border: 1px solid #000;
+            width: 33.33%;
+        }
+        .signature-table th {
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .signature-box {
+            position: relative;
+            height: 110px; 
+            padding: 5px;
+        }
+        .signature-label {
+            color: #666;
+            font-size: 9pt;
+            position: absolute;
+            top: 5px;
+            left: 10px; 
+        }
+        .signature-name {
+            position: absolute;
+            bottom: 5px;
+            left: 10px; 
+            text-align: left; 
+            width: calc(100% - 20px);
+            font-size: 9pt; 
+        }
+
+        /* KETENTUAN (8pt) */
+        .ketentuan-box {
+            font-size: 8pt; 
+            line-height: 1.4;
+            margin-bottom: 30px;
+        }
+        .ketentuan-box u { font-weight: bold; text-decoration: underline; }
+        .ketentuan-list {
+            margin: 5px 0 0 0;
+            padding-left: 20px;
+        }
+        .ketentuan-list li {
+            margin-bottom: 4px;
+            text-align: justify;
+        }
+
+        /* FOOTER SURAT MENGUNCI DI BAWAH KERTAS */
+        .footer-surat {
+            position: absolute;
+            bottom: 15mm;
+            left: 15mm;
+            right: 15mm;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9pt;
+        }
+
+        /* TOMBOL PRINT */
+        .no-print {
+            text-align: center;
+            margin: 20px auto;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            width: 100%;
+        }
+        .btn-print {
+            background-color: #0d6efd;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 12pt;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        @media print {
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button class="btn-print" onclick="window.print()">🖨️ Cetak Dokumen / Simpan PDF</button>
+        <p style="font-size: 10pt; color: #666; margin-top: 10px; margin-bottom: 0;">(Dokumen sudah dikunci 1 halaman. Jika tabel masih putih, centang <b>"Background graphics"</b> saat print)</p>
+    </div>
+
+    <div class="container">
+        <!-- HEADER KOP SURAT TERBARU -->
+        <div class="header-kop">
+            <div class="header-text">
+                <div class="header-title">
+                    JOINT OPERATING BODY<br>
+                    PERTAMINA-MEDCO E&P TOMORI SULAWESI
+                </div>
+                <div class="header-address">
+                    <div class="header-address-left">
+                        Menara Bidakara Lt.4<br>
+                        Jl. Jend. Gatot Subroto Kav 71-73<br>
+                        DKI Jakarta 12870, Indonesia<br>
+                        www.job-tomori.com
+                    </div>
+                    <div class="header-address-right">
+                        Tel +62 21 2980 7000<br>
+                        Fax +62 21 2980 7080
+                    </div>
+                </div>
+            </div>
+            <div class="header-logo">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo JOB Tomori">
+            </div>
+        </div>
+
+        <!-- BANNER ABU-ABU -->
+        <div class="bg-gray banner-title">
+            DELIVERY SLIP
+        </div>
+
+        <!-- TABEL INFO -->
+        <table class="info-table">
+            <tr>
+                <td>No</td>
+                <td>:</td>
+                <td style="width: 50%;">{{ no_surat }}</td>
+                <td style="width: 80px;">Tanggal</td>
+                <td>:</td>
+                <td>{{ tr.tanggal.strftime('%d/%m/%Y') if tr.tanggal else '-' }}</td>
+            </tr>
+            <tr>
+                <td>Ticket Number</td>
+                <td>:</td>
+                <td colspan="4">................................................</td>
+            </tr>
+        </table>
+
+        <!-- TABEL DATA ASET -->
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="bg-gray" style="width: 5%;">No</th>
+                    <th class="bg-gray" style="width: 30%;">Item</th>
+                    <th class="bg-gray" style="width: 20%;">Serial No</th>
+                    <th class="bg-gray" style="width: 20%;">Barcode No</th>
+                    <th class="bg-gray" style="width: 5%;">Qty</th>
+                    <th class="bg-gray" style="width: 20%;">Note</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- BARIS 1 -->
+                <tr>
+                    <td>1</td>
+                    <td>{{ tr.inventory.nama_barang }}</td>
+                    <td>{{ tr.inventory.serial_number }}</td>
+                    <td>{{ tr.inventory.kode_barang }}</td>
+                    <td>1</td>
+                    <!-- Kolom Note yang di-merge ke bawah -->
+                    <td rowspan="5">{{ tr.keterangan.split('| Catatan: ')[1] if '| Catatan: ' in tr.keterangan else '' }}</td>
+                </tr>
+                <!-- BARIS 2 SAMPAI 5 -->
+                <tr><td>2</td><td></td><td></td><td></td><td></td></tr>
+                <tr><td>3</td><td></td><td></td><td></td><td></td></tr>
+                <tr><td>4</td><td></td><td></td><td></td><td></td></tr>
+                <tr><td>5</td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+        </table>
+
+        <!-- TABEL TANDA TANGAN -->
+        <table class="signature-table">
+            <thead>
+                <tr>
+                    <th class="bg-gray">Dikerjakan oleh,<br>Service Desk</th>
+                    <th class="bg-gray">Dipergunakan oleh,<br>Pengguna</th>
+                    <th class="bg-gray">Diketahui oleh,<br>Atasan ybs</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <div class="signature-box">
+                            <div class="signature-label">Tandatangan</div>
+                            <div class="signature-name">
+                                {{ current_user.nama_lengkap if current_user.nama_lengkap else current_user.username }}<br>
+                                {{ current_user.payroll or '-' }}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="signature-box">
+                            <div class="signature-label">Tandatangan</div>
+                            <div class="signature-name">
+                                {% if tr.inventory.karyawan_id and tr.inventory.karyawan_id_2 %}
+                                    {{ tr.inventory.pic_1.nama }} / {{ tr.inventory.pic_2.nama }}<br>
+                                    {{ tr.inventory.pic_1.payroll }} / {{ tr.inventory.pic_2.payroll }}
+                                {% elif tr.inventory.karyawan_id %}
+                                    {{ tr.inventory.pic_1.nama }}<br>
+                                    {{ tr.inventory.pic_1.payroll }}
+                                {% else %}
+                                    -<br>-
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="signature-box">
+                            <div class="signature-label">Tandatangan</div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- KETENTUAN (8pt) -->
+        <div class="ketentuan-box">
+            <u>Ketentuan :</u>
+            <ul class="ketentuan-list">
+                <li>Item / perangkat yang diberikan adalah properti perusahaan, pengguna bertanggung jawab penuh atas item tersebut di atas (seperti kerusakan dan kehilangan).</li>
+                <li>Apabila terjadi kerusakan dari item yang tersebut di atas, mohon untuk menghubungi personil perusahaan untuk dilakukan pengecekan lebih lanjut.</li>
+                <li>Apabila terjadi kehilangan dari item yang tersebut di atas, mohon untuk membuat surat laporan kehilangan dari pihak berwajib kemudian diserahkan ke perusahaan.</li>
+                <li>Pengguna bertanggung jawab untuk mengembalikan property perusahaan pada tanggal yang telah ditentukan.</li>
+                <li>Pengguna tidak berhak untuk meminjamkan properti kepada pekerja/pihak lain.</li>
+                <li>Properti yang dipinjam dipergunakan untuk keperluan perusahaan.</li>
+                <li>Apabila masa kerja telah berakhir, mohon untuk mengembalikan item yang tersebut di atas ke ICT JOB Tomori.</li>
+            </ul>
+        </div>
+        
+        <!-- FOOTER DOKUMEN -->
+        <div class="footer-surat">
+            <div>TOMORI-BSD-PR-05-000_L01</div>
+            <div>Page 1 of 1</div>
+        </div>
+    </div>
+</body>
+</html>

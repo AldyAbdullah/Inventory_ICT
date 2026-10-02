@@ -51,12 +51,13 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light sticky-top" style="z-index: 1;">
                     <tr>
-                        <th class="ps-4" width="15%">Waktu</th>
-                        <th width="20%">Kode & SN</th>
-                        <th width="20%">Nama Aset</th>
-                        <th width="10%">Jenis</th>
-                        <th width="25%">Lokasi & Penugasan</th>
-                        <th class="pe-4" width="10%">Operator Sistem</th>
+                        <th class="ps-4" width="12%">Waktu</th>
+                        <th width="15%">Kode & SN</th>
+                        <th width="18%">Nama Aset</th>
+                        <th width="12%">Jenis Transaksi</th>
+                        <th width="20%">Lokasi / Penugasan</th>
+                        <th width="12%">Operator Sistem</th>
+                        <th class="pe-4 text-center" width="11%">Dokumen</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -74,16 +75,30 @@
                             {{ item.inventory.nama_barang if item.inventory else 'Aset Dihapus' }}
                         </td>
                         <td>
-                            <span class="badge {% if item.jenis == 'Masuk' %}bg-success{% elif item.jenis == 'Mutasi' %}bg-info text-dark{% else %}bg-danger{% endif %}">
-                                <i class="bi {% if item.jenis == 'Masuk' %}bi-box-arrow-in-down{% elif item.jenis == 'Mutasi' %}bi-arrow-left-right{% else %}bi-box-arrow-up{% endif %} me-1"></i>
-                                {{ item.jenis }}
+                            <!-- LOGIKA WARNA BADGE SESUAI JENIS TRANSAKSI -->
+                            {% set bg_class = 'bg-secondary' %}
+                            {% set icon_class = 'bi-circle' %}
+                            
+                            {% if item.jenis == 'Masuk' %}
+                                {% set bg_class, icon_class = 'bg-success', 'bi-box-arrow-in-down' %}
+                            {% elif item.jenis == 'Deliver' %}
+                                {% set bg_class, icon_class = 'bg-primary', 'bi-person-check-fill' %}
+                            {% elif item.jenis == 'Retrieval' %}
+                                {% set bg_class, icon_class = 'bg-warning text-dark', 'bi-person-dash-fill' %}
+                            {% elif item.jenis == 'Mutasi' %}
+                                {% set bg_class, icon_class = 'bg-info text-dark', 'bi-arrow-left-right' %}
+                            {% elif item.jenis == 'Edit' %}
+                                {% set bg_class, icon_class = 'bg-secondary', 'bi-pencil-square' %}
+                            {% endif %}
+                            
+                            <span class="badge {{ bg_class }} shadow-sm">
+                                <i class="bi {{ icon_class }} me-1"></i>{{ item.jenis }}
                             </span>
                         </td>
                         <td>
-                            <!-- MENAMPILKAN TEKS OTOMATIS DARI BACKEND -->
                             <span class="text-dark fw-medium" style="font-size: 0.9rem;">{{ item.keterangan or '-' }}</span>
                         </td>
-                        <td class="pe-4">
+                        <td>
                             <small class="text-muted">
                             {% if item.user %}
                                 {{ item.user.nama_lengkap.split(' ')[0] if item.user.nama_lengkap else item.user.payroll }}
@@ -92,10 +107,24 @@
                             {% endif %}
                             </small>
                         </td>
+                        <td class="pe-4 text-center">
+                            <!-- TOMBOL CETAK SLIP DINAMIS -->
+                            {% if item.jenis == 'Deliver' %}
+                                <a href="{{ url_for('cetak_delivery', id=item.id) }}" target="_blank" class="btn btn-sm btn-outline-primary border" title="Cetak Delivery Slip">
+                                    <i class="bi bi-printer me-1"></i> Delivery
+                                </a>
+                            {% elif item.jenis == 'Retrieval' %}
+                                <a href="{{ url_for('cetak_retrieval', id=item.id) }}" target="_blank" class="btn btn-sm btn-outline-warning border text-dark" title="Cetak Retrieval Slip">
+                                    <i class="bi bi-printer me-1"></i> Retrieval
+                                </a>
+                            {% else %}
+                                <span class="text-muted small">-</span>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
+                        <td colspan="7" class="text-center py-5 text-muted">
                             <i class="bi bi-clock-history fs-1 d-block mb-3"></i>
                             Tidak ada riwayat transaksi yang ditemukan.
                         </td>

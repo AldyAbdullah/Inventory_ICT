@@ -15,7 +15,6 @@
     </div>
 </div>
 
-<!-- Flash Messages (Notifikasi Redirect) -->
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
@@ -27,7 +26,7 @@
   {% endif %}
 {% endwith %}
 
-<div class="row">
+<div class="row pb-5"> 
     <div class="col-lg-8">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3">
@@ -35,15 +34,13 @@
             </div>
             <div class="card-body p-4">
                 <form action="{{ url_for('tambah_inventory') }}" method="POST">
-                    <!-- Hapus tag csrf_token di bawah jika sistem Anda tidak mewajibkannya -->
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}"/>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <!-- PERBAIKAN: Kode aset kini wajib diisi manual -->
                             <label for="kode_barang" class="form-label fw-semibold">Kode Aset <span class="text-danger">*</span></label>
                             <input type="text" class="form-control font-monospace text-uppercase" id="kode_barang" name="kode_barang" required placeholder="Contoh: INV-0123">
-                            <small class="text-muted d-block mt-1">Harus diketik manual sesuai standar penomoran fisik aset perusahaan.</small>
+                            <small class="text-muted d-block mt-1">Sesuai standar penomoran fisik aset.</small>
                         </div>
                         <div class="col-md-6">
                             <label for="serial_number" class="form-label fw-semibold">Serial Number (SN) <span class="text-danger">*</span></label>
@@ -53,12 +50,12 @@
 
                     <div class="mb-3">
                         <label for="nama_barang" class="form-label fw-semibold">Nama Perangkat <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="nama_barang" name="nama_barang" required placeholder="Contoh: Access Point Cisco Meraki / Laptop Bisnis">
+                        <input type="text" class="form-control" id="nama_barang" name="nama_barang" required placeholder="Contoh: Access Point Cisco / Laptop Bisnis">
                     </div>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="Brand" class="form-label fw-semibold">Brand <span class="text-danger">*</span></label>
+                            <label for="brand" class="form-label fw-semibold">Brand <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="brand" name="brand" required placeholder="Contoh: Lenovo, HP, Dell, Cisco">
                         </div>
                         <div class="col-md-6">
@@ -69,10 +66,9 @@
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <!-- PERBAIKAN: Input kategori berubah menjadi Select (Dropdown) relasi tabel -->
                             <label for="kategori_id" class="form-label fw-semibold">Kategori Barang</label>
                             <select class="form-select" id="kategori_id" name="kategori_id">
-                                <option value=""></option> <!-- Placeholder wajib untuk Select2 -->
+                                <option value="">-- Tidak Ada Kategori --</option>
                                 {% for kat in kategori_list %}
                                 <option value="{{ kat.id }}">{{ kat.nama_kategori }}</option>
                                 {% endfor %}
@@ -84,30 +80,16 @@
                         </div>
                     </div>
 
-                    <!-- PERBAIKAN: Penambahan field Keterangan Tambahan -->
                     <div class="mb-4">
                         <label for="keterangan" class="form-label fw-semibold">Keterangan Tambahan <span class="badge bg-light text-secondary ms-1 fw-normal border">Opsional</span></label>
                         <textarea class="form-control" id="keterangan" name="keterangan" rows="2" placeholder="Catatan khusus saat pendaftaran aset pertama kali..."></textarea>
-                        <small class="text-muted d-block mt-1">Keterangan ini akan muncul di kolom Riwayat Mutasi sebagai catatan awal.</small>
                     </div>
                     
                     <hr class="text-muted my-4">
 
-                    <!-- Dropdown Penugasan Karyawan -->
-                    <div class="mb-4 p-3 bg-light border rounded">
-                        <label for="karyawan_id" class="form-label fw-bold text-primary"><i class="bi bi-person-badge me-2"></i>Penugasan Karyawan (PIC)</label>
-                        <p class="small text-muted mb-2">Jika diisi, lokasi aset akan otomatis diarahkan ke <b>Senoro Field - User/Employee</b>. Biarkan pada pilihan default jika ini adalah aset cadangan.</p>
-                        <select class="form-select border-primary" id="karyawan_id" name="karyawan_id">
-                            <!-- Value kosong agar dibaca sistem sebagai null/tanpa PIC, namun tampilannya ICT ASSET -->
-                            <option value="" selected>ICT ASSET (Gudang/Cadangan)</option> 
-                            {% for karyawan in karyawan_list %}
-                            <option value="{{ karyawan.id }}">{{ karyawan.nama }} - {{ karyawan.payroll }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
+                    <!-- Status & Radio Button Kepemilikan -->
+                    <div class="row mb-4 align-items-end">
+                        <div class="col-md-5">
                             <label for="status_id" class="form-label fw-semibold">Status Aset <span class="text-danger">*</span></label>
                             <select class="form-select" id="status_id" name="status_id" required>
                                 <option value="" selected disabled>-- Pilih Status --</option>
@@ -116,21 +98,63 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label for="lokasi_id" class="form-label fw-semibold">Alokasi Lokasi Manual</label>
-                            <select class="form-select" id="lokasi_id" name="lokasi_id">
-                                <option value=""></option> <!-- Value kosong penting untuk placeholder Select2 -->
-                                {% for lokasi in lokasi_list %}
-                                <option value="{{ lokasi.id }}">{{ lokasi.main_lokasi }} - {{ lokasi.nama_lokasi }}</option>
-                                {% endfor %}
-                            </select>
-                            <small class="text-muted mt-1 d-block">Diabaikan jika PIC Karyawan diisi.</small>
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold">Jenis Kepemilikan Aset <span class="text-danger">*</span></label>
+                            <div class="d-flex gap-3 p-2 bg-light border rounded">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="radio" name="jenis_kepemilikan" id="radioICT" value="ict" checked style="cursor: pointer;">
+                                    <label class="form-check-label fw-bold text-primary" for="radioICT" style="cursor: pointer;">
+                                        <i class="bi bi-hdd-stack me-1"></i>ICT Asset
+                                    </label>
+                                </div>
+                                <div class="form-check mb-0 ms-2">
+                                    <input class="form-check-input" type="radio" name="jenis_kepemilikan" id="radioPIC" value="pic" style="cursor: pointer;">
+                                    <label class="form-check-label fw-bold text-success" for="radioPIC" style="cursor: pointer;">
+                                        <i class="bi bi-person-badge me-1"></i>Aset Personal (PIC)
+                                    </label>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- BAGIAN DINAMIS: PIC -->
+                    <div id="picContainer" style="display: none;" class="p-3 bg-success bg-opacity-10 border border-success border-opacity-25 rounded mb-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="karyawan_id" class="form-label fw-semibold mb-1 text-success"><i class="bi bi-person-fill me-1"></i>User / PIC 1 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="karyawan_id" name="karyawan_id">
+                                    <option value="">-- Pilih PIC 1 --</option>
+                                    {% for karyawan in karyawan_list %}
+                                    <option value="{{ karyawan.id }}">{{ karyawan.nama }} - {{ karyawan.payroll }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="karyawan_id_2" class="form-label fw-semibold mb-1 text-success"><i class="bi bi-person-plus-fill me-1"></i>User / PIC 2 <span class="badge bg-white text-secondary ms-1 fw-normal border">Opsional</span></label>
+                                <select class="form-select" id="karyawan_id_2" name="karyawan_id_2">
+                                    <option value="">-- Tidak Ada / Kosong --</option>
+                                    {% for karyawan in karyawan_list %}
+                                    <option value="{{ karyawan.id }}">{{ karyawan.nama }} - {{ karyawan.payroll }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                        
+                    <!-- BAGIAN DINAMIS: ICT ASSET (LOKASI) -->
+                    <div id="lokasiContainer" class="p-3 bg-primary bg-opacity-10 border border-primary border-opacity-25 rounded mb-4">
+                        <label for="lokasi_id" class="form-label fw-semibold mb-1 text-primary"><i class="bi bi-geo-alt-fill me-1"></i>Alokasi Lokasi Gudang / Area <span class="text-danger">*</span></label>
+                        <select class="form-select" id="lokasi_id" name="lokasi_id" required>
+                            <option value="">-- Pilih Lokasi Gudang --</option> 
+                            {% for lokasi in sub_lokasi_list %}
+                            <option value="{{ lokasi.id }}">{{ lokasi.main.nama_main }} - {{ lokasi.nama_sub }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
 
                     <hr class="text-muted">
                     
-                    <div class="d-flex justify-content-end mt-4">
+                    <div class="d-flex justify-content-end mt-4 mb-5">
                         <button type="submit" class="btn btn-primary px-4 shadow-sm">
                             <i class="bi bi-save me-1"></i> Simpan Data Aset
                         </button>
@@ -141,14 +165,15 @@
     </div>
     
     <div class="col-lg-4">
-        <div class="card shadow-sm border-0 bg-light">
+        <!-- PERBAIKAN: Jarak top diubah menjadi 85px dan z-index disesuaikan -->
+        <div class="card shadow-sm border-0 bg-light sticky-top" style="top: 85px; z-index: 1;">
             <div class="card-body">
                 <h6 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle me-2"></i>Panduan Pengisian</h6>
                 <ul class="text-muted small ps-3 mb-0" style="line-height: 1.8;">
                     <li><strong>Kode Aset:</strong> Wajib diisi manual. Harus unik dan tidak boleh sama dengan barang lain di dalam sistem.</li>
                     <li><strong>Aturan SN:</strong> Serial Number boleh sama antar perangkat asalkan <strong>Brand</strong>-nya berbeda.</li>
-                    <li><strong>Standar Kategori:</strong> Jika kategori aset yang Anda maksud tidak ada, silakan tambahkan di menu Pengaturan Sistem (Kategori & Satuan).</li>
-                    <li><strong>Otomatisasi Lokasi:</strong> Jika Anda memilih Karyawan di kolom Penugasan, sistem akan mengabaikan pilihan Lokasi Manual Anda dan menaruh aset tersebut di <em>Senoro Field - User/Employee</em>.</li>
+                    <li><strong>Sistem PIC B2B:</strong> Pilih "Aset Personal" jika aset diserahkan ke user. Anda bisa mengisi PIC 2 jika aset tersebut di-sharing pada jadwal Back-to-Back.</li>
+                    <li><strong>Lokasi Otomatis:</strong> Untuk "Aset Personal", sistem secara otomatis akan menyimpan riwayat lokasinya pada area <em>User / Employee</em>.</li>
                 </ul>
             </div>
         </div>
@@ -161,7 +186,6 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <style>
-    /* Styling agar Select2 menyatu dengan gaya Bootstrap 5 */
     .select2-container .select2-selection--single {
         height: 38px;
         border: 1px solid #dee2e6;
@@ -178,63 +202,54 @@
 
 <script>
 $(document).ready(function() {
-    // 1. Inisialisasi Dropdown Pintar (Select2)
-    $('#kategori_id').select2({
-        placeholder: "Cari/Pilih Kategori...",
-        allowClear: true,
-        width: '100%'
-    });
+    // 1. Inisialisasi Select2
+    $('#kategori_id').select2({ width: '100%' });
+    $('#karyawan_id').select2({ width: '100%' });
+    $('#karyawan_id_2').select2({ width: '100%' });
+    $('#lokasi_id').select2({ width: '100%' });
 
-    $('#karyawan_id').select2({
-        width: '100%' 
-    });
-    
-    $('#lokasi_id').select2({
-        placeholder: "-- Pilih atau Cari Lokasi --",
-        allowClear: true,
-        width: '100%'
-    });
+    // 2. Logika Pencegahan Duplikasi PIC
+    function updatePICOptions() {
+        var pic1 = $('#karyawan_id').val();
+        var pic2 = $('#karyawan_id_2').val();
 
-    // 2. Logika Otomatisasi Lokasi
-    function sesuaikanLokasi() {
-        let karyawanVal = $('#karyawan_id').val();
-        
-        if (karyawanVal) {
-            // Jika ada Karyawan: Cari dan pilih otomatis "User/Employee"
-            $('#lokasi_id option').each(function() {
-                if ($(this).text().includes('User/Employee')) {
-                    $('#lokasi_id').val($(this).val()).trigger('change.select2');
-                }
-            });
-            
-            // Kunci visual dropdown lokasi menggunakan class khusus Select2
-            $('#lokasi_id').next('.select2-container').css({
-                'pointer-events': 'none',
-                'opacity': '0.6',
-                'background-color': '#f8f9fa'
-            });
-            $('#lokasi_id').removeAttr('required');
-        } else {
-            // Jika ICT ASSET: Buka kembali kuncinya
-            $('#lokasi_id').next('.select2-container').css({
-                'pointer-events': 'auto',
-                'opacity': '1',
-                'background-color': 'transparent'
-            });
-            $('#lokasi_id').attr('required', 'required');
-            
-            // Kosongkan pilihan jika sebelumnya otomatis User/Employee
-            if ($('#lokasi_id option:selected').text().includes('User/Employee')) {
-                $('#lokasi_id').val('').trigger('change.select2');
-            }
+        $('#karyawan_id option').prop('disabled', false);
+        $('#karyawan_id_2 option').prop('disabled', false);
+
+        if (pic1) {
+            $('#karyawan_id_2 option[value="' + pic1 + '"]').prop('disabled', true);
+        }
+        if (pic2) {
+            $('#karyawan_id option[value="' + pic2 + '"]').prop('disabled', true);
         }
     }
 
-    // Pantau setiap kali pilihan Karyawan diubah
-    $('#karyawan_id').on('change', sesuaikanLokasi);
+    $('#karyawan_id, #karyawan_id_2').on('change', updatePICOptions);
+
+    // 3. Logika Radio Button untuk Tampil/Sembunyi Form
+    function sesuaikanForm() {
+        if ($('#radioICT').is(':checked')) {
+            $('#picContainer').hide();
+            $('#lokasiContainer').show();
+            
+            $('#karyawan_id').val('').trigger('change.select2').removeAttr('required');
+            $('#karyawan_id_2').val('').trigger('change.select2');
+            
+            $('#lokasi_id').attr('required', 'required');
+        } else {
+            $('#picContainer').show();
+            $('#lokasiContainer').hide();
+            
+            $('#karyawan_id').attr('required', 'required');
+            
+            $('#lokasi_id').val('').trigger('change.select2').removeAttr('required');
+        }
+    }
+
+    $('input[name="jenis_kepemilikan"]').on('change', sesuaikanForm);
     
     // Jalankan satu kali saat halaman dimuat
-    sesuaikanLokasi();
+    sesuaikanForm();
 });
 </script>
 {% endblock %}

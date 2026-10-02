@@ -5,8 +5,8 @@ from flask_login import login_required, current_user
 from sqlalchemy import or_
 
 from main import app, admin_required
-# PERBAIKAN: Menambahkan KategoriBarang dan SatuanBarang pada import
-from models import db, Consumable, Transaksi, Lokasi, KategoriBarang, SatuanBarang
+# PERBAIKAN: Menambahkan MainLokasi dan SubLokasi
+from models import db, Consumable, Transaksi, MainLokasi, SubLokasi, KategoriBarang, SatuanBarang
 
 @app.route('/consumable')
 @login_required
@@ -35,7 +35,9 @@ def master_consumable():
     # PERBAIKAN: List Dropdown memanggil data Master secara langsung
     kategori_list = KategoriBarang.query.filter_by(jenis='Consumable').order_by(KategoriBarang.nama_kategori.asc()).all()
     tipe_list = [t[0] for t in db.session.query(Consumable.unit_type).filter(Consumable.is_active==True, Consumable.unit_type != None, Consumable.unit_type != '').distinct().all()]
-    lokasi_list = Lokasi.query.order_by(Lokasi.main_lokasi.asc(), Lokasi.nama_lokasi.asc()).all()
+    
+    # PERBAIKAN: Mengambil data lokasi dari SubLokasi
+    lokasi_list = SubLokasi.query.join(MainLokasi).order_by(MainLokasi.nama_main.asc(), SubLokasi.nama_sub.asc()).all()
     
     data = query.order_by(Consumable.id.desc()).paginate(page=page, per_page=50, error_out=False)
     
@@ -56,6 +58,9 @@ def tambah_consumable():
         
         satuan_id_raw = request.form.get('satuan_id')
         satuan_id = int(satuan_id_raw) if satuan_id_raw and satuan_id_raw.isdigit() else None
+        
+        lok_id_raw = request.form.get('lokasi_id')
+        lokasi_id = int(lok_id_raw) if lok_id_raw and lok_id_raw.isdigit() else None
 
         if not kode_barang:
             flash('Gagal! Kode Barang wajib diisi manual.', 'danger')
@@ -76,7 +81,7 @@ def tambah_consumable():
             vendor=request.form.get('vendor', '').strip(),
             kategori_id=kategori_id, # Relasi Master
             unit_type=request.form.get('unit_type', '').strip(), 
-            lokasi_id=request.form.get('lokasi_id') or None, 
+            lokasi_id=lokasi_id, 
             stok=stok, 
             satuan_id=satuan_id # Relasi Master
         )
@@ -85,6 +90,13 @@ def tambah_consumable():
         
         if stok > 0: 
             ket_awal = "Stok Awal Registrasi"
+            if lokasi_id:
+               lok = SubLokasi.query.get(lokasi_id)
+               if lok and lok.main:
+                   ket_awal += f" | Lokasi: {lok.main.nama_main} - {lok.nama_sub}"
+               else:
+                   ket_awal += f" | Lokasi: {lok.nama_sub}" if lok else " | Lokasi Tidak Diketahui"
+            
             if keterangan_tambahan:
                 ket_awal += f" | Catatan: {keterangan_tambahan}"
                 
@@ -96,7 +108,8 @@ def tambah_consumable():
         return redirect(url_for('tambah_consumable'))
         
     return render_template('consumable/tambah.html', 
-                           lokasi_list=Lokasi.query.all(),
+                           main_lokasi_list=MainLokasi.query.order_by(MainLokasi.nama_main.asc()).all(),
+                           sub_lokasi_list=SubLokasi.query.join(MainLokasi).order_by(MainLokasi.nama_main.asc(), SubLokasi.nama_sub.asc()).all(),
                            kategori_list=KategoriBarang.query.filter_by(jenis='Consumable').order_by(KategoriBarang.nama_kategori.asc()).all(),
                            satuan_list=SatuanBarang.query.order_by(SatuanBarang.nama_satuan.asc()).all())
 
@@ -184,8 +197,11 @@ def edit_consumable(id):
             db.session.add(Transaksi(user_id=current_user.id, consumable_id=barang.id, jenis='Edit', jumlah=1, keterangan=keterangan_edit))
             
         if old_lokasi_id != new_lokasi_id:
-            lok_baru = Lokasi.query.get(new_lokasi_id)
-            ket_mutasi = f"Pindah Lokasi ke: {lok_baru.main_lokasi} - {lok_baru.nama_lokasi}" if lok_baru else "Ditarik dari Lokasi"
+            lok_baru = SubLokasi.query.get(new_lokasi_id)
+            if lok_baru and lok_baru.main:
+                ket_mutasi = f"Pindah Lokasi ke: {lok_baru.main.nama_main} - {lok_baru.nama_sub}"
+            else:
+                ket_mutasi = f"Pindah Lokasi ke: {lok_baru.nama_sub}" if lok_baru else "Ditarik dari Lokasi"
             db.session.add(Transaksi(user_id=current_user.id, consumable_id=barang.id, jenis='Mutasi', jumlah=1, keterangan=ket_mutasi))
 
         db.session.commit()
@@ -198,7 +214,8 @@ def edit_consumable(id):
     return render_template('consumable/edit.html', 
                            barang=barang, 
                            riwayat=riwayat_barang,
-                           lokasi_list=Lokasi.query.all(),
+                           main_lokasi_list=MainLokasi.query.order_by(MainLokasi.nama_main.asc()).all(),
+                           sub_lokasi_list=SubLokasi.query.join(MainLokasi).order_by(MainLokasi.nama_main.asc(), SubLokasi.nama_sub.asc()).all(),
                            kategori_list=KategoriBarang.query.filter_by(jenis='Consumable').order_by(KategoriBarang.nama_kategori.asc()).all(),
                            satuan_list=SatuanBarang.query.order_by(SatuanBarang.nama_satuan.asc()).all())
 
@@ -352,8 +369,8 @@ def export_consumable():
             'Vendor': item.vendor or '-',
             'Kategori': item.kategori_terkait.nama_kategori if item.kategori_id and item.kategori_terkait else '-',
             'Tipe Unit': item.unit_type or '-',
-            'Main Location': item.lokasi.main_lokasi if item.lokasi else 'Belum Dialokasikan',
-            'Sub Location': item.lokasi.nama_lokasi if item.lokasi else '-',
+            'Main Location': item.lokasi.main.nama_main if item.lokasi and item.lokasi.main else 'Belum Dialokasikan',
+            'Sub Location': item.lokasi.nama_sub if item.lokasi else '-',
             'Sisa Stok': item.stok,
             'Satuan': item.satuan_terkait.nama_satuan if item.satuan_id and item.satuan_terkait else '-',
             'Tanggal Register': item.created_at.strftime('%Y-%m-%d %H:%M:%S') if item.created_at else "-"

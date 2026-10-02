@@ -12,44 +12,128 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
-      <div class="alert alert-danger alert-dismissible fade show">
-        {{ message }}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show shadow-sm">
+        <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
     {% endfor %}
   {% endif %}
 {% endwith %}
 
-<div class="card shadow-sm border-0 col-lg-8">
+<!-- Pilihan Tipe Lokasi (Radio Buttons) -->
+<div class="card shadow-sm border-0 mb-4 col-lg-8 bg-light">
+    <div class="card-body p-3">
+        <h6 class="fw-bold mb-3 text-dark">Pilih Tipe Lokasi yang Ingin Ditambahkan:</h6>
+        <div class="d-flex gap-4">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="tipe_lokasi" id="radioMain" value="main" checked style="cursor: pointer;">
+                <label class="form-check-label fw-medium" for="radioMain" style="cursor: pointer;">
+                    Main Location <span class="text-muted fw-normal">(Area Utama)</span>
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="tipe_lokasi" id="radioSub" value="sub" style="cursor: pointer;">
+                <label class="form-check-label fw-medium" for="radioSub" style="cursor: pointer;">
+                    Sub Location <span class="text-muted fw-normal">(Titik Spesifik)</span>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FORM 1: Main Location (Area Utama) -->
+<div class="card shadow-sm border-0 col-lg-8" id="formMainWrapper">
     <div class="card-body p-4">
-        <form action="{{ url_for('tambah_lokasi') }}" method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <form action="{{ url_for('tambah_main_lokasi') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}"/>
             
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <label for="main_lokasi" class="form-label fw-semibold">Main Location (Area Utama) <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="main_lokasi" name="main_lokasi" list="mainLocationList" required placeholder="Contoh: Senoro CPP">
-                    <datalist id="mainLocationList">
-                        {% for main in main_lokasi_list %}
-                        <option value="{{ main }}">
-                        {% endfor %}
-                    </datalist>
-                    <small class="text-muted">Ketik area baru atau pilih area yang sudah ada.</small>
-                </div>
-                
-                <div class="col-md-6">
-                    <label for="nama_lokasi" class="form-label fw-semibold">Sub Location (Titik Spesifik) <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="nama_lokasi" name="nama_lokasi" required placeholder="Contoh: Gudang OFM">
-                    <small class="text-muted">Nama spesifik tempat barang disimpan atau dipasang.</small>
-                </div>
+            <div class="mb-3">
+                <label for="nama_main" class="form-label fw-semibold">Nama Main Location <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="nama_main" name="nama_main" required placeholder="Contoh: Office CPP">
+                <small class="text-muted">Nama area besar atau fasilitas utama.</small>
+            </div>
+            
+            <div class="mb-4">
+                <label for="keterangan_main" class="form-label fw-semibold">Keterangan / Deskripsi (Opsional)</label>
+                <textarea class="form-control" id="keterangan_main" name="keterangan" rows="2" placeholder="Contoh: Area perkantoran khusus departemen teknis"></textarea>
             </div>
 
-            <div class="d-flex justify-content-end mt-2">
+            <div class="d-flex justify-content-end">
                 <button type="submit" class="btn btn-primary px-4 shadow-sm">
-                    <i class="bi bi-save me-1"></i> Simpan Lokasi
+                    <i class="bi bi-save me-1"></i> Simpan Main Location
                 </button>
             </div>
         </form>
     </div>
 </div>
+
+<!-- FORM 2: Sub Location (Titik Spesifik) -->
+<div class="card shadow-sm border-0 col-lg-8" id="formSubWrapper" style="display: none;">
+    <div class="card-body p-4">
+        <form action="{{ url_for('tambah_sub_lokasi') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}"/>
+            
+            <div class="mb-3">
+                <label for="main_lokasi_id" class="form-label fw-semibold">Pilih Area Utama (Main Location) <span class="text-danger">*</span></label>
+                <select class="form-select" id="main_lokasi_id" name="main_lokasi_id" required>
+                    <option value="" selected disabled>-- Pilih Main Location --</option>
+                    {% for main in main_lokasi_list %}
+                        <option value="{{ main.id }}">{{ main.nama_main }}</option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted">Area tempat titik spesifik ini berada.</small>
+            </div>
+            
+            <div class="mb-3">
+                <label for="nama_sub" class="form-label fw-semibold">Nama Sub Location <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="nama_sub" name="nama_sub" required placeholder="Contoh: Ruang Meeting Lantai 2">
+                <small class="text-muted">Titik spesifik penempatan aset.</small>
+            </div>
+            
+            <div class="mb-4">
+                <label for="keterangan_sub" class="form-label fw-semibold">Keterangan / Deskripsi (Opsional)</label>
+                <textarea class="form-control" id="keterangan_sub" name="keterangan" rows="2" placeholder="Contoh: Pojok kiri depan"></textarea>
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                    <i class="bi bi-save me-1"></i> Simpan Sub Location
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- JavaScript untuk Logika Tampil/Sembunyi Form -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const radioMain = document.getElementById('radioMain');
+        const radioSub = document.getElementById('radioSub');
+        const formMain = document.getElementById('formMainWrapper');
+        const formSub = document.getElementById('formSubWrapper');
+
+        function toggleForms() {
+            if (radioMain.checked) {
+                formMain.style.display = 'block';
+                formSub.style.display = 'none';
+                // Reset required attributes agar tidak memblokir form yang tidak aktif
+                document.getElementById('nama_main').setAttribute('required', 'required');
+                document.getElementById('main_lokasi_id').removeAttribute('required');
+                document.getElementById('nama_sub').removeAttribute('required');
+            } else {
+                formMain.style.display = 'none';
+                formSub.style.display = 'block';
+                // Reset required attributes
+                document.getElementById('nama_main').removeAttribute('required');
+                document.getElementById('main_lokasi_id').setAttribute('required', 'required');
+                document.getElementById('nama_sub').setAttribute('required', 'required');
+            }
+        }
+
+        // Jalankan saat pertama kali dimuat dan saat radio berubah
+        toggleForms();
+        radioMain.addEventListener('change', toggleForms);
+        radioSub.addEventListener('change', toggleForms);
+    });
+</script>
 {% endblock %}
