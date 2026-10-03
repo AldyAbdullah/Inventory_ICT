@@ -6,10 +6,7 @@ from sqlalchemy import func, or_
 import calendar
 
 from main import app, admin_required
-# PERBAIKAN: KategoriBarang diimpor di sini
 from models import db, User, MainLokasi, SubLokasi, Inventory, Consumable, Transaksi, KategoriBarang, SatuanBarang
-
-from datetime import datetime
 
 @app.context_processor
 def inject_datetime():
@@ -200,13 +197,12 @@ def index():
     )
 
 # ---------------------------------------------------------
-# 3. RUTE MASTER LOKASI (Hierarki Main & Sub Lokasi)
+# 3. RUTE MASTER LOKASI
 # ---------------------------------------------------------
 @app.route('/lokasi')
 @login_required
 @admin_required
 def master_lokasi():
-    # Ambil semua MainLokasi dan ikutkan (join) data SubLokasinya
     main_lokasi_list = MainLokasi.query.order_by(MainLokasi.nama_main.asc()).all()
     sub_lokasi_list = SubLokasi.query.join(MainLokasi).order_by(MainLokasi.nama_main.asc(), SubLokasi.nama_sub.asc()).all()
     
@@ -216,7 +212,6 @@ def master_lokasi():
 @login_required
 @admin_required
 def tambah_lokasi():
-    # Menarik data Main Lokasi untuk diisi ke dalam Dropdown di form Sub Lokasi
     main_lokasi_list = MainLokasi.query.order_by(MainLokasi.nama_main.asc()).all()
     return render_template('lokasi/tambah.html', main_lokasi_list=main_lokasi_list)
 
@@ -266,7 +261,6 @@ def edit_main_lokasi(id):
     nama_main_baru = request.form.get('nama_main', '').strip()
     keterangan_baru = request.form.get('keterangan', '').strip()
     
-    # Cek apakah nama main lokasi baru sudah dipakai oleh data lain
     cek = MainLokasi.query.filter(MainLokasi.id != id, MainLokasi.nama_main.ilike(nama_main_baru)).first()
     if cek:
         flash(f'Gagal! Main Lokasi "{nama_main_baru}" sudah terdaftar.', 'danger')
@@ -287,7 +281,6 @@ def edit_sub_lokasi(id):
     nama_sub_baru = request.form.get('nama_sub', '').strip()
     keterangan_baru = request.form.get('keterangan', '').strip()
     
-    # Cek duplikasi nama sub lokasi di dalam main lokasi yang sama
     cek = SubLokasi.query.filter(SubLokasi.id != id, SubLokasi.main_lokasi_id == main_lokasi_id, SubLokasi.nama_sub.ilike(nama_sub_baru)).first()
     if cek:
         flash(f'Gagal! Sub Lokasi "{nama_sub_baru}" sudah ada di area tersebut.', 'danger')
@@ -299,6 +292,7 @@ def edit_sub_lokasi(id):
         flash('Data Sub Lokasi berhasil diperbarui.', 'success')
         
     return redirect(url_for('master_lokasi'))
+
 # ---------------------------------------------------------
 # 4. RUTE MASTER KATEGORI & SATUAN BARANG
 # ---------------------------------------------------------
@@ -309,7 +303,6 @@ def master_kategori_satuan():
     if request.method == 'POST':
         nama_kategori = request.form.get('nama_kategori', '').strip()
         jenis = request.form.get('jenis', '').strip()
-        # Satuan hanya ditangkap jika jenisnya Consumable
         nama_satuan = request.form.get('satuan', '').strip() if jenis == 'Consumable' else ''
 
         if not nama_kategori and not nama_satuan:
@@ -318,7 +311,6 @@ def master_kategori_satuan():
 
         pesan = []
         
-        # Eksekusi simpan Kategori
         if nama_kategori:
             if KategoriBarang.query.filter_by(nama_kategori=nama_kategori, jenis=jenis).first():
                 pesan.append(f'Kategori "{nama_kategori}" sudah ada')
@@ -326,7 +318,6 @@ def master_kategori_satuan():
                 db.session.add(KategoriBarang(nama_kategori=nama_kategori, jenis=jenis))
                 pesan.append(f'Kategori "{nama_kategori}" ditambahkan')
 
-        # Eksekusi simpan Satuan (Jika ada isinya)
         if nama_satuan:
             if SatuanBarang.query.filter_by(nama_satuan=nama_satuan).first():
                 pesan.append(f'Satuan "{nama_satuan}" sudah ada')
@@ -338,7 +329,6 @@ def master_kategori_satuan():
         flash(" | ".join(pesan) + ".", 'success')
         return redirect(url_for('master_kategori_satuan'))
 
-    # Ambil 3 data sekaligus untuk ditampilkan di HTML
     kat_inventory = KategoriBarang.query.filter_by(jenis='Inventory').order_by(KategoriBarang.nama_kategori.asc()).all()
     kat_consumable = KategoriBarang.query.filter_by(jenis='Consumable').order_by(KategoriBarang.nama_kategori.asc()).all()
     data_satuan = SatuanBarang.query.order_by(SatuanBarang.nama_satuan.asc()).all()
@@ -373,10 +363,10 @@ def hapus_satuan(id):
         db.session.commit()
         flash('Satuan berhasil dihapus.', 'success')
     return redirect(url_for('master_kategori_satuan'))
+
 # ---------------------------------------------------------
 # 5. RUTE TAMPILAN RIWAYAT
 # ---------------------------------------------------------
-
 @app.route('/riwayat_inventory')
 @login_required
 def riwayat_inventory():
@@ -402,23 +392,70 @@ def riwayat_inventory():
     data = query.order_by(Transaksi.tanggal.desc()).paginate(page=page, per_page=15, error_out=False)
     return render_template('inventory/riwayat.html', data=data)
 
+# ==========================================
+# PERBAIKAN: RIWAYAT CONSUMABLE (REVERSE STOCK CALCULATION)
+# ==========================================
 @app.route('/riwayat_consumable')
 @login_required
 def riwayat_consumable():
-    search = request.args.get('search', '')
-    start_date, end_date = request.args.get('start_date', ''), request.args.get('end_date', '')
+    search = request.args.get('search', '').strip().lower()
+    start_date = request.args.get('start_date', '').strip()
+    end_date = request.args.get('end_date', '').strip()
     
-    query = Transaksi.query.join(Consumable).filter(Transaksi.consumable_id != None)
+    # Ambil SEMUA transaksi untuk menghitung mundur dari stok saat ini (Desc = Terbaru ke Terlama)
+    # Filter pencarian ditunda ke level list (Python) agar urutan hitungan stok valid
+    semua_trx = Transaksi.query.filter(Transaksi.consumable_id != None).order_by(Transaksi.id.desc()).all()
     
-    if search:
-        query = query.filter(db.or_(Consumable.nama_barang.ilike(f"%{search}%"), Consumable.kode_barang.ilike(f"%{search}%"), Transaksi.keterangan.ilike(f"%{search}%")))
-    if start_date:
-        query = query.filter(Transaksi.tanggal >= datetime.strptime(start_date, '%Y-%m-%d'))
-    if end_date:
-        query = query.filter(Transaksi.tanggal <= datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59))
+    stok_tracker = {}
+    processed_data = []
+    
+    for trx in semua_trx:
+        c_id = trx.consumable_id
         
-    data = query.order_by(Transaksi.tanggal.desc()).paginate(page=request.args.get('page', 1, type=int), per_page=20, error_out=False)
-    return render_template('consumable/riwayat.html', data=data, search_query=search, start_date=start_date, end_date=end_date)
+        # Di transaksi terbaru yang dibaca pertama kali, ambil stok aktual di DB
+        if c_id not in stok_tracker:
+            stok_tracker[c_id] = trx.consumable.stok if trx.consumable else 0
+            
+        stok_sesudah = stok_tracker[c_id]
+        
+        # Hitung mundur (reverse engineering) ke stok sebelumnya
+        if trx.jenis == 'Masuk':
+            stok_sebelum = stok_sesudah - trx.jumlah
+        elif trx.jenis == 'Keluar':
+            stok_sebelum = stok_sesudah + trx.jumlah
+        else:
+            stok_sebelum = stok_sesudah # Edit/Mutasi
+            
+        # Simpan state untuk mundur ke iterasi transaksi yang lebih lampau
+        stok_tracker[c_id] = stok_sebelum
+        
+        trx.stok_sebelum = stok_sebelum
+        trx.stok_sekarang = stok_sesudah
+        
+        # -----------------------------
+        # Logika Filter Search & Date
+        # -----------------------------
+        tampil = True
+        
+        if search:
+            nm = (trx.consumable.nama_barang or '').lower() if trx.consumable else ''
+            kd = (trx.consumable.kode_barang or '').lower() if trx.consumable else ''
+            kt = (trx.keterangan or '').lower()
+            if search not in nm and search not in kd and search not in kt:
+                tampil = False
+                
+        if start_date and trx.tanggal:
+            if trx.tanggal.strftime('%Y-%m-%d') < start_date:
+                tampil = False
+        if end_date and trx.tanggal:
+            if trx.tanggal.strftime('%Y-%m-%d') > end_date:
+                tampil = False
+                
+        if tampil:
+            processed_data.append(trx)
+            
+    # Data di HTML akan terurut dari yang terbaru secara otomatis, tidak perlu di-reverse
+    return render_template('consumable/riwayat.html', data=processed_data)
 
 # ---------------------------------------------------------
 # 6. ERROR HANDLERS

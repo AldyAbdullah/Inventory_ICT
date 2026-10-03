@@ -5,18 +5,21 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
     <h4 class="fw-bold mb-1" style="color: #0a2540">Master Data Consumable</h4>
-    <p class="text-muted mb-0">Kelola barang habis pakai, stok, dan riwayat mutasinya.</p>
-    <!-- PENAMBAHAN TANGGAL HARI INI -->
     <small class="badge bg-light text-secondary border mt-2">
       <i class="bi bi-clock-history me-1"></i>Data per: <strong>{{ dt.now().strftime('%d %B %Y') }}</strong>
     </small>
   </div>
+  
   <div class="d-flex gap-2">
-    <a href="{{ url_for('export_consumable', search=search_query, kategori=filter_kategori, tipe=filter_tipe, lokasi=filter_lokasi) }}" class="btn btn-success shadow-sm" title="Export ke Excel">
-      <i class="bi bi-file-earmark-excel"></i> Export Excel
+    <!-- PERBAIKAN: Tambah Tombol Import Data Excel -->
+    <button type="button" class="btn btn-outline-info shadow-sm bg-transparent" data-bs-toggle="modal" data-bs-target="#importModal" title="Import Data Excel">
+      <i class="bi bi-upload"></i> <span class="d-none d-md-inline ms-1">Import</span>
+    </button>
+    <a href="{{ url_for('export_consumable', search=search_query, kategori=filter_kategori, stok=filter_stok, lokasi=filter_lokasi) }}" class="btn btn-outline-success shadow-sm bg-transparent" title="Export ke Excel">
+      <i class="bi bi-file-earmark-excel"></i> <span class="d-none d-md-inline ms-1">Export</span>
     </a>
-    <a href="{{ url_for('tambah_consumable') }}" class="btn btn-primary shadow-sm" title="Tambah Barang Baru">
-      <i class="bi bi-plus-lg me-1"></i> Tambah Consumable
+    <a href="{{ url_for('tambah_consumable') }}" class="btn btn-outline-primary shadow-sm bg-transparent" title="Tambah Barang Baru">
+      <i class="bi bi-plus-lg"></i> <span class="d-none d-md-inline ms-1">Tambah</span>
     </a>
   </div>
 </div>
@@ -32,23 +35,22 @@
   {% endif %} 
 {% endwith %}
 
-<div class="card shadow-sm border-0">
+<div class="card shadow-sm border-0 mb-5">
   <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
     <h6 class="m-0 fw-bold text-primary">Daftar Consumable Aktif</h6>
 
-    <!-- FORM PENCARIAN & FILTER -->
-    <form id="filterForm" method="GET" action="{{ url_for('master_consumable') }}" class="d-flex" style="min-width: 400px">
-      <div class="input-group input-group-sm">
+    <form id="filterForm" method="GET" action="{{ url_for('master_consumable') }}" class="d-flex w-auto flex-grow-1 flex-md-grow-0 justify-content-end">
+      <div class="input-group input-group-sm" style="max-width: 400px;">
         <input type="text" name="search" class="form-control bg-light border-0" placeholder="Cari barang, brand, kode..." value="{{ search_query }}" />
         <button class="btn btn-primary border-0" type="submit">
           <i class="bi bi-search"></i>
         </button>
 
-        <button class="btn btn-outline-secondary border-0 dropdown-toggle" type="button" id="dropdownFilter" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-          <i class="bi bi-funnel me-1"></i> Filter
+        <button class="btn btn-outline-secondary border-0 dropdown-toggle dropdown-toggle-split px-3" type="button" id="dropdownFilter" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+          <i class="bi bi-funnel"></i>
         </button>
 
-        <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0" aria-labelledby="dropdownFilter" style="width: 320px">
+        <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0" aria-labelledby="dropdownFilter" style="width: 300px">
           <h6 class="dropdown-header px-0 text-dark fw-bold mb-2">Filter Data Consumable</h6>
           
           <div class="mb-2">
@@ -62,12 +64,11 @@
           </div>
           
           <div class="mb-2">
-            <label class="form-label small fw-semibold mb-1">Tipe Unit</label>
-            <select name="tipe" class="form-select form-select-sm">
-              <option value="">Semua Tipe</option>
-              {% for tipe in tipe_list %}
-              <option value="{{ tipe }}" {% if filter_tipe == tipe %}selected{% endif %}>{{ tipe }}</option>
-              {% endfor %}
+            <label class="form-label small fw-semibold mb-1">Status Stok</label>
+            <select name="stok" class="form-select form-select-sm">
+              <option value="">Semua Kondisi Stok</option>
+              <option value="sedikit" {% if filter_stok == 'sedikit' %}selected{% endif %}>Stok Sedikit (≤ 5)</option>
+              <option value="banyak" {% if filter_stok == 'banyak' %}selected{% endif %}>Stok Aman (> 5)</option>
             </select>
           </div>
           
@@ -76,7 +77,6 @@
             <select name="lokasi" class="form-select form-select-sm">
               <option value="">Semua Lokasi Gudang</option>
               {% for lok in lokasi_list %}
-              <!-- Menyembunyikan opsi User/Employee di filter -->
               {% if lok.main.nama_main != 'User / Employee' %}
               <option value="{{ lok.id }}" {% if filter_lokasi|string == lok.id|string %}selected{% endif %}>{{ lok.main.nama_main }} - {{ lok.nama_sub }}</option>
               {% endif %}
@@ -84,13 +84,12 @@
             </select>
           </div>
           
-          <div class="d-flex justify-content-end gap-2 mt-3">
-            <a href="{{ url_for('master_consumable') }}" class="btn btn-sm btn-light border">Reset</a>
-            <button type="submit" class="btn btn-sm btn-primary px-3">Terapkan</button>
+          <div class="d-flex justify-content-end mt-3">
+            <a href="{{ url_for('master_consumable') }}" class="btn btn-sm btn-light border w-100">Reset Semua Filter</a>
           </div>
         </div>
 
-        {% if search_query or filter_kategori or filter_tipe or filter_lokasi %}
+        {% if search_query or filter_kategori or filter_stok or filter_lokasi %}
         <a href="{{ url_for('master_consumable') }}" class="btn btn-danger border-0 text-white" title="Hapus Filter"><i class="bi bi-x-lg"></i></a>
         {% endif %}
       </div>
@@ -101,13 +100,14 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}" />
 
     <div class="card-body p-0">
-      <div class="table-responsive table-scrollable pb-0" style="min-height: 280px">
+      <!-- PERBAIKAN: Max Height untuk Infinite Scroll seperti Inventory -->
+      <div class="table-responsive table-scrollable pb-0" style="min-height: 280px; max-height: 65vh;">
         <table class="table table-hover table-sm align-middle mb-0 text-nowrap">
           <thead class="table-light">
             <tr>
               <th class="ps-4" width="5%">No</th>
               <th width="15%">Kode Barang</th>
-              <th width="20%">Nama, Brand & Vendor</th>
+              <th width="20%">Brand & Vendor</th>
               <th width="20%">Kategori & Tipe</th>
               <th width="15%">Lokasi Gudang</th>
               <th width="12%">Sisa Stok</th>
@@ -115,28 +115,31 @@
             </tr>
           </thead>
           <tbody id="tableBody">
-            {% for item in data.items %}
+            <!-- PERBAIKAN: Hapus .items karena Pagination Dihapus di Backend Nanti -->
+            {% set items_list = data.items if data.__class__.__name__ == 'Pagination' else data %}
+            {% for item in items_list %}
             <tr class="selectable-row" onclick="toggleRow(this, event)">
               <td class="ps-4">
                 <input type="checkbox" name="item_ids" value="{{ item.id }}" class="d-none item-checkbox" />
-                {{ (data.page - 1) * data.per_page + loop.index }}
+                {{ loop.index }}
               </td>
               <td>
-                <span class="badge bg-light text-dark border"><i class="bi bi-upc-scan me-1"></i>{{ item.kode_barang }}</span>
+                <!-- PERBAIKAN: Hapus Badge & Icon Barcode -->
+                <span class="text-dark">{{ item.kode_barang }}</span>
               </td>
               <td>
-                <span class="fw-semibold text-primary" style="font-size: 0.95rem;">{{ item.nama_barang }}</span><br />
+                <!-- PERBAIKAN: Hapus font bold -->
+                <span class="text-primary" style="font-size: 0.95rem;">{{ item.nama_barang }}</span><br />
                 <small class="text-muted">{{ item.brand or '-' }} | {{ item.vendor or '-' }}</small>
               </td>
               <td>
-                <span class="fw-medium text-dark"><i class="bi bi-tag me-1"></i>{{ item.kategori_terkait.nama_kategori if item.kategori_id and item.kategori_terkait else 'Tanpa Kategori' }}</span><br />
+                <span class="text-dark"><i class="bi bi-tag me-1"></i>{{ item.kategori_terkait.nama_kategori if item.kategori_id and item.kategori_terkait else 'Tanpa Kategori' }}</span><br />
                 <small class="text-muted">{{ item.unit_type or '-' }}</small>
               </td>
               
-              <!-- PERBAIKAN: Kolom Lokasi menggunakan MainLokasi dan SubLokasi -->
               <td>
                 {% if item.lokasi %}
-                  <div class="text-dark fw-medium" style="font-size: 0.9rem;">
+                  <div class="text-dark" style="font-size: 0.9rem;">
                     {{ item.lokasi.main.nama_main if item.lokasi.main else 'Belum Dialokasikan' }}
                   </div>
                   <small class="text-muted">
@@ -153,7 +156,11 @@
               </td>
               
               <td>
-                <span class="badge {% if item.stok <= 5 %}bg-danger{% else %}bg-success{% endif %} fs-6 px-2 py-1">
+                {% set badge_stok = 'border-danger text-danger' %}
+                {% if item.stok > 5 %}
+                    {% set badge_stok = 'border-success text-success' %}
+                {% endif %}
+                <span class="badge bg-transparent border {{ badge_stok }} fs-6 px-2 py-1">
                   {{ item.stok }} {{ item.satuan_terkait.nama_satuan if item.satuan_id and item.satuan_terkait else '' }}
                 </span>
               </td>
@@ -179,7 +186,7 @@
             <tr>
               <td colspan="7" class="text-center py-5 text-muted">
                 <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                {% if search_query or filter_kategori or filter_tipe or filter_lokasi %} Tidak ada data yang sesuai filter pencarian. {% else %} Belum ada data barang habis pakai. {% endif %}
+                {% if search_query or filter_kategori or filter_stok or filter_lokasi %} Tidak ada data yang sesuai filter pencarian. {% else %} Belum ada data barang habis pakai. {% endif %}
               </td>
             </tr>
             {% endfor %}
@@ -187,7 +194,6 @@
         </table>
       </div>
 
-      <!-- Toolbar Aksi Massal -->
       <div id="bulkActionBar" class="d-none justify-content-between align-items-center px-4 py-3 bg-light border-top">
         <div class="d-flex align-items-center gap-2">
           <input class="form-check-input border-secondary m-0" type="checkbox" id="selectAllBottom" style="width: 1.1em; height: 1.1em;" />
@@ -206,23 +212,38 @@
       </div>
     </div>
   </form>
+</div>
 
-  <div class="card-footer bg-white py-3">
-    <nav aria-label="Page navigation">
-      <ul class="pagination justify-content-center mb-0" id="paginationBox">
-        {% if data.has_prev %}
-        <li class="page-item">
-          <a class="page-link" href="{{ url_for('master_consumable', page=data.prev_num, search=search_query, kategori=filter_kategori, tipe=filter_tipe, lokasi=filter_lokasi) }}">Sebelumnya</a>
-        </li>
-        {% endif %}
-        <li class="page-item active"><span class="page-link">{{ data.page }}</span></li>
-        {% if data.has_next %}
-        <li class="page-item">
-          <a class="page-link" href="{{ url_for('master_consumable', page=data.next_num, search=search_query, kategori=filter_kategori, tipe=filter_tipe, lokasi=filter_lokasi) }}">Selanjutnya</a>
-        </li>
-        {% endif %}
-      </ul>
-    </nav>
+<!-- Modal Import Excel Consumable -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow">
+      <form action="{{ url_for('import_consumable') }}" method="POST" enctype="multipart/form-data">
+        <div class="modal-header border-bottom-0 bg-light">
+          <h5 class="modal-title fw-bold text-dark" id="importModalLabel">
+            <i class="bi bi-file-earmark-spreadsheet text-success me-2"></i>Import Data Consumable
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted mb-3">Unggah file Excel (.xlsx) untuk menambahkan banyak barang Consumable sekaligus. Sistem otomatis mendeteksi kategori, lokasi, dan satuan jika belum ada.</p>
+          
+          <div class="mb-3">
+            <label for="fileExcel" class="form-label fw-semibold small">Pilih File Excel</label>
+            <input class="form-control" type="file" id="fileExcel" name="file" accept=".xlsx, .xls" required>
+          </div>
+          
+          <div class="alert alert-info py-2 small mb-0 border-0 bg-info bg-opacity-10">
+            <i class="bi bi-info-circle text-info me-1"></i> Belum punya template standar? <br>
+            <a href="{{ url_for('download_template_consumable') }}" class="fw-bold text-info text-decoration-none ms-4">Download Template Excel</a>
+          </div>
+        </div>
+        <div class="modal-footer border-top-0 bg-light">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-cloud-arrow-up me-1"></i> Upload & Proses</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -230,7 +251,6 @@
   document.addEventListener("DOMContentLoaded", function () {
     const filterForm = document.getElementById("filterForm");
     const tableBody = document.getElementById("tableBody");
-    const paginationBox = document.getElementById("paginationBox");
 
     if (!filterForm || !tableBody) return; 
 
@@ -248,9 +268,6 @@
 
           const newTbody = doc.getElementById("tableBody");
           if (newTbody) tableBody.innerHTML = newTbody.innerHTML;
-
-          const newPagination = doc.getElementById("paginationBox");
-          if (newPagination && paginationBox) paginationBox.innerHTML = newPagination.innerHTML;
 
           tableBody.style.opacity = "1";
           window.history.pushState({}, "", url);
@@ -282,7 +299,6 @@
       select.addEventListener("change", fetchResults);
     });
 
-    // Event listener 'Pilih Semua'
     const selectAllBtn = document.getElementById("selectAllBottom");
     if (selectAllBtn) {
       selectAllBtn.addEventListener("change", function () {
@@ -300,7 +316,6 @@
     }
   });
 
-  // Fungsi Global untuk Aksi Massal
   function toggleRow(row, event) {
     if (event.target.closest("button") || event.target.closest("a") || event.target.closest(".dropdown-menu") || event.target.closest("input")) return;
     const checkbox = row.querySelector(".item-checkbox");
@@ -311,7 +326,6 @@
     updateBulkBar();
   }
 
-  // Fungsi Update Toolbar
   function updateBulkBar() {
     const checkedCount = document.querySelectorAll(".item-checkbox:checked").length;
     const totalCount = document.querySelectorAll(".item-checkbox").length;

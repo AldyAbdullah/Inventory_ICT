@@ -5,7 +5,6 @@ from flask_login import login_required, current_user
 from sqlalchemy import or_
 
 from main import app, admin_required
-# PERBAIKAN: Menambahkan MainLokasi dan SubLokasi
 from models import db, Consumable, Transaksi, MainLokasi, SubLokasi, KategoriBarang, SatuanBarang
 
 @app.route('/consumable')
@@ -13,9 +12,8 @@ from models import db, Consumable, Transaksi, MainLokasi, SubLokasi, KategoriBar
 def master_consumable():
     search = request.args.get('search', '').strip()
     filter_kategori = request.args.get('kategori', '').strip()
-    filter_tipe = request.args.get('tipe', '').strip()
+    filter_stok = request.args.get('stok', '').strip()
     filter_lokasi = request.args.get('lokasi', '').strip()
-    page = request.args.get('page', 1, type=int)
     
     query = Consumable.query.filter_by(is_active=True)
     
@@ -27,21 +25,20 @@ def master_consumable():
             Consumable.vendor.ilike(f"%{search}%")
         ))
     
-    # PERBAIKAN: Filter berdasarkan ID kategori (bukan teks)
     if filter_kategori: query = query.filter(Consumable.kategori_id == filter_kategori)
-    if filter_tipe: query = query.filter(Consumable.unit_type == filter_tipe)
     if filter_lokasi: query = query.filter(Consumable.lokasi_id == filter_lokasi)
-        
-    # PERBAIKAN: List Dropdown memanggil data Master secara langsung
-    kategori_list = KategoriBarang.query.filter_by(jenis='Consumable').order_by(KategoriBarang.nama_kategori.asc()).all()
-    tipe_list = [t[0] for t in db.session.query(Consumable.unit_type).filter(Consumable.is_active==True, Consumable.unit_type != None, Consumable.unit_type != '').distinct().all()]
     
-    # PERBAIKAN: Mengambil data lokasi dari SubLokasi
+    if filter_stok == 'sedikit':
+        query = query.filter(Consumable.stok <= 5)
+    elif filter_stok == 'banyak':
+        query = query.filter(Consumable.stok > 5)
+        
+    kategori_list = KategoriBarang.query.filter_by(jenis='Consumable').order_by(KategoriBarang.nama_kategori.asc()).all()
     lokasi_list = SubLokasi.query.join(MainLokasi).order_by(MainLokasi.nama_main.asc(), SubLokasi.nama_sub.asc()).all()
     
-    data = query.order_by(Consumable.id.desc()).paginate(page=page, per_page=50, error_out=False)
+    data = query.order_by(Consumable.id.desc()).all()
     
-    return render_template('consumable/master.html', data=data, search_query=search, filter_kategori=filter_kategori, filter_tipe=filter_tipe, filter_lokasi=filter_lokasi, kategori_list=kategori_list, tipe_list=tipe_list, lokasi_list=lokasi_list)
+    return render_template('consumable/master.html', data=data, search_query=search, filter_kategori=filter_kategori, filter_stok=filter_stok, filter_lokasi=filter_lokasi, kategori_list=kategori_list, lokasi_list=lokasi_list)
 
 @app.route('/tambah_consumable', methods=['GET', 'POST'])
 @login_required
@@ -52,7 +49,6 @@ def tambah_consumable():
         stok = int(request.form.get('stok', 0))
         keterangan_tambahan = request.form.get('keterangan', '').strip()
         
-        # Penangkapan data ID dari Dropdown Master
         kategori_id_raw = request.form.get('kategori_id')
         kategori_id = int(kategori_id_raw) if kategori_id_raw and kategori_id_raw.isdigit() else None
         
@@ -79,11 +75,11 @@ def tambah_consumable():
             nama_barang=request.form.get('nama_barang', '').strip(), 
             brand=request.form.get('brand', '').strip(),
             vendor=request.form.get('vendor', '').strip(),
-            kategori_id=kategori_id, # Relasi Master
+            kategori_id=kategori_id,
             unit_type=request.form.get('unit_type', '').strip(), 
             lokasi_id=lokasi_id, 
             stok=stok, 
-            satuan_id=satuan_id # Relasi Master
+            satuan_id=satuan_id
         )
         db.session.add(barang_baru)
         db.session.flush()
@@ -104,7 +100,6 @@ def tambah_consumable():
         
         db.session.commit()
         flash('Barang Consumable berhasil ditambahkan.', 'success')
-        # PERBAIKAN UX: Kembali ke form tambah agar bisa input data selanjutnya tanpa repot pindah halaman
         return redirect(url_for('tambah_consumable'))
         
     return render_template('consumable/tambah.html', 
@@ -129,7 +124,6 @@ def edit_consumable(id):
             flash(f'Gagal! Kode Barang "{new_kode}" sudah dipakai item lain.', 'danger')
             return redirect(url_for('edit_consumable', id=id))
 
-        # TANGKAP DATA LAMA UNTUK JEJAK AUDIT
         old_kode = barang.kode_barang
         old_nama = barang.nama_barang
         old_brand = barang.brand or 'Kosong'
@@ -140,7 +134,6 @@ def edit_consumable(id):
         old_satuan_id = barang.satuan_id
         old_stok = barang.stok
 
-        # TANGKAP DATA BARU
         new_nama = request.form.get('nama_barang', '').strip()
         new_brand = request.form.get('brand', '').strip() or 'Kosong'
         new_vendor = request.form.get('vendor', '').strip() or 'Kosong'
@@ -157,7 +150,6 @@ def edit_consumable(id):
         lok_id_raw = request.form.get('lokasi_id')
         new_lokasi_id = int(lok_id_raw) if lok_id_raw and lok_id_raw.isdigit() else None
 
-        # DETEKSI PERUBAHAN
         perubahan_edit = []
         if old_kode != new_kode: perubahan_edit.append(f"Kode ({old_kode} -> {new_kode})")
         if old_nama != new_nama: perubahan_edit.append(f"Nama ({old_nama} -> {new_nama})")
@@ -178,7 +170,6 @@ def edit_consumable(id):
             new_sat = new_sat_obj.nama_satuan if new_sat_obj else "Kosong"
             perubahan_edit.append(f"Satuan ({old_sat} -> {new_sat})")
 
-        # TERAPKAN KE DATABASE
         barang.kode_barang = new_kode
         barang.nama_barang = new_nama
         barang.brand = request.form.get('brand', '').strip()
@@ -189,7 +180,6 @@ def edit_consumable(id):
         barang.satuan_id = new_satuan_id
         barang.stok = new_stok
         
-        # CATAT JEJAK RIWAYAT
         if perubahan_edit or keterangan_tambahan:
             keterangan_edit = "Edit: " + ", ".join(perubahan_edit) if perubahan_edit else "Edit Data Tambahan"
             if keterangan_tambahan:
@@ -206,7 +196,6 @@ def edit_consumable(id):
 
         db.session.commit()
         flash('Data Consumable berhasil diperbarui.', 'success')
-        # PERBAIKAN UX: Redirect kembali ke halaman edit agar pengguna langsung melihat hasil dan riwayat terbaru
         return redirect(url_for('edit_consumable', id=id))
         
     riwayat_barang = Transaksi.query.filter_by(consumable_id=id).order_by(Transaksi.tanggal.desc()).all()
@@ -240,7 +229,6 @@ def transaksi_consumable_bulk():
         for item_id in item_ids:
             jenis = request.form.get(f'jenis_transaksi_{item_id}')
             jumlah_str = request.form.get(f'jumlah_{item_id}')
-            # Keterangan massal kini didukung
             keterangan = request.form.get(f'keterangan_{item_id}', '').strip()
             
             if not jenis or not jumlah_str or not jumlah_str.isdigit():
@@ -341,7 +329,7 @@ def catat_transaksi_cns(id):
 def export_consumable():
     search = request.args.get('search', '').strip()
     filter_kategori = request.args.get('kategori', '').strip()
-    filter_tipe = request.args.get('tipe', '').strip()
+    filter_stok = request.args.get('stok', '').strip()
     filter_lokasi = request.args.get('lokasi', '').strip()
     
     query = Consumable.query.filter_by(is_active=True)
@@ -354,8 +342,10 @@ def export_consumable():
             Consumable.vendor.ilike(f"%{search}%")
         ))
     if filter_kategori: query = query.filter(Consumable.kategori_id == filter_kategori)
-    if filter_tipe: query = query.filter(Consumable.unit_type == filter_tipe)
     if filter_lokasi: query = query.filter(Consumable.lokasi_id == filter_lokasi)
+    
+    if filter_stok == 'sedikit': query = query.filter(Consumable.stok <= 5)
+    elif filter_stok == 'banyak': query = query.filter(Consumable.stok > 5)
         
     items = query.order_by(Consumable.id.asc()).all()
 
@@ -382,7 +372,6 @@ def export_consumable():
         df.to_excel(writer, index=False, sheet_name='Data Consumable')
         worksheet = writer.sheets['Data Consumable']
         
-        # Tambahkan formatting dasar
         header_format = writer.book.add_format({'bold': True, 'bg_color': '#D3D3D3', 'border': 1})
         for col_num, value in enumerate(df.columns.values):
             worksheet.write(0, col_num, value, header_format)
@@ -392,7 +381,6 @@ def export_consumable():
             worksheet.set_column(idx, idx, max_len)
 
     output.seek(0)
-    # PERBAIKAN: Menambahkan mimetype Excel
     return send_file(output, download_name="Data_Consumable.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 @app.route('/export_riwayat_consumable')
@@ -450,5 +438,190 @@ def export_riwayat_consumable():
             worksheet.set_column(idx, idx, max_len)
 
     output.seek(0)
-    # PERBAIKAN: Menambahkan mimetype Excel
     return send_file(output, download_name="Riwayat_Stok_Consumable.xlsx", as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+# ==========================================
+# FITUR IMPORT EXCEL CONSUMABLE (DENGAN DROPDOWN)
+# ==========================================
+
+@app.route('/download_template_consumable')
+@login_required
+@admin_required
+def download_template_consumable():
+    kolom = ['Kode Barang', 'Nama Barang', 'Brand', 'Vendor', 'Tipe Unit', 'Kategori', 'Satuan', 'Stok Awal', 'Main Lokasi', 'Sub Lokasi']
+    df = pd.DataFrame(columns=kolom)
+    
+    # Menarik data aktif dari Database untuk Dropdown
+    kategori_list = [k.nama_kategori for k in KategoriBarang.query.filter_by(jenis='Consumable').order_by(KategoriBarang.nama_kategori.asc()).all()]
+    satuan_list = [s.nama_satuan for s in SatuanBarang.query.order_by(SatuanBarang.nama_satuan.asc()).all()]
+    main_lokasi_list = [m.nama_main for m in MainLokasi.query.order_by(MainLokasi.nama_main.asc()).all()]
+    # Menghapus duplikat nama Sub Lokasi
+    sub_lokasi_list = list(set([s.nama_sub for s in SubLokasi.query.all()]))
+    sub_lokasi_list.sort()
+    
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Template_Import')
+        workbook = writer.book
+        worksheet = writer.sheets['Template_Import']
+        
+        # 1. Formatting Header Utama
+        header_format = workbook.add_format({'bold': True, 'bg_color': '#0a2540', 'font_color': 'white', 'border': 1})
+        for col_num, value in enumerate(df.columns.values):
+            worksheet.write(0, col_num, value, header_format)
+            worksheet.set_column(col_num, col_num, 20)
+            
+        # 2. Membuat Sheet Tersembunyi (Referensi) untuk menampung list panjang
+        ref_sheet = workbook.add_worksheet('Referensi')
+        ref_sheet.hide() # Disembunyikan agar user tidak bingung
+        
+        # 3. Menulis Data ke Sheet Referensi & Menyuntikkan Dropdown ke Template
+        # Index kolom excel (0=A, 1=B, ..., 5=F(Kategori), 6=G(Satuan), 8=I(MainLok), 9=J(SubLok))
+        
+        if kategori_list:
+            ref_sheet.write_column('A2', kategori_list)
+            # Apply validasi ke kolom F (Baris 2 hingga 1000)
+            worksheet.data_validation('F2:F1000', {'validate': 'list', 'source': f'=Referensi!$A$2:$A${len(kategori_list)+1}'})
+            
+        if satuan_list:
+            ref_sheet.write_column('B2', satuan_list)
+            worksheet.data_validation('G2:G1000', {'validate': 'list', 'source': f'=Referensi!$B$2:$B${len(satuan_list)+1}'})
+            
+        if main_lokasi_list:
+            ref_sheet.write_column('C2', main_lokasi_list)
+            worksheet.data_validation('I2:I1000', {'validate': 'list', 'source': f'=Referensi!$C$2:$C${len(main_lokasi_list)+1}'})
+            
+        if sub_lokasi_list:
+            ref_sheet.write_column('D2', sub_lokasi_list)
+            worksheet.data_validation('J2:J1000', {'validate': 'list', 'source': f'=Referensi!$D$2:$D${len(sub_lokasi_list)+1}'})
+            
+    output.seek(0)
+    return send_file(output, download_name="Template_Import_Consumable.xlsx", as_attachment=True)
+
+@app.route('/import_consumable', methods=['POST'])
+@login_required
+@admin_required
+def import_consumable():
+    if 'file' not in request.files:
+        flash('Tidak ada file yang dipilih.', 'danger')
+        return redirect(url_for('master_consumable'))
+        
+    file = request.files['file']
+    if file.filename == '':
+        flash('File tidak valid.', 'danger')
+        return redirect(url_for('master_consumable'))
+        
+    try:
+        df = pd.read_excel(file)
+        
+        required_cols = ['Kode Barang', 'Nama Barang']
+        for col in required_cols:
+            if col not in df.columns:
+                flash(f'Gagal: Kolom wajib "{col}" tidak ditemukan di file Excel.', 'danger')
+                return redirect(url_for('master_consumable'))
+                
+        berhasil = 0
+        gagal = 0
+        
+        for index, row in df.iterrows():
+            val_kode = row.get('Kode Barang')
+            val_nama = row.get('Nama Barang')
+            
+            kode = str(val_kode).strip() if pd.notna(val_kode) else ''
+            nama = str(val_nama).strip() if pd.notna(val_nama) else ''
+            
+            if not kode or not nama:
+                gagal += 1
+                continue
+                
+            if Consumable.query.filter_by(kode_barang=kode).first():
+                gagal += 1
+                continue
+                
+            brand = str(row.get('Brand')).strip() if pd.notna(row.get('Brand')) else ''
+            vendor = str(row.get('Vendor')).strip() if pd.notna(row.get('Vendor')) else ''
+            tipe = str(row.get('Tipe Unit')).strip() if pd.notna(row.get('Tipe Unit')) else ''
+            
+            # --- PENANGANAN STOK ---
+            val_stok = row.get('Stok Awal')
+            stok = 0
+            if pd.notna(val_stok):
+                try:
+                    stok = int(val_stok)
+                except ValueError:
+                    stok = 0
+            if stok < 0: stok = 0
+            
+            # --- PENANGANAN RELASI KATEGORI ---
+            val_kat = row.get('Kategori')
+            kat_nama = str(val_kat).strip() if pd.notna(val_kat) else ''
+            kategori_id = None
+            if kat_nama:
+                kat = KategoriBarang.query.filter(KategoriBarang.nama_kategori.ilike(kat_nama), KategoriBarang.jenis=='Consumable').first()
+                if not kat:
+                    kat = KategoriBarang(nama_kategori=kat_nama, jenis='Consumable')
+                    db.session.add(kat)
+                    db.session.flush()
+                kategori_id = kat.id
+                
+            # --- PENANGANAN RELASI SATUAN ---
+            val_sat = row.get('Satuan')
+            sat_nama = str(val_sat).strip() if pd.notna(val_sat) else ''
+            satuan_id = None
+            if sat_nama:
+                sat = SatuanBarang.query.filter(SatuanBarang.nama_satuan.ilike(sat_nama)).first()
+                if not sat:
+                    sat = SatuanBarang(nama_satuan=sat_nama)
+                    db.session.add(sat)
+                    db.session.flush()
+                satuan_id = sat.id
+                
+            # --- PENANGANAN RELASI LOKASI ---
+            val_main = row.get('Main Lokasi')
+            val_sub = row.get('Sub Lokasi')
+            lok_main_nama = str(val_main).strip() if pd.notna(val_main) else ''
+            lok_sub_nama = str(val_sub).strip() if pd.notna(val_sub) else '-'
+            lokasi_id = None
+            
+            if lok_main_nama:
+                main_lok = MainLokasi.query.filter(MainLokasi.nama_main.ilike(lok_main_nama)).first()
+                if not main_lok:
+                    main_lok = MainLokasi(nama_main=lok_main_nama)
+                    db.session.add(main_lok)
+                    db.session.flush()
+                    
+                sub_lok = SubLokasi.query.filter(SubLokasi.main_lokasi_id==main_lok.id, SubLokasi.nama_sub.ilike(lok_sub_nama)).first()
+                if not sub_lok:
+                    sub_lok = SubLokasi(main_lokasi_id=main_lok.id, nama_sub=lok_sub_nama)
+                    db.session.add(sub_lok)
+                    db.session.flush()
+                lokasi_id = sub_lok.id
+                
+            # Simpan Barang Consumable
+            cons = Consumable(
+                kode_barang=kode, nama_barang=nama, brand=brand, vendor=vendor,
+                unit_type=tipe, kategori_id=kategori_id, lokasi_id=lokasi_id,
+                satuan_id=satuan_id, stok=stok, is_active=True
+            )
+            db.session.add(cons)
+            db.session.flush()
+            
+            # Catat Riwayat Mutasi "Masuk" jika stok > 0
+            if stok > 0:
+                ket_masuk = "Stok Awal via Import Excel massal."
+                trx_masuk = Transaksi(user_id=current_user.id, consumable_id=cons.id, jenis='Masuk', jumlah=stok, keterangan=ket_masuk)
+                db.session.add(trx_masuk)
+                
+            berhasil += 1
+            
+        db.session.commit()
+        if berhasil > 0:
+            flash(f'Import Sukses! {berhasil} consumable ditambahkan. {gagal} baris dilewati (duplikat/tidak valid).', 'success')
+        else:
+            flash(f'Gagal: Tidak ada data valid yang diimport. {gagal} baris bermasalah.', 'warning')
+            
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Sistem gagal membaca isi Excel Anda. Error Code: {str(e)}', 'danger')
+        
+    return redirect(url_for('master_consumable'))

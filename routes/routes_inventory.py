@@ -14,7 +14,6 @@ def master_inventory():
     filter_kategori = request.args.get('kategori', '').strip()
     filter_lokasi = request.args.get('lokasi', '').strip()
     filter_status = request.args.get('status', '').strip()
-    page = request.args.get('page', 1, type=int)
 
     query = Inventory.query
 
@@ -34,7 +33,7 @@ def master_inventory():
             Inventory.pic_2.has(Karyawan.payroll.ilike(f'%{search_query}%'))
         ))
 
-    data = query.order_by(Inventory.id.desc()).paginate(page=page, per_page=10, error_out=False)
+    data = query.order_by(Inventory.id.desc()).all()
 
     base_query = Inventory.query
     kategori_list = KategoriBarang.query.filter_by(jenis='Inventory').order_by(KategoriBarang.nama_kategori.asc()).all()
@@ -296,16 +295,12 @@ def edit_inventory(id):
                 keterangan_edit += f" | Catatan: {keterangan_tambahan}"
             db.session.add(Transaksi(user_id=current_user.id, inventory_id=barang.id, jenis='Edit', jumlah=1, keterangan=keterangan_edit))
 
-        # === LOGIKA BARU: DETEKSI DELIVER, RETRIEVAL, DAN MUTASI ===
         if old_pic_id != new_pic_id or old_pic_2_id != new_pic_2_id or old_lokasi_id != new_lokasi_id:
             ket_transaksi = ""
             jenis_transaksi = "Mutasi" 
             
-            # 1. RETRIEVAL (Dari PIC ditarik ke Gudang)
             if (old_pic_id or old_pic_2_id) and not (new_pic_id or new_pic_2_id):
                 jenis_transaksi = "Retrieval"
-                
-                # --- MENYIMPAN DATA PIC LAMA SEBELUM DIHAPUS DARI SISTEM ---
                 pic_names = []
                 pic_payrolls = []
                 if old_pic_id:
@@ -328,10 +323,8 @@ def edit_inventory(id):
                 else:
                     lok_str = "ke Gudang"
                     
-                # Format Sakti agar mudah dipisah di HTML
                 ket_transaksi = f"Dari: {nama_lama} | NIP: {nip_lama} | {lok_str}"
                     
-            # 2. DELIVER (Diserahkan ke PIC / Ganti PIC)
             elif (new_pic_id or new_pic_2_id) and (old_pic_id != new_pic_id or old_pic_2_id != new_pic_2_id):
                 jenis_transaksi = "Deliver"
                 pic_names = []
@@ -343,7 +336,6 @@ def edit_inventory(id):
                     if k2: pic_names.append(k2.nama)
                 ket_transaksi = f"Diserahkan ke PIC: {' & '.join(pic_names)}"
                 
-            # 3. MUTASI (Hanya pindah gudang)
             elif not (new_pic_id or new_pic_2_id) and not (old_pic_id or old_pic_2_id) and (old_lokasi_id != new_lokasi_id):
                 jenis_transaksi = "Mutasi"
                 lok = SubLokasi.query.get(new_lokasi_id)
@@ -368,7 +360,7 @@ def edit_inventory(id):
         
     return render_template('inventory/edit.html', barang=barang, riwayat=riwayat_barang, main_lokasi_list=main_lokasi_list, sub_lokasi_list=sub_lokasi_list, karyawan_list=karyawan_list, status_list=StatusAset.query.all(), kategori_list=KategoriBarang.query.filter_by(jenis='Inventory').order_by(KategoriBarang.nama_kategori.asc()).all())
 
-# ... (KODE EXPORT INVENTORY DAN EXPORT RIWAYAT TETAP SAMA) ...
+
 @app.route('/export_inventory')
 @login_required
 @admin_required
@@ -550,5 +542,219 @@ def cetak_retrieval(id):
         return redirect(url_for('riwayat_inventory'))
         
     tahun = tr.tanggal.strftime('%Y') if tr.tanggal else '2026'
-    no_surat = f"{tr.id:05d}/Tomori/BSD/IRS-S/{tahun}" # Sesuai format gambar
+    no_surat = f"{tr.id:05d}/Tomori/BSD/IRS-S/{tahun}" 
     return render_template('inventory/retrieval_slip.html', tr=tr, no_surat=no_surat)
+
+
+# ==========================================
+# FITUR IMPORT EXCEL INVENTORY (DENGAN DROPDOWN)
+# ==========================================
+
+@app.route('/download_template_inventory')
+@login_required
+@admin_required
+def download_template_inventory():
+    kolom = ['Kode Barang', 'Nama Barang', 'Brand', 'Serial Number', 'Tipe Unit', 'Vendor', 'Kategori', 'Status', 'Payroll PIC 1', 'Payroll PIC 2', 'Main Lokasi', 'Sub Lokasi']
+    df = pd.DataFrame(columns=kolom)
+    
+    # Menarik data aktif dari Database untuk Dropdown
+    kategori_list = [k.nama_kategori for k in KategoriBarang.query.filter_by(jenis='Inventory').order_by(KategoriBarang.nama_kategori.asc()).all()]
+    status_list = [s.nama_status for s in StatusAset.query.order_by(StatusAset.nama_status.asc()).all()]
+    main_lokasi_list = [m.nama_main for m in MainLokasi.query.order_by(MainLokasi.nama_main.asc()).all()]
+    # Menghapus duplikat nama Sub Lokasi
+    sub_lokasi_list = list(set([s.nama_sub for s in SubLokasi.query.all()]))
+    sub_lokasi_list.sort()
+    
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Template_Import')
+        workbook = writer.book
+        worksheet = writer.sheets['Template_Import']
+        
+        # 1. Formatting Header Utama
+        header_format = workbook.add_format({'bold': True, 'bg_color': '#0a2540', 'font_color': 'white', 'border': 1})
+        for col_num, value in enumerate(df.columns.values):
+            worksheet.write(0, col_num, value, header_format)
+            worksheet.set_column(col_num, col_num, 20)
+            
+        # 2. Membuat Sheet Tersembunyi (Referensi) untuk menampung list panjang
+        ref_sheet = workbook.add_worksheet('Referensi')
+        ref_sheet.hide() # Disembunyikan agar user tidak bingung
+        
+        # 3. Menulis Data ke Sheet Referensi & Menyuntikkan Dropdown ke Template
+        # Index kolom excel: 0(Kode), 1(Nama), 2(Brand), 3(SN), 4(Tipe), 5(Vendor), 6(Kategori), 7(Status), 8(PIC1), 9(PIC2), 10(MainLok), 11(SubLok)
+        
+        if kategori_list:
+            ref_sheet.write_column('A2', kategori_list)
+            # Apply validasi ke kolom G (Baris 2 hingga 1000)
+            worksheet.data_validation('G2:G1000', {'validate': 'list', 'source': f'=Referensi!$A$2:$A${len(kategori_list)+1}'})
+            
+        if status_list:
+            ref_sheet.write_column('B2', status_list)
+            worksheet.data_validation('H2:H1000', {'validate': 'list', 'source': f'=Referensi!$B$2:$B${len(status_list)+1}'})
+            
+        if main_lokasi_list:
+            ref_sheet.write_column('C2', main_lokasi_list)
+            worksheet.data_validation('K2:K1000', {'validate': 'list', 'source': f'=Referensi!$C$2:$C${len(main_lokasi_list)+1}'})
+            
+        if sub_lokasi_list:
+            ref_sheet.write_column('D2', sub_lokasi_list)
+            worksheet.data_validation('L2:L1000', {'validate': 'list', 'source': f'=Referensi!$D$2:$D${len(sub_lokasi_list)+1}'})
+            
+    output.seek(0)
+    return send_file(output, download_name="Template_Import_Inventory.xlsx", as_attachment=True)
+
+@app.route('/import_inventory', methods=['POST'])
+@login_required
+@admin_required
+def import_inventory():
+    if 'file' not in request.files:
+        flash('Tidak ada file yang dipilih.', 'danger')
+        return redirect(url_for('master_inventory'))
+        
+    file = request.files['file']
+    if file.filename == '':
+        flash('File tidak valid.', 'danger')
+        return redirect(url_for('master_inventory'))
+        
+    try:
+        df = pd.read_excel(file)
+        
+        required_cols = ['Kode Barang', 'Nama Barang', 'Serial Number']
+        for col in required_cols:
+            if col not in df.columns:
+                flash(f'Gagal: Kolom wajib "{col}" tidak ditemukan di file Excel.', 'danger')
+                return redirect(url_for('master_inventory'))
+                
+        berhasil = 0
+        gagal = 0
+        
+        for index, row in df.iterrows():
+            val_kode = row.get('Kode Barang')
+            val_nama = row.get('Nama Barang')
+            val_sn = row.get('Serial Number')
+            
+            kode = str(val_kode).strip() if pd.notna(val_kode) else ''
+            nama = str(val_nama).strip() if pd.notna(val_nama) else ''
+            sn = str(val_sn).strip() if pd.notna(val_sn) else ''
+            
+            if not kode or not nama or not sn:
+                gagal += 1
+                continue
+                
+            if Inventory.query.filter_by(kode_barang=kode).first() or Inventory.query.filter_by(serial_number=sn).first():
+                gagal += 1
+                continue
+                
+            val_brand = row.get('Brand')
+            val_tipe = row.get('Tipe Unit')
+            val_vendor = row.get('Vendor')
+            brand = str(val_brand).strip() if pd.notna(val_brand) else ''
+            tipe = str(val_tipe).strip() if pd.notna(val_tipe) else ''
+            vendor = str(val_vendor).strip() if pd.notna(val_vendor) else ''
+            
+            val_kat = row.get('Kategori')
+            kat_nama = str(val_kat).strip() if pd.notna(val_kat) else ''
+            kategori_id = None
+            if kat_nama:
+                kat = KategoriBarang.query.filter(KategoriBarang.nama_kategori.ilike(kat_nama), KategoriBarang.jenis=='Inventory').first()
+                if not kat:
+                    kat = KategoriBarang(nama_kategori=kat_nama, jenis='Inventory')
+                    db.session.add(kat)
+                    db.session.flush()
+                kategori_id = kat.id
+                
+            val_stat = row.get('Status')
+            stat_nama = str(val_stat).strip() if pd.notna(val_stat) else ''
+            status_id = None
+            if stat_nama:
+                stat = StatusAset.query.filter(StatusAset.nama_status.ilike(stat_nama)).first()
+                if not stat:
+                    stat = StatusAset(nama_status=stat_nama)
+                    db.session.add(stat)
+                    db.session.flush()
+                status_id = stat.id
+                
+            val_pic1 = row.get('Payroll PIC 1')
+            val_pic2 = row.get('Payroll PIC 2')
+            pic1_payroll = str(val_pic1).strip() if pd.notna(val_pic1) else ''
+            pic2_payroll = str(val_pic2).strip() if pd.notna(val_pic2) else ''
+            
+            karyawan_id = None
+            karyawan_id_2 = None
+            
+            if pic1_payroll:
+                kar1 = Karyawan.query.filter_by(payroll=pic1_payroll).first()
+                if kar1: karyawan_id = kar1.id
+                
+            if pic2_payroll:
+                kar2 = Karyawan.query.filter_by(payroll=pic2_payroll).first()
+                if kar2: karyawan_id_2 = kar2.id
+                
+            val_main = row.get('Main Lokasi')
+            val_sub = row.get('Sub Lokasi')
+            lok_main_nama = str(val_main).strip() if pd.notna(val_main) else ''
+            lok_sub_nama = str(val_sub).strip() if pd.notna(val_sub) else '-'
+            lokasi_id = None
+            
+            if karyawan_id or karyawan_id_2:
+                main_user = MainLokasi.query.filter_by(nama_main='User / Employee').first()
+                if not main_user:
+                    main_user = MainLokasi(nama_main='User / Employee', keterangan='Sistem Bawaan')
+                    db.session.add(main_user)
+                    db.session.flush()
+                sub_user = SubLokasi.query.filter_by(main_lokasi_id=main_user.id, nama_sub='-').first()
+                if not sub_user:
+                    sub_user = SubLokasi(main_lokasi_id=main_user.id, nama_sub='-')
+                    db.session.add(sub_user)
+                    db.session.flush()
+                lokasi_id = sub_user.id
+            elif lok_main_nama:
+                main_lok = MainLokasi.query.filter(MainLokasi.nama_main.ilike(lok_main_nama)).first()
+                if not main_lok:
+                    main_lok = MainLokasi(nama_main=lok_main_nama)
+                    db.session.add(main_lok)
+                    db.session.flush()
+                    
+                sub_lok = SubLokasi.query.filter(SubLokasi.main_lokasi_id==main_lok.id, SubLokasi.nama_sub.ilike(lok_sub_nama)).first()
+                if not sub_lok:
+                    sub_lok = SubLokasi(main_lokasi_id=main_lok.id, nama_sub=lok_sub_nama)
+                    db.session.add(sub_lok)
+                    db.session.flush()
+                lokasi_id = sub_lok.id
+                
+            inv = Inventory(
+                kode_barang=kode, nama_barang=nama, brand=brand, serial_number=sn,
+                unit_type=tipe, vendor=vendor, kategori_id=kategori_id, status_id=status_id,
+                karyawan_id=karyawan_id, karyawan_id_2=karyawan_id_2, lokasi_id=lokasi_id,
+                is_active=True
+            )
+            db.session.add(inv)
+            db.session.flush()
+            
+            ket_masuk = "Registrasi via Import Excel massal."
+            trx_masuk = Transaksi(user_id=current_user.id, inventory_id=inv.id, jenis='Masuk', jumlah=1, keterangan=ket_masuk)
+            db.session.add(trx_masuk)
+            
+            if karyawan_id or karyawan_id_2:
+                pic_names = []
+                if karyawan_id: pic_names.append(Karyawan.query.get(karyawan_id).nama)
+                if karyawan_id_2: pic_names.append(Karyawan.query.get(karyawan_id_2).nama)
+                
+                ket_deliver = f"Diserahkan ke PIC: {' & '.join(pic_names)} | Catatan: Auto Deliver via Excel"
+                trx_deliver = Transaksi(user_id=current_user.id, inventory_id=inv.id, jenis='Deliver', jumlah=1, keterangan=ket_deliver)
+                db.session.add(trx_deliver)
+                
+            berhasil += 1
+            
+        db.session.commit()
+        if berhasil > 0:
+            flash(f'Import Sukses! {berhasil} aset ditambahkan. {gagal} baris dilewati (duplikat/tidak valid).', 'success')
+        else:
+            flash(f'Gagal: Tidak ada data valid yang diimport. {gagal} baris bermasalah.', 'warning')
+            
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Sistem gagal membaca isi Excel Anda. Error Code: {str(e)}', 'danger')
+        
+    return redirect(url_for('master_inventory'))
