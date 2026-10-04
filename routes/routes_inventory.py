@@ -1,11 +1,13 @@
 import io
+import json
+import uuid
 import pandas as pd
 from sqlalchemy import or_
 from flask import render_template, request, redirect, url_for, flash, send_file
 from flask_login import login_required, current_user
 
 from main import app, admin_required
-from models import db, Inventory, MainLokasi, SubLokasi, Transaksi, Karyawan, StatusAset, KategoriBarang
+from models import db, Inventory, MainLokasi, SubLokasi, Transaksi, Karyawan, StatusAset, KategoriBarang, Consumable
 
 @app.route('/master_inventory', methods=['GET'])
 @login_required
@@ -193,6 +195,10 @@ def edit_inventory(id):
         serial_number_baru = request.form.get('serial_number', '').strip()
         brand_baru = request.form.get('brand', '').strip()
         
+        # Array Bundling Consumable
+        bundle_cons_ids = request.form.getlist('bundle_cons_id[]')
+        bundle_cons_qtys = request.form.getlist('bundle_cons_qty[]')
+        
         if not new_kode:
             flash('Gagal! Kode Barang wajib diisi.', 'danger')
             return redirect(url_for('edit_inventory', id=id))
@@ -289,16 +295,38 @@ def edit_inventory(id):
         barang.karyawan_id_2 = new_pic_2_id
         barang.lokasi_id = new_lokasi_id
 
+        # TRANSAKSI: EDIT (TERPISAH)
         if perubahan_edit or (keterangan_tambahan and old_pic_id == new_pic_id and old_pic_2_id == new_pic_2_id and old_lokasi_id == new_lokasi_id):
             keterangan_edit = "Edit: " + ", ".join(perubahan_edit) if perubahan_edit else "Edit Data Tambahan"
             if keterangan_tambahan:
                 keterangan_edit += f" | Catatan: {keterangan_tambahan}"
             db.session.add(Transaksi(user_id=current_user.id, inventory_id=barang.id, jenis='Edit', jumlah=1, keterangan=keterangan_edit))
 
+        # ========================================================
+        # TRANSAKSI: MUTASI & BUNDLING CONSUMABLE
+        # ========================================================
         if old_pic_id != new_pic_id or old_pic_2_id != new_pic_2_id or old_lokasi_id != new_lokasi_id:
             ket_transaksi = ""
             jenis_transaksi = "Mutasi" 
             
+            # CEK KELENGKAPAN CONSUMABLE YANG VALID DULU (Agar tidak terjadi Badge Bundling Palsu)
+            valid_bundles = []
+            if bundle_cons_ids:
+                for i in range(len(bundle_cons_ids)):
+                    c_id_str = bundle_cons_ids[i]
+                    qty_str = bundle_cons_qtys[i] if i < len(bundle_cons_qtys) else '1'
+                    
+                    if c_id_str and qty_str.isdigit():
+                        qty = int(qty_str)
+                        if qty > 0:
+                            cons = Consumable.query.get(int(c_id_str))
+                            if cons:
+                                valid_bundles.append({'cons': cons, 'qty': qty})
+                                
+            # Buat grup_id HANYA jika benar-benar ada Consumable yang valid
+            grup_id = str(uuid.uuid4()) if valid_bundles else None
+            
+            # MODE: RETRIEVAL (KEMBALI KE GUDANG)
             if (old_pic_id or old_pic_2_id) and not (new_pic_id or new_pic_2_id):
                 jenis_transaksi = "Retrieval"
                 pic_names = []
@@ -319,12 +347,14 @@ def edit_inventory(id):
                 
                 lok = SubLokasi.query.get(new_lokasi_id)
                 if lok and lok.main:
-                    lok_str = f"ke {lok.main.nama_main}" if lok.nama_sub == '-' else f"ke {lok.main.nama_main} - {lok.nama_sub}"
+                    lok_sub = f" - {lok.nama_sub}" if lok.nama_sub != '-' else ""
+                    lok_str = f"ke {lok.main.nama_main}{lok_sub}"
                 else:
                     lok_str = "ke Gudang"
                     
                 ket_transaksi = f"Dari: {nama_lama} | NIP: {nip_lama} | {lok_str}"
                     
+            # MODE: DELIVER (DISERAHKAN KE PIC)
             elif (new_pic_id or new_pic_2_id) and (old_pic_id != new_pic_id or old_pic_2_id != new_pic_2_id):
                 jenis_transaksi = "Deliver"
                 pic_names = []
@@ -336,18 +366,52 @@ def edit_inventory(id):
                     if k2: pic_names.append(k2.nama)
                 ket_transaksi = f"Diserahkan ke PIC: {' & '.join(pic_names)}"
                 
+            # MODE: MUTASI LOKASI GUDANG (Tanpa PIC)
             elif not (new_pic_id or new_pic_2_id) and not (old_pic_id or old_pic_2_id) and (old_lokasi_id != new_lokasi_id):
                 jenis_transaksi = "Mutasi"
-                lok = SubLokasi.query.get(new_lokasi_id)
-                if lok and lok.main:
-                    ket_transaksi = f"Pindah Lokasi: {lok.main.nama_main}" if lok.nama_sub == '-' else f"Pindah Lokasi: {lok.main.nama_main} - {lok.nama_sub}"
-                else:
-                    ket_transaksi = "Pindah Lokasi Gudang"
+                
+                # PERBAIKAN FORMAT MUTASI: Lokasi Awal ➔ Lokasi Baru
+                old_lok = SubLokasi.query.get(old_lokasi_id) if old_lokasi_id else None
+                new_lok = SubLokasi.query.get(new_lokasi_id) if new_lokasi_id else None
+                
+                old_sub = f" - {old_lok.nama_sub}" if old_lok and old_lok.nama_sub != '-' else ""
+                new_sub = f" - {new_lok.nama_sub}" if new_lok and new_lok.nama_sub != '-' else ""
+                
+                old_str = f"{old_lok.main.nama_main}{old_sub}" if old_lok and old_lok.main else "Lokasi Awal"
+                new_str = f"{new_lok.main.nama_main}{new_sub}" if new_lok and new_lok.main else "Lokasi Baru"
+                
+                ket_transaksi = f"{old_str} ➔ {new_str}"
 
+            # SIMPAN TRANSAKSI INVENTORY (INDUK)
             if ket_transaksi:
                 if keterangan_tambahan:
                     ket_transaksi += f" | Catatan: {keterangan_tambahan}"
-                db.session.add(Transaksi(user_id=current_user.id, inventory_id=barang.id, jenis=jenis_transaksi, jumlah=1, keterangan=ket_transaksi))
+                db.session.add(Transaksi(user_id=current_user.id, inventory_id=barang.id, jenis=jenis_transaksi, jumlah=1, keterangan=ket_transaksi, grup_id=grup_id))
+
+                # PROSES KELENGKAPAN CONSUMABLE (ANAK/BUNDLE)
+                if valid_bundles and jenis_transaksi in ['Deliver', 'Retrieval']:
+                    for bundle in valid_bundles:
+                        cons = bundle['cons']
+                        qty = bundle['qty']
+                        
+                        if jenis_transaksi == 'Deliver':
+                            if cons.stok < qty:
+                                flash(f'Peringatan: Stok {cons.nama_barang} tidak cukup. Kelengkapan ini dibatalkan secara otomatis.', 'warning')
+                                continue 
+                            
+                            cons.stok -= qty
+                            pic_names = []
+                            if new_pic_id: pic_names.append(Karyawan.query.get(new_pic_id).nama)
+                            if new_pic_2_id: pic_names.append(Karyawan.query.get(new_pic_2_id).nama)
+                            nama_pic = " & ".join(pic_names) if pic_names else "PIC"
+                            
+                            ket_cons = f"Kelengkapan untuk {barang.nama_barang} ({barang.kode_barang}) ke PIC: {nama_pic}."
+                            db.session.add(Transaksi(user_id=current_user.id, consumable_id=cons.id, jenis='Keluar', jumlah=qty, keterangan=ket_cons, grup_id=grup_id))
+                            
+                        elif jenis_transaksi == 'Retrieval':
+                            cons.stok += qty
+                            ket_cons = f"Dikembalikan ke gudang bersama penarikan {barang.nama_barang} ({barang.kode_barang})."
+                            db.session.add(Transaksi(user_id=current_user.id, consumable_id=cons.id, jenis='Masuk', jumlah=qty, keterangan=ket_cons, grup_id=grup_id))
 
         db.session.commit()
         flash('Data Inventory berhasil diperbarui.', 'success')
@@ -358,8 +422,158 @@ def edit_inventory(id):
     main_lokasi_list = MainLokasi.query.filter(MainLokasi.nama_main != 'User / Employee').order_by(MainLokasi.nama_main.asc()).all()
     sub_lokasi_list = SubLokasi.query.join(MainLokasi).filter(MainLokasi.nama_main != 'User / Employee').order_by(MainLokasi.nama_main.asc(), SubLokasi.nama_sub.asc()).all()
         
-    return render_template('inventory/edit.html', barang=barang, riwayat=riwayat_barang, main_lokasi_list=main_lokasi_list, sub_lokasi_list=sub_lokasi_list, karyawan_list=karyawan_list, status_list=StatusAset.query.all(), kategori_list=KategoriBarang.query.filter_by(jenis='Inventory').order_by(KategoriBarang.nama_kategori.asc()).all())
+    cns_data = []
+    for c in Consumable.query.filter_by(is_active=True).order_by(Consumable.nama_barang.asc()).all():
+        satuan_nama = c.satuan_terkait.nama_satuan if c.satuan_terkait else 'Unit'
+        cns_data.append({
+            'id': c.id,
+            'text': f"{c.nama_barang} (Sisa: {c.stok} {satuan_nama})"
+        })
+    all_consumables_json = json.dumps(cns_data)
 
+    return render_template('inventory/edit.html', 
+                           barang=barang, 
+                           riwayat=riwayat_barang, 
+                           main_lokasi_list=main_lokasi_list, 
+                           sub_lokasi_list=sub_lokasi_list, 
+                           karyawan_list=karyawan_list, 
+                           status_list=StatusAset.query.all(), 
+                           kategori_list=KategoriBarang.query.filter_by(jenis='Inventory').order_by(KategoriBarang.nama_kategori.asc()).all(),
+                           all_consumables_json=all_consumables_json)
+
+@app.route('/mutasi_massal', methods=['POST'])
+@login_required
+@admin_required
+def mutasi_massal():
+    # Ambil daftar ID barang yang dicentang
+    selected_ids = request.form.get('selected_ids', '')
+    if not selected_ids:
+        flash('Gagal! Tidak ada aset yang dipilih.', 'danger')
+        return redirect(url_for('master_inventory'))
+
+    id_list = [int(i.strip()) for i in selected_ids.split(',') if i.strip().isdigit()]
+    if not id_list:
+        flash('Gagal! Format ID tidak valid.', 'danger')
+        return redirect(url_for('master_inventory'))
+
+    # Ambil data form tujuan mutasi
+    karyawan_id_raw = request.form.get('karyawan_id')
+    karyawan_id_2_raw = request.form.get('karyawan_id_2')
+    lokasi_id_raw = request.form.get('lokasi_id')
+    catatan_massal = request.form.get('keterangan', '').strip()
+
+    new_pic_id = int(karyawan_id_raw) if karyawan_id_raw and karyawan_id_raw.isdigit() else None
+    new_pic_2_id = int(karyawan_id_2_raw) if karyawan_id_2_raw and karyawan_id_2_raw.isdigit() else None
+    new_lokasi_id = int(lokasi_id_raw) if lokasi_id_raw and lokasi_id_raw.isdigit() else None
+
+    # Jika diserahkan ke PIC, pastikan lokasinya adalah 'User / Employee' -> '-'
+    if new_pic_id or new_pic_2_id:
+        main_lok_user = MainLokasi.query.filter_by(nama_main='User / Employee').first()
+        if not main_lok_user:
+            main_lok_user = MainLokasi(nama_main='User / Employee', keterangan='Sistem Bawaan')
+            db.session.add(main_lok_user)
+            db.session.flush()
+            
+        sub_lok_pic = SubLokasi.query.filter_by(main_lokasi_id=main_lok_user.id, nama_sub='-').first()
+        if not sub_lok_pic:
+            sub_lok_pic = SubLokasi(main_lokasi_id=main_lok_user.id, nama_sub='-')
+            db.session.add(sub_lok_pic)
+            db.session.flush()
+            
+        new_lokasi_id = sub_lok_pic.id
+
+    berhasil = 0
+    # Proses mutasi untuk setiap aset yang dipilih
+    for item_id in id_list:
+        barang = Inventory.query.get(item_id)
+        if not barang:
+            continue
+
+        old_pic_id = barang.karyawan_id
+        old_pic_2_id = barang.karyawan_id_2
+        old_lokasi_id = barang.lokasi_id
+
+        # Cegah mutasi ganda jika tujuan sama dengan lokasi saat ini
+        if old_pic_id == new_pic_id and old_pic_2_id == new_pic_2_id and old_lokasi_id == new_lokasi_id:
+            continue
+
+        # Tentukan jenis mutasi
+        ket_transaksi = ""
+        jenis_transaksi = "Mutasi"
+
+        # MODE: RETRIEVAL (KEMBALI KE GUDANG DARI PIC)
+        if (old_pic_id or old_pic_2_id) and not (new_pic_id or new_pic_2_id):
+            jenis_transaksi = "Retrieval"
+            pic_names = []
+            pic_payrolls = []
+            if old_pic_id:
+                k1 = Karyawan.query.get(old_pic_id)
+                if k1:
+                    pic_names.append(k1.nama)
+                    pic_payrolls.append(k1.payroll or '-')
+            if old_pic_2_id:
+                k2 = Karyawan.query.get(old_pic_2_id)
+                if k2:
+                    pic_names.append(k2.nama)
+                    pic_payrolls.append(k2.payroll or '-')
+                    
+            nama_lama = " / ".join(pic_names) if pic_names else "Pengguna"
+            nip_lama = " / ".join(pic_payrolls) if pic_payrolls else "-"
+            
+            lok = SubLokasi.query.get(new_lokasi_id)
+            if lok and lok.main:
+                lok_sub = f" - {lok.nama_sub}" if lok.nama_sub != '-' else ""
+                lok_str = f"ke {lok.main.nama_main}{lok_sub}"
+            else:
+                lok_str = "ke Gudang"
+                
+            ket_transaksi = f"Dari: {nama_lama} | NIP: {nip_lama} | {lok_str}"
+
+        # MODE: DELIVER (DISERAHKAN KE PIC)
+        elif (new_pic_id or new_pic_2_id):
+            jenis_transaksi = "Deliver"
+            pic_names = []
+            if new_pic_id:
+                k1 = Karyawan.query.get(new_pic_id)
+                if k1: pic_names.append(k1.nama)
+            if new_pic_2_id:
+                k2 = Karyawan.query.get(new_pic_2_id)
+                if k2: pic_names.append(k2.nama)
+            ket_transaksi = f"Diserahkan ke PIC: {' & '.join(pic_names)}"
+
+        # MODE: MUTASI GUDANG (Tanpa PIC)
+        else:
+            jenis_transaksi = "Mutasi"
+            old_lok = SubLokasi.query.get(old_lokasi_id) if old_lokasi_id else None
+            new_lok = SubLokasi.query.get(new_lokasi_id) if new_lokasi_id else None
+            
+            old_sub = f" - {old_lok.nama_sub}" if old_lok and old_lok.nama_sub != '-' else ""
+            new_sub = f" - {new_lok.nama_sub}" if new_lok and new_lok.nama_sub != '-' else ""
+            
+            old_str = f"{old_lok.main.nama_main}{old_sub}" if old_lok and old_lok.main else "Lokasi Awal"
+            new_str = f"{new_lok.main.nama_main}{new_sub}" if new_lok and new_lok.main else "Lokasi Baru"
+            
+            ket_transaksi = f"{old_str} ➔ {new_str}"
+
+        # Terapkan perubahan ke database
+        barang.karyawan_id = new_pic_id
+        barang.karyawan_id_2 = new_pic_2_id
+        barang.lokasi_id = new_lokasi_id
+
+        if catatan_massal:
+            ket_transaksi += f" | Catatan: {catatan_massal}"
+            
+        db.session.add(Transaksi(user_id=current_user.id, inventory_id=barang.id, jenis=jenis_transaksi, jumlah=1, keterangan=ket_transaksi))
+        berhasil += 1
+
+    db.session.commit()
+    
+    if berhasil > 0:
+        flash(f'Sukses! {berhasil} Aset berhasil dimutasi.', 'success')
+    else:
+        flash('Tidak ada aset yang dimutasi (Semua aset sudah berada di tujuan yang sama).', 'warning')
+        
+    return redirect(url_for('master_inventory'))
 
 @app.route('/export_inventory')
 @login_required
@@ -530,7 +744,12 @@ def cetak_delivery(id):
         
     tahun = tr.tanggal.strftime('%Y') if tr.tanggal else '2026'
     no_surat = f"{tr.id:05d}/Tomori/BSD/IDS-S/{tahun}"
-    return render_template('inventory/delivery_slip.html', tr=tr, no_surat=no_surat)
+    
+    bundle_trx = []
+    if tr.grup_id:
+        bundle_trx = Transaksi.query.filter_by(grup_id=tr.grup_id).filter(Transaksi.consumable_id != None).all()
+        
+    return render_template('inventory/delivery_slip.html', tr=tr, no_surat=no_surat, bundle_trx=bundle_trx)
 
 @app.route('/cetak_retrieval/<int:id>')
 @login_required
@@ -543,8 +762,12 @@ def cetak_retrieval(id):
         
     tahun = tr.tanggal.strftime('%Y') if tr.tanggal else '2026'
     no_surat = f"{tr.id:05d}/Tomori/BSD/IRS-S/{tahun}" 
-    return render_template('inventory/retrieval_slip.html', tr=tr, no_surat=no_surat)
-
+    
+    bundle_trx = []
+    if tr.grup_id:
+        bundle_trx = Transaksi.query.filter_by(grup_id=tr.grup_id).filter(Transaksi.consumable_id != None).all()
+        
+    return render_template('inventory/retrieval_slip.html', tr=tr, no_surat=no_surat, bundle_trx=bundle_trx)
 
 # ==========================================
 # FITUR IMPORT EXCEL INVENTORY (DENGAN DROPDOWN)
@@ -557,11 +780,9 @@ def download_template_inventory():
     kolom = ['Kode Barang', 'Nama Barang', 'Brand', 'Serial Number', 'Tipe Unit', 'Vendor', 'Kategori', 'Status', 'Payroll PIC 1', 'Payroll PIC 2', 'Main Lokasi', 'Sub Lokasi']
     df = pd.DataFrame(columns=kolom)
     
-    # Menarik data aktif dari Database untuk Dropdown
     kategori_list = [k.nama_kategori for k in KategoriBarang.query.filter_by(jenis='Inventory').order_by(KategoriBarang.nama_kategori.asc()).all()]
     status_list = [s.nama_status for s in StatusAset.query.order_by(StatusAset.nama_status.asc()).all()]
     main_lokasi_list = [m.nama_main for m in MainLokasi.query.order_by(MainLokasi.nama_main.asc()).all()]
-    # Menghapus duplikat nama Sub Lokasi
     sub_lokasi_list = list(set([s.nama_sub for s in SubLokasi.query.all()]))
     sub_lokasi_list.sort()
     
@@ -571,22 +792,16 @@ def download_template_inventory():
         workbook = writer.book
         worksheet = writer.sheets['Template_Import']
         
-        # 1. Formatting Header Utama
         header_format = workbook.add_format({'bold': True, 'bg_color': '#0a2540', 'font_color': 'white', 'border': 1})
         for col_num, value in enumerate(df.columns.values):
             worksheet.write(0, col_num, value, header_format)
             worksheet.set_column(col_num, col_num, 20)
             
-        # 2. Membuat Sheet Tersembunyi (Referensi) untuk menampung list panjang
         ref_sheet = workbook.add_worksheet('Referensi')
-        ref_sheet.hide() # Disembunyikan agar user tidak bingung
-        
-        # 3. Menulis Data ke Sheet Referensi & Menyuntikkan Dropdown ke Template
-        # Index kolom excel: 0(Kode), 1(Nama), 2(Brand), 3(SN), 4(Tipe), 5(Vendor), 6(Kategori), 7(Status), 8(PIC1), 9(PIC2), 10(MainLok), 11(SubLok)
+        ref_sheet.hide() 
         
         if kategori_list:
             ref_sheet.write_column('A2', kategori_list)
-            # Apply validasi ke kolom G (Baris 2 hingga 1000)
             worksheet.data_validation('G2:G1000', {'validate': 'list', 'source': f'=Referensi!$A$2:$A${len(kategori_list)+1}'})
             
         if status_list:

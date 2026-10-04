@@ -2,69 +2,138 @@
 {% block title %}Riwayat Mutasi - Inventaris Tomori{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<style>
+    /* Penyesuaian Tombol Export Mobile */
+    .btn-export {
+        background-color: transparent !important;
+        color: #198754 !important;
+        border: 1px solid #198754 !important;
+    }
+    .btn-export:hover {
+        background-color: #198754 !important;
+        color: #fff !important;
+    }
+
+    /* Filter UI Tweaks untuk Mobile */
+    @media (max-width: 768px) {
+        .filter-form-container { width: 100% !important; }
+        .filter-form-container .dropdown-menu {
+            width: calc(100vw - 32px) !important;
+            left: auto !important;
+            right: 0 !important;
+        }
+        .btn-export span { display: none; }
+        .btn-export i { margin-right: 0 !important; }
+    }
+
+    /* ========================================= */
+    /* UI KARTU MOBILE YANG SUPER SIMPEL & RAPI  */
+    /* ========================================= */
+    .log-card-mobile {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 18px;
+        margin-bottom: 14px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+    }
+    
+    .assign-box {
+        background-color: #f8fafc;
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 14px 0;
+        border: 1px solid #f1f5f9;
+    }
+
+    /* Dark Mode Minimalist Cards */
+    [data-bs-theme="dark"] .log-card-mobile { background: #1e293b; border-color: #334155; }
+    [data-bs-theme="dark"] .assign-box { background-color: #0f172a; border-color: #1e293b; }
+    [data-bs-theme="dark"] .btn-export { color: #10b981 !important; border-color: #10b981 !important; }
+    [data-bs-theme="dark"] .btn-export:hover { background-color: #10b981 !important; color: #fff !important; }
+</style>
+
+<div class="d-flex justify-content-between align-items-start align-items-md-center mb-4">
     <div>
         <h4 class="fw-bold mb-1" style="color: #0a2540;">Riwayat Mutasi Inventory</h4>
-        <p class="text-muted mb-0">Pantau aktivitas registrasi dan perpindahan lokasi aset.</p>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">Aktivitas registrasi dan perpindahan aset.</p>
     </div>
-    <div>
-        <a href="{{ url_for('export_riwayat_inventory', search=request.args.get('search', ''), start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="btn btn-success shadow-sm" hx-boost="false">
-            <i class="bi bi-file-earmark-excel me-1"></i> Export Data
+    <div class="mt-2 mt-md-0">
+        <a href="{{ url_for('export_riwayat_inventory', search=request.args.get('search', ''), start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', ''), jenis_mutasi=request.args.get('jenis_mutasi', '')) }}" class="btn btn-export shadow-sm" hx-boost="false">
+            <i class="bi bi-file-earmark-excel me-1"></i><span>Export Data</span>
         </a>
     </div>
 </div>
 
-<div class="card shadow-sm border-0">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <h6 class="m-0 fw-bold text-primary">Log Transaksi</h6>
+<div class="card shadow-sm border-0 mb-5">
+    <div class="card-header bg-white py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <h6 class="m-0 fw-bold text-primary d-none d-md-block">Log Transaksi</h6>
         
-        <form method="GET" action="{{ url_for('riwayat_inventory') }}" class="d-flex" style="min-width: 350px;">
-            <div class="input-group input-group-sm">
+        <form method="GET" action="{{ url_for('riwayat_inventory') }}" class="d-flex filter-form-container" style="min-width: 350px;">
+            <div class="input-group input-group-sm w-100">
                 <input type="text" name="search" class="form-control bg-light border-0" placeholder="Cari aset, SN, PIC..." value="{{ request.args.get('search', '') }}">
-                <button class="btn btn-primary border-0" type="submit"><i class="bi bi-search"></i></button>
+                <button class="btn btn-primary border-0 px-3" type="submit"><i class="bi bi-search"></i></button>
                 
-                <button class="btn btn-outline-secondary border-0 dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                    <i class="bi bi-funnel me-1"></i> Filter
+                <button class="btn btn-outline-secondary border-0 dropdown-toggle px-3" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                    <i class="bi bi-funnel me-1"></i> <span class="d-none d-md-inline">Filter</span>
                 </button>
                 
-                <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0" style="width: 300px;">
+                <!-- DROPDOWN FILTER -->
+                <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0" style="width: 300px; max-width: 100%;">
+                    <h6 class="dropdown-header px-0 text-dark fw-bold mb-2">Filter Jenis Mutasi</h6>
+                    <div class="mb-3">
+                        <select name="jenis_mutasi" class="form-select form-select-sm">
+                            <option value="">Semua Mutasi</option>
+                            <option value="Deliver" {% if request.args.get('jenis_mutasi') == 'Deliver' %}selected{% endif %}>Deliver (Penyerahan)</option>
+                            <option value="Retrieval" {% if request.args.get('jenis_mutasi') == 'Retrieval' %}selected{% endif %}>Retrieval (Penarikan)</option>
+                            <option value="Mutasi" {% if request.args.get('jenis_mutasi') == 'Mutasi' %}selected{% endif %}>Mutasi Lokasi / Gudang</option>
+                            <option value="Masuk" {% if request.args.get('jenis_mutasi') == 'Masuk' %}selected{% endif %}>Aset Baru (Registrasi)</option>
+                        </select>
+                    </div>
+
                     <h6 class="dropdown-header px-0 text-dark fw-bold mb-2">Filter Rentang Waktu</h6>
                     <div class="mb-2">
-                        <label class="form-label fw-semibold mb-1">Dari Tanggal</label>
+                        <label class="form-label fw-semibold mb-1" style="font-size: 0.8rem;">Dari Tanggal</label>
                         <input type="date" name="start_date" class="form-control form-control-sm" value="{{ request.args.get('start_date', '') }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold mb-1">Sampai Tanggal</label>
+                        <label class="form-label fw-semibold mb-1" style="font-size: 0.8rem;">Sampai Tanggal</label>
                         <input type="date" name="end_date" class="form-control form-control-sm" value="{{ request.args.get('end_date', '') }}">
+                        <div class="form-text mt-1" style="font-size: 0.7rem;">Kosongkan jika mencari di satu hari saja.</div>
                     </div>
                     <div class="d-flex justify-content-end gap-2 mt-3">
-                        <a href="{{ url_for('riwayat_inventory') }}" class="btn btn-sm btn-light border">Reset</a>
-                        <button type="submit" class="btn btn-sm btn-primary px-3">Terapkan</button>
+                        <a href="{{ url_for('riwayat_inventory') }}" class="btn btn-sm btn-light border w-100 text-center">Reset</a>
+                        <button type="submit" class="btn btn-sm btn-primary px-3 w-100">Terapkan</button>
                     </div>
                 </div>
             </div>
         </form>
     </div>
 
+    <!-- AREA DATA TRANSAKSI -->
     <div class="card-body p-0">
-        <div class="table-responsive" style="max-height: 65vh; overflow-y: auto;">
-            <table class="table table-hover align-middle mb-0">
+        
+        <!-- ============================================== -->
+        <!-- TAMPILAN DESKTOP: TABEL STANDAR -->
+        <!-- ============================================== -->
+        <div class="table-responsive d-none d-md-block" style="max-height: 70vh; overflow-y: auto;">
+            <table class="table table-hover align-middle mb-0 text-nowrap">
                 <thead class="table-light sticky-top" style="z-index: 1;">
                     <tr>
                         <th class="ps-4" width="10%">Waktu</th>
                         <th width="14%">Kode & SN</th>
                         <th width="15%">Nama Aset</th>
-                        <th width="12%">Jenis Transaksi</th>
-                        <th width="16%">Assignment</th>
-                        <th width="14%">Keterangan</th>
+                        <th width="10%">Jenis Mutasi</th>
+                        <th width="18%">Assignment (Penugasan)</th>
+                        <th width="14%">Catatan Khusus</th>
                         <th width="10%">Operator</th>
                         <th class="pe-4 text-center" width="9%">Dokumen</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in data.items %}
+                    {% set records = data.items if data.items else data %}
+                    {% for item in records %}
                     
-                    <!-- === LOGIKA PEMISAHAN TEKS JINJA === -->
                     {% set text_raw = item.keterangan or '-' %}
                     {% set text_main = text_raw %}
                     {% set text_note = '-' %}
@@ -75,40 +144,42 @@
                         {% set text_note = parts[1] %}
                     {% elif 'Catatan: ' in text_raw %}
                         {% set parts = text_raw.split('Catatan: ') %}
-                        {% set text_main = parts[0] %}
+                        {% set text_main = '-' %}
                         {% set text_note = parts[1] %}
                     {% endif %}
 
                     {% set assign_text = text_main %}
-                    {% set assign_text = assign_text.replace('Lokasi: ', '') %}
-                    {% set assign_text = assign_text.replace('Pindah Lokasi: ', '') %}
-                    {% set assign_text = assign_text.replace('Pindah ke: ', '') %}
                     {% set assign_text = assign_text.replace('Diserahkan ke PIC: ', '') %}
-                    {% set assign_text = assign_text.replace('Ditarik ke: ', '') %}
                     {% set assign_text = assign_text.replace('Edit: ', '') %}
                     
                     {% if 'Dari: ' in assign_text and ' | NIP: ' in assign_text %}
                         {% set split_ret = assign_text.split(' | NIP: ') %}
                         {% set assign_text = split_ret[0].replace('Dari: ', '') %}
+                    {% elif 'âž”' in assign_text %}
+                        {% set assign_text = assign_text %}
+                    {% elif 'Pindah' in assign_text or 'Lokasi' in assign_text %}
+                        {% set assign_text = assign_text.replace('Pindah Lokasi ke: ', '') %}
+                        {% set assign_text = assign_text.replace('Pindah Lokasi: ', '') %}
+                        {% set assign_text = assign_text.replace('Lokasi: ', '') %}
+                        {% set assign_text = assign_text.replace('Pindah ', '') %}
+                        {% set assign_text = assign_text.replace('ke ', '') %}
+                        {% set assign_text = assign_text.strip() %}
+                        {% set assign_text = '(Data Lama) âž” ' + assign_text %}
                     {% endif %}
-                    <!-- =================================== -->
 
                     <tr>
                         <td class="ps-4">
-                            <!-- Ukuran disamakan, ketebalan dihilangkan -->
                             <div class="text-dark">{{ item.tanggal.strftime('%d %b %Y') if item.tanggal else '-' }}</div>
                             <div class="text-muted">{{ item.tanggal.strftime('%H:%M') if item.tanggal else '-' }}</div>
                         </td>
                         <td>
-                            <!-- Tetap monospace untuk kode agar rapi, tapi ukuran sama dengan teks lain -->
                             <div class="font-monospace bg-light border px-2 py-1 rounded d-inline-block mb-1">{{ item.inventory.kode_barang if item.inventory else '-' }}</div>
-                            <div class="text-muted">{{ item.inventory.serial_number if item.inventory else '-' }}</div>
+                            <div class="text-muted" style="font-size: 0.85rem;">{{ item.inventory.serial_number if item.inventory else '-' }}</div>
                         </td>
-                        <td class="text-dark">
+                        <td class="text-dark text-wrap" style="max-width: 200px;">
                             {{ item.inventory.nama_barang if item.inventory else 'Aset Dihapus' }}
                         </td>
                         <td>
-                            <!-- LOGIKA BADGE OUTLINE TRANSPARAN -->
                             {% set badge_class = 'border-secondary text-secondary' %}
                             {% set icon_class = 'bi-circle' %}
                             
@@ -120,20 +191,32 @@
                                 {% set badge_class, icon_class = 'border-warning text-warning', 'bi-person-dash-fill' %}
                             {% elif item.jenis == 'Mutasi' %}
                                 {% set badge_class, icon_class = 'border-info text-info', 'bi-arrow-left-right' %}
-                            {% elif item.jenis == 'Edit' %}
-                                {% set badge_class, icon_class = 'border-secondary text-secondary', 'bi-pencil-square' %}
                             {% endif %}
                             
-                            <!-- bg-transparent membuat background tembus pandang -->
                             <span class="badge bg-transparent border {{ badge_class }}">
                                 <i class="bi {{ icon_class }} me-1"></i>{{ item.jenis }}
                             </span>
                         </td>
-                        <td>
-                            <span class="text-dark">{{ assign_text }}</span>
+                        <td class="text-wrap" style="max-width: 200px;">
+                            {% if 'âž”' in assign_text %}
+                                {% set loc_parts = assign_text.split(' âž” ') %}
+                                <span class="text-dark">{{ loc_parts[0] }}</span>
+                                <i class="bi bi-arrow-right fw-bold text-primary mx-1"></i>
+                                <span class="text-dark">{{ loc_parts[1] }}</span>
+                            {% else %}
+                                <span class="text-dark">{{ assign_text }}</span>
+                            {% endif %}
+                            
+                            {% if item.has_valid_bundle %}
+                            <div class="mt-1">
+                                <span class="badge bg-light text-secondary border border-secondary" style="font-size: 0.65rem;">
+                                    <i class="bi bi-box-seam me-1"></i>+ Bundling Consumable
+                                </span>
+                            </div>
+                            {% endif %}
                         </td>
-                        <td>
-                            <span class="text-muted">{{ text_note }}</span>
+                        <td class="text-wrap" style="max-width: 150px;">
+                            <span class="text-muted fst-italic" style="font-size: 0.8rem;">{{ text_note }}</span>
                         </td>
                         <td>
                             <span class="text-muted">
@@ -144,14 +227,23 @@
                             {% endif %}
                             </span>
                         </td>
+                        
+                        <!-- TOMBOL DESKTOP DIUBAH MENJADI DELIVERY/RETRIEVAL SLIP -->
                         <td class="pe-4 text-center">
                             {% if item.jenis == 'Deliver' %}
-                                <a href="{{ url_for('cetak_delivery', id=item.id) }}" target="_blank" class="btn btn-sm btn-outline-primary border" title="Cetak Delivery Slip">
-                                    <i class="bi bi-printer"></i>
-                                </a>
+                                {% if item.inventory and item.inventory.karyawan_id %}
+                                    <a href="{{ url_for('cetak_delivery', id=item.id) }}" target="_blank" class="btn btn-sm btn-outline-primary fw-medium text-nowrap" style="font-size: 0.75rem;">
+                                        <i class="bi bi-file-earmark-text me-1"></i>Delivery Slip
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-sm btn-light border text-muted fw-medium text-nowrap" style="font-size: 0.75rem;" disabled>
+                                        <i class="bi bi-archive"></i> Closed
+                                    </button>
+                                {% endif %}
+                                
                             {% elif item.jenis == 'Retrieval' %}
-                                <a href="{{ url_for('cetak_retrieval', id=item.id) }}" target="_blank" class="btn btn-sm btn-outline-warning border text-dark" title="Cetak Retrieval Slip">
-                                    <i class="bi bi-printer"></i>
+                                <a href="{{ url_for('cetak_retrieval', id=item.id) }}" target="_blank" class="btn btn-sm btn-outline-warning text-dark fw-medium text-nowrap" style="font-size: 0.75rem;">
+                                    <i class="bi bi-file-earmark-text me-1"></i>Retrieval Slip
                                 </a>
                             {% else %}
                                 <span class="text-muted">-</span>
@@ -169,20 +261,143 @@
                 </tbody>
             </table>
         </div>
-    </div>
-    
-    <div class="card-footer bg-white py-3 border-top-0">
-        <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center mb-0">
-                {% if data.has_prev %}
-                <li class="page-item"><a class="page-link" href="{{ url_for('riwayat_inventory', page=data.prev_num, search=request.args.get('search')) }}">Sebelumnya</a></li>
-                {% endif %}
-                <li class="page-item active"><span class="page-link">{{ data.page }}</span></li>
-                {% if data.has_next %}
-                <li class="page-item"><a class="page-link" href="{{ url_for('riwayat_inventory', page=data.next_num, search=request.args.get('search')) }}">Selanjutnya</a></li>
-                {% endif %}
-            </ul>
-        </nav>
+
+        <!-- ============================================== -->
+        <!-- TAMPILAN MOBILE: KARTU MINIMALIS (CLEAN UI) -->
+        <!-- ============================================== -->
+        <div class="d-block d-md-none p-3 bg-light">
+            {% set records = data.items if data.items else data %}
+            {% for item in records %}
+            
+            {% set text_raw = item.keterangan or '-' %}
+            {% set text_main = text_raw %}
+            {% set text_note = '-' %}
+            {% if ' | Catatan: ' in text_raw %}
+                {% set parts = text_raw.split(' | Catatan: ') %}
+                {% set text_main = parts[0] %}
+                {% set text_note = parts[1] %}
+            {% elif 'Catatan: ' in text_raw %}
+                {% set parts = text_raw.split('Catatan: ') %}
+                {% set text_main = '-' %}
+                {% set text_note = parts[1] %}
+            {% endif %}
+            
+            {% set assign_text = text_main %}
+            {% set assign_text = assign_text.replace('Diserahkan ke PIC: ', '') %}
+            {% set assign_text = assign_text.replace('Edit: ', '') %}
+            
+            {% if 'Dari: ' in assign_text and ' | NIP: ' in assign_text %}
+                {% set split_ret = assign_text.split(' | NIP: ') %}
+                {% set assign_text = split_ret[0].replace('Dari: ', '') %}
+            {% elif 'âž”' in assign_text %}
+                {% set assign_text = assign_text %}
+            {% elif 'Pindah' in assign_text or 'Lokasi' in assign_text %}
+                {% set assign_text = assign_text.replace('Pindah Lokasi ke: ', '') %}
+                {% set assign_text = assign_text.replace('Pindah Lokasi: ', '') %}
+                {% set assign_text = assign_text.replace('Lokasi: ', '') %}
+                {% set assign_text = assign_text.replace('Pindah ', '') %}
+                {% set assign_text = assign_text.replace('ke ', '') %}
+                {% set assign_text = assign_text.strip() %}
+                {% set assign_text = '(Data Lama) âž” ' + assign_text %}
+            {% endif %}
+
+            <div class="log-card-mobile position-relative">
+                
+                <!-- Tanggal & Label Status -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    {% set text_color = 'secondary' %}
+                    {% set icon_class = 'bi-circle' %}
+                    {% if item.jenis == 'Masuk' %}
+                        {% set text_color, icon_class = 'success', 'bi-box-arrow-in-down' %}
+                    {% elif item.jenis == 'Deliver' %}
+                        {% set text_color, icon_class = 'primary', 'bi-person-check-fill' %}
+                    {% elif item.jenis == 'Retrieval' %}
+                        {% set text_color, icon_class = 'warning', 'bi-person-dash-fill' %}
+                    {% elif item.jenis == 'Mutasi' %}
+                        {% set text_color, icon_class = 'info', 'bi-arrow-left-right' %}
+                    {% endif %}
+                    
+                    <span class="badge bg-{{ text_color }} bg-opacity-10 text-{{ text_color }} px-3 py-1 fw-bold border-0">
+                        <i class="bi {{ icon_class }} me-1"></i>{{ item.jenis }}
+                    </span>
+                    <span class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-clock me-1"></i>{{ item.tanggal.strftime('%d %b %Y, %H:%M') if item.tanggal else '-' }}</span>
+                </div>
+                
+                <!-- Nama & Kode Barang -->
+                <h6 class="fw-bold text-dark mb-1 lh-sm">{{ item.inventory.nama_barang if item.inventory else 'Aset Dihapus' }}</h6>
+                <div class="text-muted font-monospace mb-1" style="font-size: 0.75rem;">
+                    {{ item.inventory.kode_barang if item.inventory else '-' }} &bull; {{ item.inventory.serial_number if item.inventory else '-' }}
+                </div>
+                
+                <!-- Box Assignment yang Simpel -->
+                <div class="assign-box">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-geo-alt text-primary mt-1 me-2" style="font-size: 0.85rem;"></i>
+                        <div class="text-dark" style="font-size: 0.85rem; line-height: 1.4;">
+                            {% if 'âž”' in assign_text %}
+                                {% set loc_parts = assign_text.split(' âž” ') %}
+                                <div class="text-muted" style="font-size: 0.75rem;">Dari: {{ loc_parts[0] }}</div>
+                                <div class="fw-medium mt-1">Ke: <span class="text-primary">{{ loc_parts[1] }}</span></div>
+                            {% else %}
+                                <div class="fw-medium">{{ assign_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if item.has_valid_bundle %}
+                    <div class="mt-2 pt-2 border-top">
+                        <span class="badge bg-white text-secondary border border-secondary fw-normal">
+                            <i class="bi bi-box-seam me-1"></i> Termasuk Consumable
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    {% if text_note != '-' %}
+                    <div class="d-flex align-items-start mt-2 pt-2 border-top">
+                        <i class="bi bi-chat-left-text text-muted mt-1 me-2" style="font-size: 0.8rem;"></i>
+                        <div class="text-muted fst-italic" style="font-size: 0.8rem; line-height: 1.4;">{{ text_note }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Tombol Action & Operator -->
+                <div class="mt-3">
+                    {% if item.jenis == 'Deliver' %}
+                        {% if item.inventory and item.inventory.karyawan_id %}
+                            <a href="{{ url_for('cetak_delivery', id=item.id) }}" target="_blank" class="btn btn-sm btn-primary w-100 fw-bold py-2 mb-2">
+                                <i class="bi bi-file-earmark-text me-1"></i> Delivery Slip
+                            </a>
+                        {% else %}
+                            <button class="btn btn-sm btn-light border text-muted w-100 fw-medium py-2 mb-2" disabled>
+                                <i class="bi bi-archive me-1"></i> Closed (Ditarik)
+                            </button>
+                        {% endif %}
+                        
+                    {% elif item.jenis == 'Retrieval' %}
+                        <a href="{{ url_for('cetak_retrieval', id=item.id) }}" target="_blank" class="btn btn-sm btn-outline-primary w-100 fw-bold py-2 mb-2">
+                            <i class="bi bi-file-earmark-text me-1"></i> Retrieval Slip
+                        </a>
+                    {% endif %}
+                    
+                    <div class="text-center text-muted mt-2" style="font-size: 0.7rem;">
+                        <i class="bi bi-person me-1"></i> Operator: 
+                        {% if item.user %}
+                            {{ item.user.nama_lengkap.split(' ')[0] if item.user.nama_lengkap else item.user.payroll }}
+                        {% else %}
+                            Sistem
+                        {% endif %}
+                    </div>
+                </div>
+                
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted bg-white rounded-4 border">
+                <i class="bi bi-clock-history fs-1 d-block mb-2"></i>
+                Belum ada transaksi.
+            </div>
+            {% endfor %}
+        </div>
+
     </div>
 </div>
 {% endblock %}

@@ -1,6 +1,7 @@
 import sys
 import os
 import random
+import uuid
 from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
 
@@ -11,7 +12,7 @@ from models import db, User, MainLokasi, SubLokasi, Karyawan, StatusAset, Katego
 
 def run_seed():
     with app.app_context():
-        print("Menghapus database lama dan membuat tabel baru...")
+        print("Menghapus database lama dan membuat tabel baru (dengan kolom grup_id)...")
         db.drop_all()
         db.create_all()
 
@@ -160,57 +161,59 @@ def run_seed():
         db.session.commit()
 
         # ==========================================
-        # SEEDING 20 TRANSAKSI INVENTORY (DIPERBAIKI)
+        # SEEDING TRANSAKSI INVENTORY + BUNDLING CONSUMABLE
         # ==========================================
-        print("Membangkitkan 20 Riwayat Transaksi Inventory...")
-        transaksi_inv = []
+        print("Membangkitkan 20 Riwayat Transaksi Inventory (termasuk contoh Bundling)...")
+        transaksi_list = []
         for _ in range(20):
             inv_terpilih = random.choice(inventory_list)
             jenis = random.choice(['Deliver', 'Retrieval', 'Mutasi'])
             waktu_acak = datetime.now() - timedelta(days=random.randint(1, 30), hours=random.randint(1, 12))
+            grup_id = str(uuid.uuid4()) # ID unik pengikat Bundle
             
             kar = random.choice(karyawans)
             lok = random.choice([sub_it, sub_meeting, sub_control])
             
-            # SINKRONISASI DATABASE & FORMAT TEKS AGAR FITUR CETAK BERFUNGSI
             if jenis == 'Deliver':
                 ket = f"Diserahkan ke PIC: {kar.nama} | Catatan: Penugasan Baru dari Seed"
-                
-                # Update status wujud asli inventory agar sinkron dengan riwayat Deliver
                 inv_terpilih.karyawan_id = kar.id
                 inv_terpilih.karyawan_id_2 = None
                 inv_terpilih.lokasi_id = sub_pic.id
                 
+                # Simulasi Bundling (Inventory Keluar bareng Mouse/Keyboard)
+                if random.random() < 0.5:
+                    cons_terpilih = random.choice(consumable_list)
+                    qty_cons = 1
+                    if cons_terpilih.stok >= qty_cons:
+                        cons_terpilih.stok -= qty_cons
+                        trx_bundle = Transaksi(
+                            consumable_id=cons_terpilih.id, user_id=admin.id, jenis='Keluar', jumlah=qty_cons,
+                            keterangan=f"Digunakan sebagai kelengkapan untuk aset {inv_terpilih.nama_barang} (Kode: {inv_terpilih.kode_barang}) ke PIC: {kar.nama}.",
+                            tanggal=waktu_acak, grup_id=grup_id
+                        )
+                        transaksi_list.append(trx_bundle)
+                
             elif jenis == 'Retrieval':
                 ket = f"Dari: {kar.nama} | NIP: {kar.payroll} | ke {lok.main.nama_main} - {lok.nama_sub}"
-                
-                # Update status wujud asli inventory agar sinkron (kosong dari PIC, ditaruh di Gudang)
                 inv_terpilih.karyawan_id = None
                 inv_terpilih.karyawan_id_2 = None
                 inv_terpilih.lokasi_id = lok.id
-                
             else: # Mutasi
                 ket = f"Pindah Lokasi ke: {lok.main.nama_main} - {lok.nama_sub}"
-                
-                # Update wujud lokasi fisik di database
                 inv_terpilih.lokasi_id = lok.id
                 
             trx = Transaksi(
-                inventory_id=inv_terpilih.id,
-                user_id=admin.id,
-                jenis=jenis,
-                jumlah=1,
-                keterangan=ket,
-                tanggal=waktu_acak
+                inventory_id=inv_terpilih.id, user_id=admin.id, jenis=jenis, jumlah=1,
+                keterangan=ket, tanggal=waktu_acak, grup_id=grup_id
             )
-            transaksi_inv.append(trx)
+            transaksi_list.append(trx)
         
-        db.session.add_all(transaksi_inv)
+        db.session.add_all(transaksi_list)
 
         # ==========================================
-        # SEEDING 20 TRANSAKSI CONSUMABLE
+        # SEEDING TRANSAKSI CONSUMABLE NORMAL
         # ==========================================
-        print("Membangkitkan 20 Riwayat Transaksi Consumable...")
+        print("Membangkitkan 20 Riwayat Transaksi Consumable (Mandiri)...")
         transaksi_cons = []
         for _ in range(20):
             cons_terpilih = random.choice(consumable_list)
@@ -224,22 +227,15 @@ def run_seed():
                 ket = "Catatan: Restock barang bulanan"
                 
             trx = Transaksi(
-                consumable_id=cons_terpilih.id,
-                user_id=admin.id,
-                jenis=jenis,
-                jumlah=jumlah_trx,
-                keterangan=ket,
-                tanggal=waktu_acak
+                consumable_id=cons_terpilih.id, user_id=admin.id, jenis=jenis, jumlah=jumlah_trx,
+                keterangan=ket, tanggal=waktu_acak
             )
             transaksi_cons.append(trx)
             
         db.session.add_all(transaksi_cons)
         db.session.commit()
 
-        print("=== PROSES SEEDING 100+ DATA SELESAI DENGAN SUKSES ===")
-        print("Silakan Login dengan:")
-        print("Payroll: 200505")
-        print("Password: 12345678")
+        print("=== PROSES SEEDING 100+ DATA & KOLOM GRUP_ID SELESAI DENGAN SUKSES ===")
 
 if __name__ == "__main__":
     run_seed()

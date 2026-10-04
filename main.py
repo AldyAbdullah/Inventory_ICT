@@ -5,12 +5,20 @@ from flask_wtf.csrf import CSRFProtect
 from functools import wraps
 import os
 from dotenv import load_dotenv
-
 from models import db, User
+from flask import Flask
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 load_dotenv()
 
 app = Flask(__name__)
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"], 
+    storage_uri="memory://" 
+)
 csrf = CSRFProtect(app)
 app.secret_key = os.getenv('SECRET_KEY', 'default_secret_tomori')
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)

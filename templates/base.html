@@ -10,113 +10,55 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
 
+    <!-- SCRIPT ANTI-BERKEDIP (Mencegah layar putih sesaat saat refresh di Dark Mode) -->
+    <script>
+      const savedTheme = localStorage.getItem('appTheme') || 'light';
+      document.documentElement.setAttribute('data-bs-theme', savedTheme);
+    </script>
+
     <style>
-      body { background-color: #f8fafc; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+      body { background-color: #f8fafc; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; transition: background-color 0.3s ease, color 0.3s ease; }
       .wrapper { display: flex; width: 100%; min-height: 100vh; overflow-x: hidden; }
       
-      .no-transition, .no-transition * {
-          transition: none !important;
-      }
+      .no-transition, .no-transition * { transition: none !important; }
 
+      /* SIDEBAR STYLES */
       .sidebar { 
-          min-width: 260px; 
-          max-width: 260px; 
-          background-color: #0a2540; 
-          background-image: 
-              linear-gradient(to bottom, #0a2540 0%, #0a2540 calc(100% - 200px), rgba(10, 37, 64, 0.6) 100%), 
-              url("{{ url_for('static', filename='img/senoro-toili-e1780540858491.jpeg') }}");
-          background-position: center top, bottom center;
-          background-size: 100% 100%, 260px auto;
-          background-repeat: no-repeat;
-          color: #fff; 
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-          position: sticky;
-          top: 0;
-          height: 100vh;
-          display: flex;
-          flex-direction: column;
-          z-index: 1030;
+          min-width: 260px; max-width: 260px; background-color: #0a2540; 
+          background-image: linear-gradient(to bottom, #0a2540 0%, #0a2540 calc(100% - 200px), rgba(10, 37, 64, 0.6) 100%), url("{{ url_for('static', filename='img/senoro-toili-e1780540858491.jpeg') }}");
+          background-position: center top, bottom center; background-size: 100% 100%, 260px auto; background-repeat: no-repeat;
+          color: #fff; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; z-index: 1030;
       }
-
-      /* PERBAIKAN: Menghilangkan gambar siluet saat sidebar ditutup */
-      .sidebar.sidebar-collapsed {
-          min-width: 75px;
-          max-width: 75px;
-          background-image: none;
-      }
-
+      .sidebar.sidebar-collapsed { min-width: 75px; max-width: 75px; background-image: none; }
       .sidebar-menu-area { flex-grow: 1; overflow-y: auto; overflow-x: hidden; }
       .sidebar-menu-area::-webkit-scrollbar { width: 4px; }
       .sidebar-menu-area::-webkit-scrollbar-track { background: transparent; }
       .sidebar-menu-area::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.1); border-radius: 10px; }
       .sidebar-menu-area::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.3); }
       
-      .sidebar .brand { 
-          padding: 16px 20px; 
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
-          position: relative; 
-          z-index: 2; 
-          display: flex;
-          justify-content: space-between; 
-          align-items: center;
-          height: 70px;
-          overflow: hidden;
-          transition: all 0.3s ease;
-          cursor: pointer; 
-      }
-      
+      .sidebar .brand { padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; height: 70px; overflow: hidden; transition: all 0.3s ease; cursor: pointer; }
       .sidebar.sidebar-collapsed .brand { padding: 16px 0; justify-content: center; }
       .sidebar .brand:hover { background-color: rgba(255, 255, 255, 0.03); }
-
-      .brand-info {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          overflow: hidden;
-      }
-
-      .sidebar .brand img {
-          max-height: 35px; 
-          min-width: 35px;
-          width: auto;
-          object-fit: contain;
-          transition: all 0.3s ease;
-      }
+      .brand-info { display: flex; align-items: center; gap: 12px; overflow: hidden; }
+      .sidebar .brand img { max-height: 35px; min-width: 35px; width: auto; object-fit: contain; transition: all 0.3s ease; }
       .sidebar.sidebar-collapsed .brand img { max-height: 30px; min-width: 30px; }
-      
-      .sidebar .brand-text {
-          display: flex;
-          flex-direction: column;
-          line-height: 1.1;
-          white-space: nowrap;
-          transition: opacity 0.2s ease, width 0.3s ease;
-          opacity: 1;
-      }
+      .sidebar .brand-text { display: flex; flex-direction: column; line-height: 1.1; white-space: nowrap; transition: opacity 0.2s ease, width 0.3s ease; opacity: 1; }
       .sidebar.sidebar-collapsed .brand-text { opacity: 0; width: 0; display: none; }
-
-      .sidebar .toggle-icon {
-          color: #94a3b8;
-          font-size: 1.2rem;
-          transition: color 0.2s;
-      }
+      .sidebar .toggle-icon { color: #94a3b8; font-size: 1.2rem; transition: color 0.2s; }
       .sidebar .brand:hover .toggle-icon { color: #fff; }
       .sidebar.sidebar-collapsed .toggle-icon { display: none; }
 
-      .sidebar .nav-link { 
-          color: #cbd5e1; padding: 10px 20px; border-radius: 0; display: flex; align-items: center; gap: 12px; 
-          font-weight: 500; font-size: 0.9rem; transition: all 0.2s ease; 
-          position: relative; z-index: 2; overflow: hidden; text-decoration: none;
-          white-space: nowrap;
-      }
+      .sidebar .nav-link { color: #cbd5e1; padding: 10px 20px; border-radius: 0; display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 0.9rem; transition: all 0.2s ease; position: relative; z-index: 2; overflow: hidden; text-decoration: none; white-space: nowrap; }
       .sidebar .nav-link:hover { color: #fff; background-color: rgba(255, 255, 255, 0.05); }
       .sidebar.sidebar-collapsed .nav-link { justify-content: center; padding: 12px 0; gap: 0;}
-      
       .sidebar .nav-link span { transition: opacity 0.2s; opacity: 1; }
       .sidebar.sidebar-collapsed .nav-link span { opacity: 0; width: 0; display: none;}
       
       .sidebar .nav-link.active { color: #fff; background-color: rgba(255, 255, 255, 0.08); border-right: 4px solid #da291c; font-weight: 600; }
       .sidebar .nav-link.active i { color: #da291c; text-shadow: 0 0 10px rgba(218, 41, 28, 0.5); }
-      .sidebar .nav-link i { font-size: 1.1rem; min-width: 20px; text-align: center; transition: color 0.3s ease; }
+      
+      /* UKURAN IKON DISERAGAMKAN */
+      .sidebar .nav-link i, .sidebar .accordion-button i { font-size: 1.1rem; min-width: 20px; text-align: center; transition: color 0.3s ease; }
       .sidebar.sidebar-collapsed .nav-link i { font-size: 1.3rem; margin: 0; }
       
       .sidebar .accordion-button { background-color: transparent; color: #cbd5e1; box-shadow: none; padding: 10px 20px; font-weight: 500; font-size: 0.9rem; border: none; border-radius: 0; transition: all 0.2s ease; position: relative; z-index: 2; white-space: nowrap;}
@@ -130,50 +72,30 @@
       .sidebar .accordion-body { padding: 0; background-color: rgba(0, 0, 0, 0.2); position: relative; z-index: 2;}
       .sidebar .accordion-body .nav-link { padding: 8px 20px 8px 44px; font-size: 0.85rem; }
       
+      /* IKON SUB-MENU LEBIH KECIL */
+      .sidebar .accordion-body .nav-link i { font-size: 0.9rem; }
+      
       .sidebar.sidebar-collapsed .accordion-body .nav-link { padding: 8px 0; justify-content: center; }
       .sidebar.sidebar-collapsed .accordion-body .nav-link i { font-size: 0.9rem; margin-right: 0;}
 
       .sidebar .nav-section-title { transition: opacity 0.2s; white-space: nowrap; overflow: hidden; opacity: 1;}
       .sidebar.sidebar-collapsed .nav-section-title { opacity: 0; height: 0; margin: 0 !important; padding: 0 !important; }
 
-      .sidebar .sidebar-footer {
-          padding: 15px 20px 25px 20px;
-          position: relative;
-          z-index: 2;
-          text-align: center;
-          transition: all 0.3s ease;
-          overflow: hidden;
-          opacity: 1;
-          height: auto;
-      }
-
-      /* PERBAIKAN: Menghilangkan footer secara total saat sidebar ditutup */
-      .sidebar.sidebar-collapsed .sidebar-footer { 
-          padding: 0; 
-          height: 0;
-          opacity: 0;
-          pointer-events: none;
-      }
-      
+      .sidebar .sidebar-footer { padding: 15px 20px 25px 20px; position: relative; z-index: 2; text-align: center; transition: all 0.3s ease; overflow: hidden; opacity: 1; height: auto; }
+      .sidebar.sidebar-collapsed .sidebar-footer { padding: 0; height: 0; opacity: 0; pointer-events: none; }
       .sidebar .sidebar-footer img { max-width: 90%; height: auto; margin-bottom: 8px; opacity: 0.9; transition: all 0.3s ease; }
       .sidebar .sidebar-footer .company-name { font-size: 0.7rem; color: #94a3b8; font-weight: 600; letter-spacing: 0.5px; margin: 0; white-space: nowrap; transition: opacity 0.2s;}
 
-      .main-content { 
-          width: 100%; 
-          overflow-y: auto; 
-          height: 100vh;    
-          display: flex; 
-          flex-direction: column; 
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
+      /* MAIN CONTENT STYLES */
+      .main-content { width: 100%; overflow-y: auto; height: 100vh; display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
       .content-wrapper { padding: 30px; flex-grow: 1; }
-      .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); margin-bottom: 24px; background-color: #ffffff; }
-      .card-header { background-color: #ffffff; border-bottom: 1px solid #edf2f7; padding: 16px 20px; border-radius: 12px 12px 0 0 !important; }
+      .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); margin-bottom: 24px; background-color: #ffffff; transition: background-color 0.3s ease, border-color 0.3s ease; }
+      .card-header { background-color: #ffffff; border-bottom: 1px solid #edf2f7; padding: 16px 20px; border-radius: 12px 12px 0 0 !important; transition: background-color 0.3s ease, border-color 0.3s ease; }
       .btn-primary { background-color: #004b87; border-color: #004b87; }
       .btn-primary:hover { background-color: #0a2540; border-color: #0a2540; }
 
       .table { font-size: 0.85rem; }
-      .table > :not(caption) > * > * { padding: 8px 12px; border-bottom-color: #edf2f7; vertical-align: middle; }
+      .table > :not(caption) > * > * { padding: 8px 12px; border-bottom-color: #edf2f7; vertical-align: middle; transition: background-color 0.3s ease, color 0.3s ease; }
       .table-light th { background-color: #f8fafc; color: #0a2540; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; border-bottom: none; padding: 10px 12px; }
       .table .badge { font-size: 0.75rem !important; }
       .table small { font-size: 0.75rem; }
@@ -194,17 +116,49 @@
       .main-content::-webkit-scrollbar-track { background: #f1f5f9; }
       .main-content::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
       .main-content::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+      
+      /* ======================================================== */
+      /* CSS KHUSUS DARK MODE (Timpa Warna Saat Mode Gelap Aktif) */
+      /* ======================================================== */
+      [data-bs-theme="dark"] body { background-color: #0f172a; color: #f8fafc; }
+      [data-bs-theme="dark"] .bg-white { background-color: #1e293b !important; color: #f8fafc !important; }
+      [data-bs-theme="dark"] .card { background-color: #1e293b; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); border: 1px solid #334155; }
+      [data-bs-theme="dark"] .card-header, [data-bs-theme="dark"] .card-footer { background-color: #1e293b; border-color: #334155; }
+      [data-bs-theme="dark"] .text-dark { color: #f8fafc !important; }
+      [data-bs-theme="dark"] .text-muted { color: #94a3b8 !important; }
+      
+      [data-bs-theme="dark"] .table-light th, [data-bs-theme="dark"] .table-scrollable thead th { background-color: #0f172a; color: #f8fafc; border-bottom: 1px solid #334155; }
+      [data-bs-theme="dark"] .table > :not(caption) > * > * { border-bottom-color: #334155; color: #f8fafc; }
+      [data-bs-theme="dark"] .table-hover > tbody > tr:hover > td { background-color: rgba(255, 255, 255, 0.05); color: #fff; }
+      
+      [data-bs-theme="dark"] .bg-light { background-color: #0f172a !important; }
+      [data-bs-theme="dark"] .border { border-color: #334155 !important; }
+      
+      [data-bs-theme="dark"] .dropdown-menu { background-color: #1e293b; border: 1px solid #334155; }
+      [data-bs-theme="dark"] .dropdown-item { color: #f8fafc; }
+      [data-bs-theme="dark"] .dropdown-item:hover { background-color: rgba(255, 255, 255, 0.1); color: #fff; }
+      [data-bs-theme="dark"] .hover-bg-light:hover { background-color: rgba(255, 255, 255, 0.05) !important; }
+      
+      [data-bs-theme="dark"] .form-control, [data-bs-theme="dark"] .form-select { background-color: #0f172a; border-color: #334155; color: #f8fafc; }
+      [data-bs-theme="dark"] .form-control:focus, [data-bs-theme="dark"] .form-select:focus { background-color: #0f172a; color: #fff; border-color: #3b82f6; box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25); }
+      [data-bs-theme="dark"] .form-control::placeholder { color: #64748b; }
+      
+      [data-bs-theme="dark"] .btn-light { background-color: #334155; color: #f8fafc; border-color: #334155; }
+      [data-bs-theme="dark"] .btn-light:hover { background-color: #475569; color: #fff; border-color: #475569; }
+      [data-bs-theme="dark"] .btn-outline-secondary { color: #cbd5e1; border-color: #475569; }
+      [data-bs-theme="dark"] .btn-outline-secondary:hover { background-color: #475569; color: #fff; }
+
+      [data-bs-theme="dark"] .main-content::-webkit-scrollbar-track { background: #0f172a; }
+      [data-bs-theme="dark"] .main-content::-webkit-scrollbar-thumb { background-color: #475569; }
+      [data-bs-theme="dark"] .main-content::-webkit-scrollbar-thumb:hover { background-color: #64748b; }
     </style>
   </head>
   <body>
     <div class="wrapper">
       
       <nav class="sidebar d-none d-lg-flex no-transition" id="desktopSidebar">
-        
         <script>
-          if (localStorage.getItem("sidebarCollapsed") === "true") {
-            document.getElementById("desktopSidebar").classList.add("sidebar-collapsed");
-          }
+          if (localStorage.getItem("sidebarCollapsed") === "true") { document.getElementById("desktopSidebar").classList.add("sidebar-collapsed"); }
         </script>
 
         <div class="brand" id="sidebarToggleArea" title="Tutup/Buka Menu">
@@ -285,19 +239,16 @@
                   <i class="bi bi-tags"></i> <span>Kategori & Satuan</span>
                 </a>
               </div>
-              
               <div class="nav-item">
                 <a class="nav-link {% if request.endpoint == 'master_lokasi' %}active{% endif %}" href="{{ url_for('master_lokasi') }}" title="Area & Lokasi">
                   <i class="bi bi-geo-alt"></i> <span>Area & Lokasi</span>
                 </a>
               </div>
-    
               <div class="nav-item">
                 <a class="nav-link {% if request.endpoint == 'master_karyawan' %}active{% endif %}" href="{{ url_for('master_karyawan') }}" title="Data Karyawan">
                   <i class="bi bi-person-vcard"></i> <span>Data Karyawan</span>
                 </a>
               </div>
-    
               <div class="nav-item">
                 <a class="nav-link {% if request.endpoint == 'users' %}active{% endif %}" href="{{ url_for('users') }}" title="Manajemen Pengguna">
                   <i class="bi bi-people"></i> <span>Manajemen Pengguna</span>
@@ -325,29 +276,33 @@
             <img src="{{ url_for('static', filename='img/logo putih.png') }}" alt="JOB Tomori Logo" onerror="this.src='https://via.placeholder.com/40?text=TOMORI'">
             <p class="company-name">JOB PERTAMINA - MEDCO E&P<br>TOMORI SULAWESI</p>
         </div>
-
       </nav>
 
       <!-- Main Content Area -->
       <div class="main-content">
         
-        <div class="bg-white py-1 px-3 d-flex justify-content-between align-items-center shadow-sm position-sticky top-0" style="z-index: 1020; min-height: 55px;">
+        <div class="bg-white py-1 px-3 d-flex justify-content-between align-items-center shadow-sm position-sticky top-0" style="z-index: 1020; min-height: 55px; transition: background-color 0.3s ease;">
           
           <div class="d-flex align-items-center d-lg-none">
             <button class="btn btn-sm btn-light border-0 py-1 px-2 me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
               <i class="bi bi-list fs-4"></i>
             </button>
-            <h6 class="m-0 fw-bold" style="color: #0a2540; font-size: 1rem; letter-spacing: 0.5px;">
+            <h6 class="m-0 fw-bold text-dark" style="font-size: 1rem; letter-spacing: 0.5px;">
               Inventaris ICT
             </h6>
           </div>
           
           <div class="d-none d-lg-flex align-items-center"></div>
 
-          <div class="dropdown ms-auto">
+          <div class="dropdown ms-auto d-flex align-items-center">
+            <!-- TOMBOL SAKELAR DARK MODE -->
+            <button id="themeToggleBtn" class="btn btn-sm btn-light border-0 me-3 rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 34px; height: 34px; transition: all 0.2s;" title="Ganti Mode Gelap/Terang">
+              <i id="themeIcon" class="bi bi-moon-stars-fill text-dark fs-6"></i>
+            </button>
+
             <a href="#" class="d-flex align-items-center text-decoration-none text-dark py-1 px-2 rounded hover-bg-light" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false" style="transition: background 0.2s;">
               <div class="d-flex flex-column justify-content-center text-end me-2 d-none d-sm-block">
-                <span class="fw-bold" style="font-size: 0.85rem; color: #0a2540;">
+                <span class="fw-bold" style="font-size: 0.85rem;">
                   Hi, {% if current_user.is_authenticated %}{{ current_user.nama_lengkap or current_user.payroll }}{% else %}Guest{% endif %}
                 </span>
               </div>
@@ -490,12 +445,41 @@
 
         toggleArea.addEventListener("click", function() {
           sidebar.classList.toggle("sidebar-collapsed");
-          
           if(sidebar.classList.contains("sidebar-collapsed")) {
             localStorage.setItem("sidebarCollapsed", "true");
           } else {
             localStorage.setItem("sidebarCollapsed", "false");
           }
+        });
+
+        // ==========================================
+        // SCRIPT LOGIKA TOMBOL DARK MODE
+        // ==========================================
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const themeIcon = document.getElementById('themeIcon');
+        const htmlElement = document.documentElement;
+
+        function updateThemeIcon(theme) {
+          if (theme === 'dark') {
+            themeIcon.classList.remove('bi-moon-stars-fill', 'text-dark');
+            themeIcon.classList.add('bi-sun-fill', 'text-warning');
+          } else {
+            themeIcon.classList.remove('bi-sun-fill', 'text-warning');
+            themeIcon.classList.add('bi-moon-stars-fill', 'text-dark');
+          }
+        }
+
+        // Terapkan ikon saat halaman pertama kali dimuat
+        updateThemeIcon(htmlElement.getAttribute('data-bs-theme'));
+
+        // Event saat tombol diklik
+        themeToggleBtn.addEventListener('click', () => {
+          const currentTheme = htmlElement.getAttribute('data-bs-theme');
+          const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+          
+          htmlElement.setAttribute('data-bs-theme', newTheme);
+          localStorage.setItem('appTheme', newTheme);
+          updateThemeIcon(newTheme);
         });
       });
     </script>

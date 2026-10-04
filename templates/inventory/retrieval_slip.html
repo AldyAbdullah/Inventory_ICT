@@ -5,194 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Retrieval Slip - {{ tr.inventory.kode_barang }}</title>
     <style>
-        @page {
-            size: A4;
-            margin: 0; 
-        }
+        @page { size: A4; margin: 0; }
         body {
-            font-family: Arial, sans-serif;
-            font-size: 10pt;
-            color: #000;
-            margin: 0;
-            padding: 0;
-            line-height: 1.4;
-            background-color: #fff;
-            
+            font-family: Arial, sans-serif; font-size: 10pt; color: #000;
+            margin: 0; padding: 0; line-height: 1.4; background-color: #fff;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
         }
         .container {
-            width: 210mm; 
-            height: 295mm; 
-            margin: 0 auto;
-            padding: 15mm; 
-            box-sizing: border-box;
-            position: relative;
-            overflow: hidden; 
+            width: 210mm; height: 295mm; margin: 0 auto;
+            padding: 15mm; box-sizing: border-box; position: relative; overflow: hidden; 
         }
         
-        /* HEADER KOP SURAT */
-        .header-kop {
-            display: flex;
-            justify-content: space-between;
-            align-items: center; 
-            margin-bottom: 20px;
-        }
+        .header-kop { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .header-text { width: 52%; }
-        .header-title {
-            font-size: 12pt;
-            font-weight: bold;
-            margin-bottom: 10px;
-            line-height: 1.3;
-            text-align: center; 
-        }
-        .header-address {
-            display: flex;
-            justify-content: space-between;
-            font-size: 8.5pt; 
-        }
+        .header-title { font-size: 12pt; font-weight: bold; margin-bottom: 10px; line-height: 1.3; text-align: center; }
+        .header-address { display: flex; justify-content: space-between; font-size: 8.5pt; }
         .header-address-left { width: 60%; white-space: nowrap; text-align: left; } 
         .header-address-right { width: 40%; color: #0000FF; text-align: right; } 
         
-        .header-logo {
-            width: 45%;
-            text-align: right;
-        }
-        .header-logo img {
-            max-width: 100%;
-            height: auto;
-            max-height: 65px;
-        }
+        .header-logo { width: 45%; text-align: right; }
+        .header-logo img { max-width: 100%; height: auto; max-height: 65px; }
 
-        /* BANNER MERAH KHUSUS RETRIEVAL */
-        .bg-red {
-            background-color: #ff0000 !important;
-            color: #ffffff !important;
-            box-shadow: inset 0 0 0 1000px #ff0000 !important;
-        }
-        .banner-title {
-            text-align: center;
-            font-size: 18pt;
-            font-weight: bold;
-            letter-spacing: 2px;
-            padding: 8px 0;
-            margin-bottom: 20px;
-            margin-left: -15mm;
-            margin-right: -15mm;
-        }
+        .bg-red { background-color: #ff0000 !important; color: #ffffff !important; box-shadow: inset 0 0 0 1000px #ff0000 !important; }
+        .banner-title { text-align: center; font-size: 18pt; font-weight: bold; letter-spacing: 2px; padding: 8px 0; margin-bottom: 20px; margin-left: -15mm; margin-right: -15mm; }
 
-        /* INFO TABLE */
-        .info-table {
-            width: 100%;
-            margin-bottom: 20px;
-            font-size: 11pt;
-        }
+        .info-table { width: 100%; margin-bottom: 20px; font-size: 11pt; }
         .info-table td { padding: 3px 0; }
         .info-table td:nth-child(1) { width: 120px; }
         .info-table td:nth-child(2) { width: 15px; }
 
-        /* DATA TABLE */
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-        }
-        .data-table th, .data-table td {
-            border: 1px solid #000;
-            padding: 8px;
-            text-align: center;
-            vertical-align: middle;
-        }
-        .data-table th {
-            font-weight: bold;
-            font-size: 10pt;
-        }
+        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        .data-table th, .data-table td { border: 1px solid #000; padding: 8px; text-align: center; vertical-align: middle; }
+        .data-table th { font-weight: bold; font-size: 10pt; }
         
-        /* SIGNATURE TABLE (RATA KIRI & FONT SAMA RATA) */
-        .signature-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-        }
-        .signature-table th, .signature-table td {
-            border: 1px solid #000;
-            width: 33.33%;
-        }
-        .signature-table th {
-            padding: 10px;
-            text-align: center;
-            font-weight: bold;
-        }
-        .signature-box {
-            position: relative;
-            height: 110px; 
-            padding: 5px;
-        }
-        .signature-label {
-            color: #666;
-            font-size: 9pt;
-            position: absolute;
-            top: 5px;
-            left: 10px; 
-        }
-        .signature-name {
-            position: absolute;
-            bottom: 5px;
-            left: 10px; 
-            text-align: left; 
-            width: calc(100% - 20px);
-            font-size: 9pt; 
-        }
+        .signature-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        .signature-table th, .signature-table td { border: 1px solid #000; width: 33.33%; }
+        .signature-table th { padding: 10px; text-align: center; font-weight: bold; }
+        .signature-box { position: relative; height: 110px; padding: 5px; }
+        .signature-label { color: #666; font-size: 9pt; position: absolute; top: 5px; left: 10px; }
+        .signature-name { position: absolute; bottom: 5px; left: 10px; text-align: left; width: calc(100% - 20px); font-size: 9pt; }
 
-        /* KETENTUAN */
-        .ketentuan-box {
-            font-size: 8pt; 
-            line-height: 1.4;
-            margin-bottom: 30px;
-        }
+        .ketentuan-box { font-size: 8pt; line-height: 1.4; margin-bottom: 30px; }
         .ketentuan-box u { font-weight: bold; text-decoration: underline; }
-        .ketentuan-list {
-            margin: 5px 0 0 0;
-            padding-left: 20px;
-        }
-        .ketentuan-list li {
-            margin-bottom: 4px;
-            text-align: justify;
-        }
+        .ketentuan-list { margin: 5px 0 0 0; padding-left: 20px; }
+        .ketentuan-list li { margin-bottom: 4px; text-align: justify; }
 
-        /* FOOTER SURAT */
-        .footer-surat {
-            position: absolute;
-            bottom: 15mm;
-            left: 15mm;
-            right: 15mm;
-            display: flex;
-            justify-content: space-between;
-            font-size: 9pt;
-        }
+        .footer-surat { position: absolute; bottom: 15mm; left: 15mm; right: 15mm; display: flex; justify-content: space-between; font-size: 9pt; }
 
-        /* TOMBOL PRINT */
-        .no-print {
-            text-align: center;
-            margin: 20px auto;
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-bottom: 1px solid #ddd;
-            width: 100%;
-        }
-        .btn-print {
-            background-color: #0d6efd;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 12pt;
-            cursor: pointer;
-            border-radius: 5px;
-            font-weight: bold;
-        }
-        @media print {
-            .no-print { display: none; }
-        }
+        .no-print { text-align: center; margin: 20px auto; background-color: #f8f9fa; padding: 15px; border-bottom: 1px solid #ddd; width: 100%; }
+        .btn-print { background-color: #0d6efd; color: white; border: none; padding: 10px 20px; font-size: 12pt; cursor: pointer; border-radius: 5px; font-weight: bold; }
+        @media print { .no-print { display: none; } }
     </style>
 </head>
 <body>
@@ -201,13 +64,11 @@
         <p style="font-size: 10pt; color: #666; margin-top: 10px; margin-bottom: 0;">(Jika tabel masih putih, centang <b>"Background graphics"</b> saat print agar warna merah muncul)</p>
     </div>
 
-    <!-- LOGIKA JINJA YANG DISEMPURNAKAN (Ekstrak Nama Tanpa Looping) -->
     {% set ret_nama = "" %}
     {% set ret_nip = "" %}
     {% set ret_note = "" %}
 
     {% if 'Dari: ' in tr.keterangan and ' | NIP: ' in tr.keterangan %}
-        <!-- Memotong string berdasarkan pembatas -->
         {% set split_awal = tr.keterangan.split(' | NIP: ') %}
         {% set ret_nama = split_awal[0].replace('Dari: ', '') %}
         
@@ -247,10 +108,7 @@
             </div>
         </div>
 
-        <!-- BANNER MERAH -->
-        <div class="bg-red banner-title">
-            RETRIEVAL SLIP
-        </div>
+        <div class="bg-red banner-title">RETRIEVAL SLIP</div>
 
         <!-- TABEL INFO -->
         <table class="info-table">
@@ -269,7 +127,7 @@
             </tr>
         </table>
 
-        <!-- TABEL DATA ASET -->
+        <!-- TABEL DATA ASET DENGAN LOGIKA BUNDLING -->
         <table class="data-table">
             <thead>
                 <tr>
@@ -282,22 +140,54 @@
                 </tr>
             </thead>
             <tbody>
+                <!-- BARIS 1: ASET INVENTORY UTAMA -->
                 <tr>
                     <td>1</td>
-                    <td>{{ tr.inventory.nama_barang }}</td>
+                    <td style="text-align: left; padding-left: 10px;"><b>{{ tr.inventory.nama_barang }}</b></td>
                     <td>{{ tr.inventory.serial_number }}</td>
                     <td>{{ tr.inventory.kode_barang }}</td>
                     <td>1</td>
-                    <td rowspan="5">{{ ret_note }}</td>
+                    <!-- Kolom Note yang di-merge 5 baris ke bawah -->
+                    <td rowspan="5" style="vertical-align: top; text-align: left; padding: 10px; font-size: 9pt;">
+                        {{ ret_note }}
+                    </td>
                 </tr>
-                <tr><td>2</td><td></td><td></td><td></td><td></td></tr>
-                <tr><td>3</td><td></td><td></td><td></td><td></td></tr>
-                <tr><td>4</td><td></td><td></td><td></td><td></td></tr>
-                <tr><td>5</td><td></td><td></td><td></td><td></td></tr>
+
+                <!-- BARIS 2 dst: KELENGKAPAN CONSUMABLE (JIKA ADA BUNDLING) -->
+                {% set max_rows = 5 %}
+                {% set total_bundle = bundle_trx|length if bundle_trx else 0 %}
+                
+                {% if bundle_trx %}
+                    {% for b in bundle_trx %}
+                        {% if loop.index + 1 <= max_rows %}
+                        <tr>
+                            <td>{{ loop.index + 1 }}</td>
+                            <td style="text-align: left; padding-left: 10px;">{{ b.consumable.nama_barang }}</td>
+                            <td>-</td>
+                            <td>{{ b.consumable.kode_barang }}</td>
+                            <td>{{ b.jumlah }} {{ b.consumable.satuan_terkait.nama_satuan if b.consumable.satuan_terkait else 'Unit' }}</td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                
+                <!-- BARIS SISA KOSONG (AGAR TABEL SELALU BERJUMLAH 5 BARIS) -->
+                {% set remaining = max_rows - 1 - total_bundle %}
+                {% if remaining > 0 %}
+                    {% for i in range(remaining) %}
+                    <tr>
+                        <td>{{ i + total_bundle + 2 }}</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
             </tbody>
         </table>
 
-        <!-- TABEL TANDA TANGAN (Merah & Rata Kiri) -->
+        <!-- TABEL TANDA TANGAN -->
         <table class="signature-table">
             <thead>
                 <tr>
@@ -312,7 +202,6 @@
                         <div class="signature-box">
                             <div class="signature-label">Tandatangan</div>
                             <div class="signature-name">
-                                <!-- Jika ret_nama berhasil ditangkap, cetak. Jika tidak, cetak titik-titik -->
                                 {% if ret_nama %}
                                     {{ ret_nama }}<br>
                                     {{ ret_nip }}
@@ -355,7 +244,6 @@
             </ul>
         </div>
         
-        <!-- FOOTER DOKUMEN -->
         <div class="footer-surat">
             <div>TOMORI-BSD-PR-05-000_L05</div>
             <div>Page 1 of 1</div>

@@ -3,47 +3,38 @@
 
 {% block content %}
 <style>
-  /* Ukuran Default (Desktop) */
   .stat-label { font-size: 0.65rem; letter-spacing: 0.5px; }
   .stat-angka { font-size: 1.25rem; }
   .stat-icon-box { width: 36px; height: 36px; }
   .stat-icon-box i { font-size: 1.25rem; }
   .stat-pct { font-size: 0.65rem; }
   
-  /* Mode Mobile: Kartu Ramping & Horizontal Scroll (Swipe) */
   @media (max-width: 767.98px) {
-    .mobile-scroll-row {
-      flex-wrap: nowrap !important;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch; 
-      scrollbar-width: none; 
-      padding-bottom: 8px; 
-    }
-    .mobile-scroll-row::-webkit-scrollbar {
-      display: none; 
-    }
-    .mobile-scroll-row > .col-6 {
-      flex: 0 0 42% !important; 
-      max-width: 42% !important;
-    }
-    .stat-label { 
-      font-size: 0.55rem !important; 
-      letter-spacing: 0px; 
-      white-space: nowrap; 
-      overflow: hidden; 
-      text-overflow: ellipsis; 
-    }
+    .mobile-scroll-row { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 8px; }
+    .mobile-scroll-row::-webkit-scrollbar { display: none; }
+    .mobile-scroll-row > .col-6 { flex: 0 0 42% !important; max-width: 42% !important; }
+    .stat-label { font-size: 0.55rem !important; letter-spacing: 0px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .stat-angka { font-size: 1.1rem !important; }
     .stat-icon-box { width: 28px !important; height: 28px !important; }
     .stat-icon-box i { font-size: 0.9rem !important; }
     .stat-pct { font-size: 0.55rem !important; }
   }
+
+  /* EFEK KLIK BARIS (ROW SELECTION) */
+  .selectable-row { cursor: pointer; transition: all 0.2s ease; }
+  .selectable-row.selected { background-color: #e2e8f0 !important; }
+  .selectable-row:hover { background-color: #f1f5f9; }
+  
+  /* DARK MODE UNTUK BARIS TERPILIH */
+  [data-bs-theme="dark"] .selectable-row.selected { background-color: rgba(59, 130, 246, 0.2) !important; }
+  [data-bs-theme="dark"] .selectable-row:hover { background-color: rgba(255, 255, 255, 0.05); }
+  [data-bs-theme="dark"] #bulkActionBar { background-color: #1e293b !important; border-top-color: #334155 !important; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
-    <h4 class="fw-bold mb-1" style="color: #0a2540">Master Data Inventory</h4>
-    <small class="badge bg-light text-secondary border mt-2">
+    <h4 class="fw-bold mb-1" style="color: inherit">Master Data Inventory</h4>
+    <small class="badge bg-secondary bg-opacity-25 text-secondary border mt-2">
       <i class="bi bi-clock-history me-1"></i>Data per: <strong>{{ dt.now().strftime('%d %B %Y') }}</strong>
     </small>
   </div>
@@ -64,7 +55,7 @@
 {% with messages = get_flashed_messages(with_categories=true) %} 
   {% if messages %} 
     {% for category, message in messages %}
-    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show shadow-sm" role="alert">
+    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show shadow-sm border-0" role="alert">
       <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
@@ -72,7 +63,7 @@
   {% endif %} 
 {% endwith %}
 
-<!-- WIDGET KARTU STATISTIK (DENGAN KELAS mobile-scroll-row) -->
+<!-- WIDGET KARTU STATISTIK -->
 <div class="row g-2 mb-4 mobile-scroll-row">
   <div class="col-6 col-md-4 col-lg-2">
     <div class="card border-0 shadow-sm h-100 rounded-3">
@@ -85,7 +76,6 @@
       </div>
     </div>
   </div>
-  
   <div class="col-6 col-md-4 col-lg-2">
     <div class="card border-0 shadow-sm h-100 rounded-3">
       <div class="card-body p-2 d-flex align-items-center">
@@ -97,7 +87,6 @@
       </div>
     </div>
   </div>
-  
   <div class="col-6 col-md-4 col-lg-2">
     <div class="card border-0 shadow-sm h-100 rounded-3">
       <div class="card-body p-2 d-flex align-items-center">
@@ -109,7 +98,6 @@
       </div>
     </div>
   </div>
-  
   <div class="col-6 col-md-4 col-lg-2">
     <div class="card border-0 shadow-sm h-100 rounded-3">
       <div class="card-body p-2 d-flex align-items-center">
@@ -121,7 +109,6 @@
       </div>
     </div>
   </div>
-  
   <div class="col-6 col-md-4 col-lg-2">
     <div class="card border-0 shadow-sm h-100 rounded-3">
       <div class="card-body p-2 d-flex align-items-center">
@@ -133,7 +120,6 @@
       </div>
     </div>
   </div>
-  
   <div class="col-6 col-md-4 col-lg-2">
     <div class="card border-0 shadow-sm h-100 rounded-3">
       <div class="card-body p-2 d-flex align-items-center">
@@ -147,16 +133,14 @@
   </div>
 </div>
 
-<div class="card shadow-sm border-0 mb-5">
+<div class="card shadow-sm border-0 mb-5 position-relative">
   <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
     <h6 class="m-0 fw-bold text-primary">Daftar Inventory Aktif</h6>
 
     <form id="filterForm" method="GET" action="{{ url_for('master_inventory') }}" class="d-flex w-auto flex-grow-1 flex-md-grow-0 justify-content-end">
       <div class="input-group input-group-sm" style="max-width: 400px;">
         <input type="text" name="search" class="form-control bg-light border-0" placeholder="Cari aset, brand, PIC, SN..." value="{{ search_query }}" />
-        <button class="btn btn-primary border-0" type="submit">
-          <i class="bi bi-search"></i>
-        </button>
+        <button class="btn btn-primary border-0" type="submit"><i class="bi bi-search"></i></button>
 
         <button class="btn btn-outline-secondary border-0 dropdown-toggle dropdown-toggle-split px-3" type="button" id="dropdownFilter" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
           <i class="bi bi-funnel"></i>
@@ -164,7 +148,6 @@
 
         <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0" aria-labelledby="dropdownFilter" style="width: 300px">
           <h6 class="dropdown-header px-0 text-dark fw-bold mb-2">Filter Data Inventory</h6>
-          
           <div class="mb-2">
             <label class="form-label small fw-semibold mb-1">Kategori</label>
             <select name="kategori" class="form-select form-select-sm">
@@ -174,7 +157,6 @@
               {% endfor %}
             </select>
           </div>
-          
           <div class="mb-2">
             <label class="form-label small fw-semibold mb-1">Lokasi</label>
             <select name="lokasi" class="form-select form-select-sm">
@@ -186,7 +168,6 @@
               {% endfor %}
             </select>
           </div>
-          
           <div class="mb-3">
             <label class="form-label small fw-semibold mb-1">Status Aset</label>
             <select name="status" class="form-select form-select-sm">
@@ -196,7 +177,6 @@
               {% endfor %}
             </select>
           </div>
-          
           <div class="d-flex justify-content-end mt-3">
             <a href="{{ url_for('master_inventory') }}" class="btn btn-sm btn-light border w-100">Reset Semua Filter</a>
           </div>
@@ -211,7 +191,7 @@
 
   <div class="card-body p-0">
     <div class="table-responsive table-scrollable pb-0" style="min-height: 280px; max-height: 65vh;">
-      <table class="table table-hover align-middle mb-0 text-nowrap">
+      <table class="table align-middle mb-0 text-nowrap" id="inventoryTable">
         <thead class="table-light">
           <tr>
             <th class="ps-4" width="5%">No</th>
@@ -221,7 +201,7 @@
             <th width="15%">PIC 1</th>
             <th width="15%">PIC 2</th>
             <th width="10%">Status</th>
-            <th width="15%">Lokasi</th>
+            <th width="15%">Lokasi Gudang</th>
             <th width="5%" class="text-center pe-4">Aksi</th>
           </tr>
         </thead>
@@ -230,32 +210,34 @@
           {% set items_list = data.items if data.__class__.__name__ == 'Pagination' else data %}
           {% for item in items_list %}
           
-          <tr>
-            <td class="ps-4 text-dark">{{ loop.index }}</td>
+          <!-- KLIK BARIS MANAPUN UNTUK MEMILIH -->
+          <tr class="selectable-row" data-id="{{ item.id }}" onclick="toggleRow(this)">
+            <td class="ps-4 text-dark">
+              {{ loop.index }}
+              <!-- Checkbox tersembunyi untuk menyimpan data state -->
+              <input type="checkbox" class="row-checkbox d-none" value="{{ item.id }}">
+            </td>
             <td>
               <span class="text-dark">{{ item.kode_barang }}</span><br />
-              <!-- PERBAIKAN: Menghapus ikon bi-upc-scan di sini -->
               <small class="text-muted font-monospace">{{ item.serial_number }}</small>
             </td>
             <td>
-              <span class="text-primary">{{ item.nama_barang }}</span><br />
+              <span class="text-primary fw-medium">{{ item.nama_barang }}</span><br />
               <small class="text-muted">{{ item.brand or '-' }} | {{ item.vendor or '-' }}</small>
             </td>
             <td>
               <span class="text-dark"><i class="bi bi-tag me-1"></i>{{ item.kategori_terkait.nama_kategori if item.kategori_id and item.kategori_terkait else '-' }}</span><br />
               <small class="text-muted">{{ item.unit_type or '-' }}</small>
             </td>
-            
             <td>
               {% if item.karyawan_id %}
               <span class="text-dark"><i class="bi bi-person-check-fill text-success me-1"></i>{{ item.pic_1.nama }}</span><br />
               <small class="text-muted">{{ item.pic_1.payroll }}</small>
               {% else %}
-              <span class="badge bg-secondary px-2 py-1"><i class="bi bi-hdd-stack me-1"></i>ICT ASSET</span><br />
+              <span class="badge bg-secondary bg-opacity-25 text-secondary px-2 py-1 border border-secondary"><i class="bi bi-hdd-stack me-1"></i>ICT ASSET</span><br />
               <small class="text-muted">-</small>
               {% endif %}
             </td>
-
             <td>
               {% if item.karyawan_id_2 %}
               <span class="text-dark"><i class="bi bi-person-check-fill text-info me-1"></i>{{ item.pic_2.nama }}</span><br />
@@ -264,7 +246,6 @@
               <small class="text-muted fst-italic">Kosong</small>
               {% endif %}
             </td>
-
             <td>
               {% if item.status_id %} 
               {% set txt_color = 'success' if 'Good' in item.status_terkait.nama_status else ('warning' if 'Repair' in item.status_terkait.nama_status else ('secondary' if 'Missing' in item.status_terkait.nama_status else 'danger')) %}
@@ -273,7 +254,6 @@
               <span class="badge bg-transparent border text-secondary">No Status</span>
               {% endif %}
             </td>
-            
             <td>
               <div class="text-dark" style="font-size: 0.9rem;">
                 {{ item.lokasi.main.nama_main if item.lokasi and item.lokasi.main else 'Belum Dialokasikan' }}
@@ -287,13 +267,10 @@
                 {% endif %}
               </small>
             </td>
-            
             <td class="text-center pe-4">
-              <div class="btn-group shadow-sm">
-                <a href="{{ url_for('edit_inventory', id=item.id) }}" class="btn btn-sm btn-light border" title="Edit/Mutasi">
-                  <i class="bi bi-pencil-square text-primary"></i>
-                </a>
-              </div>
+              <a href="{{ url_for('edit_inventory', id=item.id) }}" class="btn btn-sm btn-light border bg-transparent" title="Edit Individual" onclick="event.stopPropagation()">
+                <i class="bi bi-pencil-square text-primary"></i>
+              </a>
             </td>
           </tr>
           {% else %}
@@ -307,6 +284,119 @@
         </tbody>
       </table>
     </div>
+    
+    <!-- BAR AKSI MELAYANG DI BAWAH TABEL -->
+    <div id="bulkActionBar" class="d-none justify-content-between align-items-center bg-white border-top shadow-lg px-4 py-3" style="position: sticky; bottom: 0; z-index: 1020; border-radius: 0 0 12px 12px;">
+        <div class="form-check mb-0">
+            <input class="form-check-input" type="checkbox" id="selectAllCheckbox" style="cursor: pointer;">
+            <label class="form-check-label text-muted ms-2 fw-medium" for="selectAllCheckbox" style="cursor: pointer;">
+                Pilih Semua (<span id="selectedCountText">0</span> baris)
+            </label>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary rounded-circle shadow-sm d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;" onclick="openBulkMutasiModal()" title="Mutasi Massal Terpilih">
+                <i class="bi bi-arrow-left-right"></i>
+            </button>
+            <button type="button" class="btn btn-danger rounded-circle shadow-sm d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;" onclick="clearSelection()" title="Batal Pilih">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+    
+  </div>
+</div>
+
+<!-- MODAL MUTASI MASSAL -->
+<div class="modal fade" id="bulkMutasiModal" tabindex="-1" aria-labelledby="bulkMutasiModalLabel" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow">
+      <form action="{{ url_for('mutasi_massal') }}" method="POST" id="bulkMutasiForm">
+        <!-- TAMBAHKAN CSRF TOKEN DI SINI -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}"/>
+        
+        <div class="modal-header bg-primary text-white border-0">
+          <h5 class="modal-title fw-bold" id="bulkMutasiModalLabel">
+            <i class="bi bi-arrow-left-right me-2"></i>Mutasi Massal (<span id="modalSelectedCount">0</span> Aset)
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        
+        <div class="modal-body p-4 bg-light">
+          <!-- Hidden Input untuk menyimpan ID barang yang dicentang -->
+          <input type="hidden" name="selected_ids" id="selectedIdsInput" value="">
+          
+          <div class="alert alert-info py-2 small mb-4 border-0 bg-info bg-opacity-10 d-flex align-items-center">
+            <i class="bi bi-info-circle-fill text-info fs-5 me-2"></i>
+            <div>Aset yang dipilih akan dipindahkan secara massal ke tujuan yang Anda atur di bawah. Jika tujuan sama dengan lokasi saat ini, aset tersebut akan diabaikan.</div>
+          </div>
+          
+          <div class="row g-4">
+            <!-- PENGATURAN PENUGASAN (PIC) -->
+            <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 pt-3 pb-0">
+                        <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-person-badge text-primary me-2"></i>Tujuan Penugasan (PIC)</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Diserahkan Ke PIC Utama</label>
+                            <select name="karyawan_id" id="bulk_karyawan_id" class="form-select form-select-sm">
+                                <option value="">-- Kembali ke Gudang / Tidak ada PIC --</option>
+                                {% for kar in karyawan_list %}
+                                <option value="{{ kar.id }}">{{ kar.nama }} ({{ kar.payroll }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label small fw-semibold">PIC Pendamping (Opsional)</label>
+                            <select name="karyawan_id_2" id="bulk_karyawan_id_2" class="form-select form-select-sm" disabled>
+                                <option value="">-- Pilih PIC Kedua --</option>
+                                {% for kar in karyawan_list %}
+                                <option value="{{ kar.id }}">{{ kar.nama }} ({{ kar.payroll }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PENGATURAN LOKASI FISIK -->
+            <div class="col-md-6">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 pt-3 pb-0">
+                        <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-geo-alt-fill text-primary me-2"></i>Tujuan Lokasi Fisik</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Lokasi Penyimpanan (Gudang)</label>
+                            <select name="lokasi_id" id="bulk_lokasi_id" class="form-select form-select-sm" required>
+                                <option value="">-- Pilih Sub Lokasi --</option>
+                                {% for lok in lokasi_list %}
+                                    {% if lok.main.nama_main != 'User / Employee' %}
+                                    <option value="{{ lok.id }}">{{ lok.main.nama_main }} - {{ lok.nama_sub }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <div class="form-text small mt-2" id="bulkLokasiHint">
+                                Jika PIC Utama dipilih, lokasi fisik akan terkunci.
+                            </div>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label small fw-semibold">Catatan Mutasi Massal (Opsional)</label>
+                            <textarea name="keterangan" class="form-control form-control-sm" rows="2" placeholder="Cth: Relokasi hardware ke Control Room" maxlength="255"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer border-top-0 bg-white">
+          <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-sm btn-primary px-4 fw-bold"><i class="bi bi-check2-circle me-1"></i> Simpan Mutasi</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -315,6 +405,8 @@
   <div class="modal-dialog">
     <div class="modal-content border-0 shadow">
       <form action="{{ url_for('import_inventory') }}" method="POST" enctype="multipart/form-data">
+   <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}"/>
+        
         <div class="modal-header border-bottom-0 bg-light">
           <h5 class="modal-title fw-bold text-dark" id="importModalLabel">
             <i class="bi bi-file-earmark-spreadsheet text-success me-2"></i>Import Data Inventory
@@ -323,12 +415,10 @@
         </div>
         <div class="modal-body">
           <p class="small text-muted mb-3">Unggah file Excel (.xlsx) untuk menambahkan banyak aset sekaligus. Sistem otomatis mendeteksi kategori dan lokasi baru jika belum ada.</p>
-          
           <div class="mb-3">
             <label for="fileExcel" class="form-label fw-semibold small">Pilih File Excel</label>
             <input class="form-control" type="file" id="fileExcel" name="file" accept=".xlsx, .xls" required>
           </div>
-          
           <div class="alert alert-info py-2 small mb-0 border-0 bg-info bg-opacity-10">
             <i class="bi bi-info-circle text-info me-1"></i> Belum punya template standar? <br>
             <a href="{{ url_for('download_template_inventory') }}" class="fw-bold text-info text-decoration-none ms-4">Download Template Excel</a>
@@ -344,6 +434,106 @@
 </div>
 
 <script>
+  // ==========================================
+  // JAVASCRIPT: LOGIKA SELEKSI BARIS (KLIK DIMANAPUN)
+  // ==========================================
+  
+  const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+  const bulkActionBar = document.getElementById('bulkActionBar');
+  
+  function toggleRow(rowElement) {
+    // Abaikan jika klik terjadi di tombol Aksi/Link
+    if (event.target.closest('a') || event.target.closest('button')) return;
+    
+    const checkbox = rowElement.querySelector('.row-checkbox');
+    if(checkbox) {
+        checkbox.checked = !checkbox.checked;
+        handleSelectionState();
+    }
+  }
+
+  function handleSelectionState() {
+    let checkedCount = 0;
+    let selectedIds = [];
+    
+    const allRowCheckboxes = document.querySelectorAll('.row-checkbox');
+    
+    allRowCheckboxes.forEach(cb => {
+      const row = cb.closest('tr');
+      if (cb.checked) {
+        checkedCount++;
+        selectedIds.push(cb.value);
+        row.classList.add('selected');
+      } else {
+        row.classList.remove('selected');
+      }
+    });
+
+    if (allRowCheckboxes.length > 0) {
+        selectAllCheckbox.checked = checkedCount === allRowCheckboxes.length;
+    }
+
+    if (checkedCount > 0) {
+      document.getElementById('selectedCountText').textContent = checkedCount;
+      document.getElementById('selectedIdsInput').value = selectedIds.join(',');
+      document.getElementById('modalSelectedCount').textContent = checkedCount;
+      bulkActionBar.classList.remove('d-none');
+      bulkActionBar.classList.add('d-flex');
+    } else {
+      bulkActionBar.classList.remove('d-flex');
+      bulkActionBar.classList.add('d-none');
+    }
+  }
+
+  if (selectAllCheckbox) {
+      selectAllCheckbox.addEventListener('change', function() {
+        const allRowCheckboxes = document.querySelectorAll('.row-checkbox');
+        allRowCheckboxes.forEach(cb => {
+          cb.checked = selectAllCheckbox.checked;
+        });
+        handleSelectionState();
+      });
+  }
+
+  function clearSelection() {
+    selectAllCheckbox.checked = false;
+    const allRowCheckboxes = document.querySelectorAll('.row-checkbox');
+    allRowCheckboxes.forEach(cb => {
+      cb.checked = false;
+    });
+    handleSelectionState();
+  }
+
+  function openBulkMutasiModal() {
+    const modal = new bootstrap.Modal(document.getElementById('bulkMutasiModal'));
+    modal.show();
+  }
+
+  // LOGIKA KUNCI LOKASI PADA FORM MUTASI
+  const bulkPic1 = document.getElementById('bulk_karyawan_id');
+  const bulkPic2 = document.getElementById('bulk_karyawan_id_2');
+  const bulkLokasi = document.getElementById('bulk_lokasi_id');
+  
+  function updateBulkLockState() {
+      if (bulkPic1 && bulkPic1.value !== "") {
+          bulkPic2.disabled = false;
+          bulkLokasi.disabled = true;
+          bulkLokasi.value = ""; 
+      } else {
+          bulkPic2.value = "";
+          bulkPic2.disabled = true;
+          bulkLokasi.disabled = false;
+      }
+  }
+
+  if (bulkPic1) {
+      bulkPic1.addEventListener('change', updateBulkLockState);
+      updateBulkLockState(); 
+  }
+
+  // ==========================================
+  // JAVASCRIPT UNTUK AJAX FILTER BAWAAN
+  // ==========================================
   document.addEventListener("DOMContentLoaded", function () {
     const filterForm = document.getElementById("filterForm");
     const tableBody = document.getElementById("tableBody");
@@ -375,6 +565,7 @@
             }
           });
 
+          clearSelection(); // Reset pilihan saat filter berubah
           tableBody.style.opacity = "1";
           window.history.pushState({}, "", url);
         })

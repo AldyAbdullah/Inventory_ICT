@@ -5,7 +5,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="fw-bold mb-1" style="color: #0a2540;">Edit Data Inventory</h4>
-        <p class="text-muted mb-0">Perbarui informasi perangkat dan alokasi PIC.</p>
+        <p class="text-muted mb-0">Perbarui informasi perangkat, alokasi PIC, dan kelengkapan (Consumable).</p>
     </div>
     <a href="{{ url_for('master_inventory') }}" class="btn btn-outline-secondary shadow-sm">
         <i class="bi bi-arrow-left me-1"></i> Kembali ke Master
@@ -86,7 +86,7 @@
 
                     <hr class="text-muted my-4">
 
-                    <!-- Status & Radio Button Kepemilikan (Desain Ramping) -->
+                    <!-- Status & Radio Button Kepemilikan -->
                     <div class="row mb-4 align-items-end">
                         <div class="col-md-5">
                             <label for="status_id" class="form-label fw-semibold">Status Aset <span class="text-danger">*</span></label>
@@ -105,7 +105,7 @@
                                 <div class="form-check mb-0">
                                     <input class="form-check-input" type="radio" name="jenis_kepemilikan" id="radioICT" value="ict" {% if not barang.karyawan_id %}checked{% endif %} style="cursor: pointer;">
                                     <label class="form-check-label fw-bold text-primary" for="radioICT" style="cursor: pointer;">
-                                        <i class="bi bi-hdd-stack me-1"></i>ICT Asset
+                                        <i class="bi bi-hdd-stack me-1"></i>ICT Asset (Gudang)
                                     </label>
                                 </div>
                                 <div class="form-check mb-0 ms-2">
@@ -158,12 +158,33 @@
                             {% endfor %}
                         </select>
                     </div>
+
+                    <!-- ======================================================== -->
+                    <!-- FITUR BARU: KELENGKAPAN CONSUMABLE (BUNDLING)            -->
+                    <!-- ======================================================== -->
+                    <div class="card bg-light border-0 mb-4 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-1"><i class="bi bi-box-seam me-2 text-primary"></i>Kelengkapan (Consumable) Tambahan</h6>
+                                    <small class="text-muted" id="teksPanduanCons">Aset ini akan diserahkan bersama barang consumable apa saja?</small>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="btnTambahConsumable">
+                                    <i class="bi bi-plus-circle me-1"></i> Tambah Consumable
+                                </button>
+                            </div>
+                            
+                            <div id="consumableList" class="d-flex flex-column gap-2">
+                                <!-- Baris Consumable akan dimuat di sini secara dinamis -->
+                            </div>
+                        </div>
+                    </div>
                     
                     <hr class="text-muted">
 
                     <div class="d-flex justify-content-end mt-4 mb-4">
                         <button type="submit" class="btn btn-primary px-4 shadow-sm">
-                            <i class="bi bi-save me-1"></i> Perbarui Data
+                            <i class="bi bi-save me-1"></i> Perbarui Data & Simpan Mutasi
                         </button>
                     </div>
                 </form>
@@ -208,16 +229,15 @@
         </div>
     </div>
     
-    <!-- PANDUAN PENGISIAN (STICKY SAMA SEPERTI TAMBAH) -->
+    <!-- PANDUAN PENGISIAN -->
     <div class="col-lg-4">
         <div class="card shadow-sm border-0 bg-light sticky-top" style="top: 85px; z-index: 1;">
             <div class="card-body">
                 <h6 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle me-2"></i>Panduan Pengisian</h6>
                 <ul class="text-muted small ps-3 mb-0" style="line-height: 1.8;">
-                    <li><strong>Kode Aset:</strong> Bisa diubah manual jika terjadi kesalahan input fisik.</li>
-                    <li><strong>Aturan SN:</strong> Serial Number boleh sama antar perangkat asalkan <strong>Brand</strong>-nya berbeda.</li>
-                    <li><strong>Sistem PIC B2B:</strong> Mengubah kepemilikan menjadi "Aset Personal" akan otomatis memindahkan aset ini ke <em>User / Employee</em> dan tercatat dalam riwayat mutasi.</li>
-                    <li><strong>Status Aset:</strong> Perubahan status (misal dari Good ke Broken) akan otomatis tersimpan dalam riwayat jejak audit.</li>
+                    <li><strong>Aset Personal (Deliver):</strong> Mengubah kepemilikan menjadi Aset Personal akan mencatat mutasi <strong>Deliver</strong>. Jika ada Consumable yang ditambahkan, stok consumable tersebut otomatis <strong>Berkurang/Keluar</strong>.</li>
+                    <li><strong>ICT Asset (Retrieval):</strong> Mengosongkan PIC akan mencatat mutasi <strong>Retrieval</strong> (Penarikan ke Gudang). Jika ada Consumable yang disertakan, stoknya akan otomatis <strong>Bertambah/Masuk</strong> kembali ke gudang (karena dianggap dikembalikan).</li>
+                    <li><strong>Mutasi Gudang:</strong> Memindah gudang ICT ke gudang ICT lain tidak mengubah stok consumable.</li>
                 </ul>
             </div>
         </div>
@@ -230,24 +250,20 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <style>
-    .select2-container .select2-selection--single {
-        height: 38px;
-        border: 1px solid #dee2e6;
-        border-radius: 0.375rem;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 36px;
-        color: #212529;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 36px;
-    }
+    .select2-container .select2-selection--single { height: 38px; border: 1px solid #dee2e6; border-radius: 0.375rem; }
+    .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 36px; color: #212529; }
+    .select2-container--default .select2-selection--single .select2-selection__arrow { height: 36px; }
+    .cons-row { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 
 <script>
-$(document).ready(function() {
-    // 1. Inisialisasi Select2
-    $('#kategori_id').select2({ width: '100%' });
+    // PERBAIKAN: Membaca data JSON yang dikirim secara aman dari backend agar Linter Editor tidak komplain.
+    const consumableData = {{ all_consumables_json | safe }};
+</script>
+
+<script>
+$(document).ready(function() {     // 1. Inisialisasi Select2$('#kategori_id').select2({ width: '100%' });
     $('#karyawan_id').select2({ width: '100%' });
     $('#karyawan_id_2').select2({ width: '100%' });
     $('#lokasi_id').select2({ width: '100%' });
@@ -260,43 +276,79 @@ $(document).ready(function() {
         $('#karyawan_id option').prop('disabled', false);
         $('#karyawan_id_2 option').prop('disabled', false);
 
-        if (pic1) {
-            $('#karyawan_id_2 option[value="' + pic1 + '"]').prop('disabled', true);
-        }
-        if (pic2) {
-            $('#karyawan_id option[value="' + pic2 + '"]').prop('disabled', true);
-        }
+        if (pic1) $('#karyawan_id_2 option[value="' + pic1 + '"]').prop('disabled', true);
+        if (pic2) $('#karyawan_id option[value="' + pic2 + '"]').prop('disabled', true);
     }
-
     $('#karyawan_id, #karyawan_id_2').on('change', updatePICOptions);
-    
-    // Panggil sekali saat load untuk mengunci opsi jika sedang edit data yang sudah ada PIC-nya
     updatePICOptions();
 
-    // 3. Logika Radio Button untuk Tampil/Sembunyi Form
+    // 3. Logika Radio Button & Panduan Teks Consumable
     function sesuaikanForm() {
+        var panduanTeks = document.getElementById("teksPanduanCons");
         if ($('#radioICT').is(':checked')) {
             $('#picContainer').hide();
             $('#lokasiContainer').show();
-            
             $('#karyawan_id').val('').trigger('change.select2').removeAttr('required');
             $('#karyawan_id_2').val('').trigger('change.select2');
-            
             $('#lokasi_id').attr('required', 'required');
+            
+            // Mode Penarikan (Retrieval) - Consumable dihitung masuk/kembali
+            if(panduanTeks) panduanTeks.innerHTML = "Opsional: Aset apa saja yang dikembalikan ke Gudang (Retrieval) bersama perangkat ini?";
         } else {
             $('#picContainer').show();
             $('#lokasiContainer').hide();
-            
             $('#karyawan_id').attr('required', 'required');
-            
             $('#lokasi_id').val('').trigger('change.select2').removeAttr('required');
+            
+            // Mode Penyerahan (Deliver) - Consumable dikeluarkan
+            if(panduanTeks) panduanTeks.innerHTML = "Aset kelengkapan apa saja yang ingin Anda serahkan (Deliver) bersama perangkat ini?";
         }
     }
-
     $('input[name="jenis_kepemilikan"]').on('change', sesuaikanForm);
-    
-    // Jalankan satu kali saat halaman dimuat
     sesuaikanForm();
+    
+    // 4. Logika Dinamis Penambahan Kolom Consumable (Bundling)
+    let consIndex = 0;
+    
+    $('#btnTambahConsumable').on('click', function() {
+        consIndex++;
+        
+        let optionsHtml = '<option value="">-- Cari Consumable --</option>';
+        consumableData.forEach(function(item) {
+            optionsHtml += `<option value="${item.id}">${item.text}</option>`;
+        });
+        
+        const rowHtml = `
+            <div class="row align-items-center cons-row bg-white p-2 border rounded" id="consRow_${consIndex}">
+                <div class="col-md-8">
+                    <label class="form-label small fw-semibold text-secondary mb-1">Pilih Barang Consumable</label>
+                    <select class="form-select cons-select" name="bundle_cons_id[]" required>
+                        ${optionsHtml}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold text-secondary mb-1">Jumlah</label>
+                    <input type="number" class="form-control" name="bundle_cons_qty[]" min="1" value="1" required>
+                </div>
+                <div class="col-md-1 d-flex align-items-end mt-4 mt-md-0">
+                    <button type="button" class="btn btn-outline-danger btn-sm hapus-cons w-100" title="Hapus baris ini">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        $('#consumableList').append(rowHtml);
+        
+        $(`#consRow_${consIndex} .cons-select`).select2({
+            width: '100%',
+            placeholder: "Ketik nama barang..."
+        });
+    });
+    
+    // Fungsi Hapus Baris Dinamis
+    $(document).on('click', '.hapus-cons', function() {$(this).closest('.cons-row').remove();
+    });
 });
 </script>
 {% endblock %}

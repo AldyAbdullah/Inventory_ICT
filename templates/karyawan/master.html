@@ -55,9 +55,13 @@
         <thead class="table-light">
           <tr>
             <th class="ps-4" width="5%">No</th>
-            <th width="20%">No. Payroll</th>
-            <th width="40%">Nama Lengkap</th>
-            <th width="20%">Status</th>
+            <th width="15%">No. Payroll</th>
+            <th width="35%">Nama Lengkap</th>
+            
+            <!-- KOLOM BARU UNTUK ASET -->
+            <th width="15%" class="text-center">Total Aset Terpinjam</th>
+            
+            <th width="15%">Status</th>
             <th class="text-end pe-4" width="15%">Aksi</th>
           </tr>
         </thead>
@@ -69,6 +73,16 @@
               <span class="font-monospace bg-light border px-2 py-1 rounded">{{ item.payroll }}</span>
             </td>
             <td class="fw-semibold text-dark">{{ item.nama }}</td>
+            
+            <!-- MENAMPILKAN TOTAL ASET -->
+            <td class="text-center">
+              {% if item.total_aset_aktif > 0 %}
+                <span class="badge bg-primary rounded-pill px-3">{{ item.total_aset_aktif }} Aset</span>
+              {% else %}
+                <span class="text-muted small fst-italic">0 Aset</span>
+              {% endif %}
+            </td>
+            
             <td>
               <span class="badge {% if item.status == 'Aktif' %}bg-success{% else %}bg-secondary{% endif %}">
                 {{ item.status }}
@@ -82,7 +96,7 @@
           </tr>
           {% else %}
           <tr>
-            <td colspan="5" class="text-center py-5 text-muted">
+            <td colspan="6" class="text-center py-5 text-muted">
               <i class="bi bi-inbox fs-2 d-block mb-2"></i>Belum ada data karyawan.
             </td>
           </tr>
